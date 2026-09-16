@@ -1,0 +1,27 @@
+# dependencies / build output
+node_modules/
+dist/
+.output/
+.output-test/
+.wxt/
+coverage/
+.eslintcache
+
+# agent skills: the lockfile (skills-lock.json) is committed; installed content is not.
+# Restore with: npx skills install
+.agents/skills/
+.claude/skills/
+.claude/settings.local.json
+
+# test harness artifacts (fixtures are generated: `make -C tools/harness fixtures` or in-process fallbacks)
+tools/harness/fixtures/
+tools/harness/.profiles/
+tools/harness/test-results/
+tools/harness/playwright-report/
+tools/harness/observer-logs/
+
+# local machine
+.env
+.env.*
+*.log
+.DS_Store

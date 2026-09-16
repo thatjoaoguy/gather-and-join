@@ -1,0 +1,53 @@
+name: Bug report
+description: Something did not work during a party.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks. Most sync bugs are only diagnosable from the event log, so the diagnostics paste matters more than the description.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what happened instead. Say who was leader and how many people were in the room.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Open the extension's setup page → Diagnostics → **Copy diagnostics**, and paste here. It contains display names and your server host, no media and nothing from the streaming service.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Extension version
+      description: Shown on chrome://extensions.
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: chrome
+    attributes:
+      label: Chrome version and OS
+      placeholder: Chrome 131 on macOS 15
+  - type: dropdown
+    id: hosting
+    attributes:
+      label: Where is the server
+      options:
+        - Same network (ws://)
+        - Tunnel from someone's laptop (wss://)
+        - Always-on machine or cloud (wss://)
+        - Not sure
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Streaming plan
+      description: Ad-supported plans desync during ad breaks by design; see the README.
+      options:
+        - Ad-free
+        - With ads
+        - Mixed in the room
+        - Not sure

@@ -1,0 +1,207 @@
+/* Screen mocks: the extension's real surfaces and states, styled with system.css tokens.
+   Everything here is additive to system.css; nothing overrides an approved token. */
+
+.screens-intro{max-width:760px;color:var(--muted);margin-bottom:8px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:12px;color:var(--muted);margin:0 0 28px}
+.legend code{color:#dccbea}
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:32px 28px;align-items:start}
+.shelf > div{min-width:0}
+.frame{width:360px;max-width:100%}
+.frame .popup{margin:0;width:100%}
+.drives{margin:10px 0 0;font-size:12px;color:var(--muted);line-height:1.5}
+.drives code{font-size:11px}
+
+/* Popup chrome */
+.popup .brand-lockup-small{width:168px;margin-bottom:6px}
+.popup h3{font-size:26px;margin:18px 0 10px}
+.popup .lede{margin:0 0 18px;color:var(--muted)}
+.popup form{margin:0}
+.popup .status{margin:8px 0 12px}
+.popup .setup-link{display:inline-block;margin-top:2px}
+.popup .footnote{margin:12px 0 0}
+.popup .notice{margin:0 0 14px}
+.popup .notice + .notice{margin-top:-2px}
+.popup .notice .row{margin-top:10px}
+.popup .notice button{min-height:40px;padding:8px 14px}
+.popup .compact{display:flex;align-items:center;gap:7px;font-size:12px;margin:0}
+.popup .compact .semantic-icon{width:16px;height:16px}
+.popup .compact.info{color:var(--info)}
+.popup .compact.warning{color:var(--warning)}
+.popup .compact.error{color:var(--error)}
+.popup .compact.success{color:var(--success)}
+
+/* Room header: code, role, connection */
+.roomhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 4px}
+.roomhead strong{font-size:16px}
+.conn{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin:0 0 14px}
+.conn i{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.conn.connected i{background:var(--success)}
+.conn.connecting i{background:var(--warning)}
+.chip.host{border-color:var(--purple);color:var(--purple)}
+
+/* Participant rows */
+.peer{align-items:center}
+.peer .who{min-width:0;flex:1}
+.peer .who strong{display:flex;align-items:center;gap:8px}
+.peer .state{display:inline-flex;align-items:center;gap:6px}
+.peer .state i{width:7px;height:7px;border-radius:50%;background:var(--muted);flex:none}
+.peer .state.connected i{background:var(--success)}
+.peer .state.connecting i{background:var(--warning)}
+.peer .state.failed i{background:var(--error)}
+.peer .cam{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:12px;padding:1px 7px;flex:none}
+.avatar.host{box-shadow:inset 0 0 0 2px var(--purple)}
+
+/* Setup page */
+.setup-frame{width:100%;max-width:720px}
+.setup-stack{display:grid;grid-template-columns:minmax(0,1fr);gap:32px;justify-items:start}
+.setup-frame .card{padding:32px}
+.setup .brand-lockup-small{width:188px;margin-bottom:8px}
+.setup h3{font-size:26px;margin:20px 0 8px}
+.setting .allowed{display:inline-flex;align-items:center;gap:7px;color:var(--success);font-weight:700}
+.setting .allowed .semantic-icon{width:18px;height:18px}
+.setup .notice{margin:12px 0 4px}
+.setup .save{margin-top:12px}
+.setup details{border-top:1px solid var(--line)}
+.setup .status{margin:8px 0 0}
+
+/* HUD (participant rail) */
+.hud-frame{border:1px solid var(--line);border-radius:var(--r-panel);overflow:hidden;background:#08080c}
+.hud-frame .player{border:0;border-radius:0;min-height:420px}
+.rail.current{width:240px}
+.rail.proposed{width:180px}
+@media(max-width:680px){.rail.current,.rail.proposed{width:98px}.fsbar{right:98px}.player.fullscreen .film .subtitle{right:110px}}
+.tile.video{background:#1b1b29 radial-gradient(ellipse at 40% 40%,#4b3a5c 0,transparent 60%);overflow:hidden;justify-content:flex-end;align-items:flex-start;padding:0}
+.tile.video .name{position:relative;z-index:1;margin:0 0 8px 10px;font-size:12px;color:var(--text);background:#08080cbf;padding:2px 8px;border-radius:10px}
+.tile.video::before{content:'';position:absolute;inset:0;background:linear-gradient(to top,#08080c99,transparent 45%)}
+.tile.video.self{transform:none}
+.tile.mirrored::after{content:'mirrored';position:absolute;top:8px;right:8px;font-size:9px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.tile .peerlabel{display:flex;flex-direction:column;align-items:center;gap:2px}
+.tile strong{font-size:12px}
+.rail .rail-note{margin-top:auto;font-size:10px;color:var(--muted);text-align:center}
+
+/* Fullscreen variant: the rail overlays the right edge of the fullscreen element */
+.player.fullscreen{position:relative}
+.player.fullscreen .film{flex:1}
+.player.fullscreen .rail{position:absolute;top:0;bottom:0;right:0}
+.player.fullscreen .film .subtitle{right:260px}
+.fsbar{position:absolute;left:0;right:240px;bottom:0;height:56px;background:linear-gradient(to top,#000c,transparent);display:flex;align-items:center;gap:14px;padding:0 20px;color:var(--muted);font-size:11px;z-index:1}
+.fsbar i{display:block;flex:1;height:3px;border-radius:2px;background:#3a3446}
+.fsbar i b{display:block;width:38%;height:100%;border-radius:2px;background:var(--purple)}
+
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.compare>div{min-width:0}
+@media(max-width:900px){.compare{grid-template-columns:1fr}.shelf{grid-template-columns:1fr}}
+
+/* Lobby: one flow at a time */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border:1px solid var(--line);border-radius:var(--r-control);background:var(--field);margin:0 0 16px}
+.seg button{min-height:38px;padding:6px 10px;border:0;border-radius:18px;background:transparent;color:var(--muted);font-weight:700}
+.seg button:hover:not(:disabled){transform:none;background:var(--raised)}
+.seg .seg-join[aria-selected=true]{background:var(--purple);color:var(--on-accent)}
+.seg .seg-create[aria-selected=true]{background:var(--red);color:var(--on-accent)}
+.popup label .count{float:right;font-weight:500;color:var(--muted);font-size:12px}
+.popup label .count.ok{color:var(--success)}
+button.not-ready{cursor:not-allowed;opacity:.45}
+
+/* Readiness rows: devices and server, with state */
+.readiness{list-style:none;margin:0 0 4px;padding:0;display:grid;gap:6px}
+.readiness li{display:flex;align-items:center;gap:9px;font-size:12px;min-height:26px}
+.readiness li span:nth-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.readiness .semantic-icon{width:18px;height:18px;border:0}
+.readiness li.ok .semantic-icon{color:var(--success)}
+.readiness li.warn .semantic-icon,.readiness li.warn span:nth-child(2){color:var(--warning)}
+.readiness li.err .semantic-icon,.readiness li.err span:nth-child(2){color:var(--error)}
+.readiness a{font-size:12px;font-weight:700;flex:none}
+
+/* Media controls: icon + state colour + label */
+.toggle.media{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.toggle.media .semantic-icon{width:18px;height:18px;border:0}
+.toggle.media.on[aria-pressed=true]{background:var(--success-bg);border-color:var(--success);color:var(--text)}
+.toggle.media.on .semantic-icon{color:var(--success)}
+.toggle.media.off[aria-pressed=false]{background:var(--warning-bg);border-color:var(--warning);color:var(--text)}
+.toggle.media.off .semantic-icon{color:var(--warning)}
+.mini{display:inline-grid;place-items:center;width:16px;height:16px;flex:none}
+.mini svg{width:100%;height:100%}
+.mini.ok{color:var(--success)}
+.mini.warn{color:var(--warning)}
+.peer .state .mini{margin-right:2px}
+
+/* Setup: sliding switch (proposed component; not in system.css yet) */
+.switch-row{align-items:center}
+.switch{position:relative;width:52px;height:30px;min-height:30px;padding:0;border-radius:15px;border:1px solid var(--control-border);background:var(--field);flex:none;transition:background 120ms ease,border-color 120ms ease}
+.switch:hover:not(:disabled){transform:none;background:var(--raised)}
+.switch .thumb{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--muted);transition:transform 120ms ease,background 120ms ease}
+.switch[aria-checked=true]{background:var(--purple);border-color:var(--purple)}
+.switch[aria-checked=true]:hover:not(:disabled){background:#c7b1ff}
+.switch[aria-checked=true] .thumb{background:var(--on-accent);transform:translateX(22px)}
+@media(prefers-reduced-motion:reduce){.switch,.switch .thumb{transition:none}}
+
+/* 1. Callout headings: icon and text on one line, everywhere */
+.popup .notice strong,.setup .notice strong,.notice strong{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.notice strong .semantic-icon{width:18px;height:18px;border:0;flex:none}
+
+/* Setup: field-level status directly under the input, and setting blocks with a callout row */
+.field-status{display:flex;align-items:center;gap:7px;font-size:12px;margin:-6px 0 12px 4px;color:var(--muted)}
+.field-status .semantic-icon{width:16px;height:16px;border:0;flex:none}
+.field-status.ok{color:var(--success)}
+.field-status.err{color:var(--error)}
+.field-status.checking{color:var(--muted)}
+.setup form input{margin-bottom:12px}
+.setup .save{margin-top:0}
+.setting-block{border-bottom:1px solid var(--line)}
+.setting-block .setting{border-bottom:0;padding-bottom:12px}
+.setting-block .notice{margin:0 0 18px}
+
+/* HUD: muted badge */
+.badge-muted{position:absolute;top:8px;left:8px;z-index:2;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--warning-bg);border:1px solid var(--warning);color:var(--warning)}
+.badge-muted svg{width:14px;height:14px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tile.mirrored::after{left:auto;right:8px}
+
+/* 2. Semantic notices outside the showcase grid */
+.notice.info{border-color:var(--info);background:var(--info-bg)}
+.notice.warning{border-color:var(--warning);background:var(--warning-bg)}
+.notice.success{border-color:var(--success);background:var(--success-bg)}
+.notice.info strong .semantic-icon{color:var(--info)}
+.notice.warning strong .semantic-icon{color:var(--warning)}
+.notice.success strong .semantic-icon{color:var(--success)}
+
+/* 3. "Allowed" aligns its text with the buttons' label text */
+.setting .allowed{padding-right:18px}
+
+/* 5. Speaking: static purple border and label, no motion */
+.tile.speaking{border:2px solid var(--purple)}
+
+.popup .notice + .primary.full,.popup .notice + .media-controls{margin-top:0}
+.popup .media-controls{margin-bottom:12px}
+
+/* Create tab helper: inset to the input text */
+.popup .helper{padding:0 16px;margin:2px 0 14px}
+
+/* HUD connection feedback */
+.rail-status{margin:auto 0 0;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--warning);background:var(--warning-bg);border:1px solid var(--warning);border-radius:12px;padding:6px 10px}
+.rail-status .semantic-icon{width:14px;height:14px;border:0;flex:none}
+.tile.lost{opacity:.55}
+.badge-lost{position:absolute;top:8px;left:8px;z-index:2;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--warning-bg);border:1px solid var(--warning);color:var(--warning)}
+.badge-lost svg{width:13px;height:13px}
+.tile.lost .badge-lost{opacity:1}
+
+/* Server row: coloured state word, visibility toggle */
+.readiness li.busy .semantic-icon{color:var(--warning)}
+.readiness li.err span:nth-child(2){color:var(--text)}
+.iconbtn{min-height:26px;width:26px;height:26px;padding:0;border:0;border-radius:13px;background:transparent;color:var(--muted);display:grid;place-items:center;flex:none}
+.iconbtn svg{width:16px;height:16px}
+.iconbtn:hover:not(:disabled){transform:none;background:var(--raised);color:var(--text)}
+
+/* Spoiler: concealed text, reveal on hover or press */
+.spoiler{background:#3a3446;color:transparent;border-radius:4px;padding:0 4px;cursor:pointer;user-select:none;transition:color 120ms ease,background 120ms ease}
+.spoiler:hover,.spoiler:focus-visible,.spoiler.open{background:var(--raised);color:var(--text)}
+.notice .spoiler{color:transparent}
+.notice .spoiler:hover{color:var(--text)}
+
+/* In-field visibility toggle */
+.field-wrap{position:relative}
+.field-wrap input{width:100%;min-width:0;border:1px solid var(--control-border);background:var(--field);color:var(--text);padding:11px 48px 11px 15px;border-radius:var(--r-control);margin-bottom:12px}
+.field-wrap input[aria-invalid=true]{border:2px solid var(--error)}
+.field-wrap .infield{position:absolute;right:11px;top:50%;transform:translateY(calc(-50% - 6px));width:26px;height:26px}
+.field-wrap .infield:hover:not(:disabled){transform:translateY(calc(-50% - 6px))}
+input[type=password]{letter-spacing:.12em;font-family:ui-monospace,monospace;font-size:13px}

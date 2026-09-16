@@ -1,0 +1,22 @@
+name: Feature request
+description: Something the room needs.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is awkward today
+      description: Describe the moment during a party where this comes up.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like instead
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This does not need the server to see or relay media.
+        - label: This does not touch the streaming service's ads, DRM, or telemetry.

@@ -1,0 +1,39 @@
+{
+  "name": "gather-and-join",
+  "description": "Watch together in sync, with voice and video. Chrome extension plus a self-hosted signaling server.",
+  "homepage": "https://thatjoaoguy.github.io/gather-and-join/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thatjoaoguy/gather-and-join.git"
+  },
+  "bugs": {
+    "url": "https://github.com/thatjoaoguy/gather-and-join/issues"
+  },
+  "private": true,
+  "license": "MIT",
+  "version": "0.1.0",
+  "packageManager": "pnpm@12.4.2",
+  "scripts": {
+    "dev:server": "pnpm --filter @gaj/server dev",
+    "dev:harness": "pnpm --filter @gaj/harness dev",
+    "dev:extension": "pnpm --filter @gaj/extension dev",
+    "build": "pnpm -r build",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test:unit": "pnpm -r --if-present test:unit",
+    "test:e2e": "pnpm --filter @gaj/harness test:e2e",
+    "test:sabotage": "pnpm --filter @gaj/harness test:sabotage",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test:unit && pnpm build && pnpm test:e2e && pnpm test:sabotage",
+    "host": "bash scripts/host.sh"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
+    "typescript-eslint": "^8.0.0"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.6"
+  }
+}

@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gather & Join · Screens</title>
+<link rel="stylesheet" href="../system.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.2"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 22 21H2Z"/><path d="M12 10v5M12 18v.2"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m7 12 3 3 7-7"/></symbol>
+  <symbol id="i-err" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v8M12 17v.2"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></symbol>
+  <symbol id="i-mic-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 9.5V6a3 3 0 0 0-6 0v1M9 11v3a3 3 0 0 0 5 2.2M5 11a7 7 0 0 0 10.6 6M19 11a7 7 0 0 1-.7 3M12 18v3M9 21h6M4 4l16 16"/></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="13" height="10" rx="2.5"/><path d="m16 10 5-2.5v9L16 14"/></symbol>
+  <symbol id="i-cam-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7h5.5A2.5 2.5 0 0 1 16 9.5v1l5-2.5v9l-2.5-1.3M16 15.5a2.5 2.5 0 0 1-2.5 1.5H5.5A2.5 2.5 0 0 1 3 14.5v-5A2.5 2.5 0 0 1 5.5 7M4 4l16 16"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 6.3A11 11 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-3.2 3.7M6.6 6.8A16 16 0 0 0 2 12s3.5 6 10 6a10 10 0 0 0 4-.8M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.2M7 17h.2"/></symbol>
+</svg>
+
+<header class="topbar"><a class="brand-link" href="../index.html"><img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join"></a>
+<nav aria-label="Screens"><a href="#popup-lobby">Popup · Lobby</a><a href="#popup-room">Popup · In room</a><a href="#setup">Setup</a><a href="#hud">Participant HUD</a><a href="../index.html">Design system</a></nav></header>
+
+<main id="top">
+<section class="section" style="border-top:0;padding-top:56px">
+<div class="eyebrow">Design system / Screens</div>
+<h2>The extension, restyled.</h2>
+<p class="screens-intro">Every surface the extension actually renders, in every state its code can produce, at true size. Each mock lists the snapshot fields that drive it, so the popup, setup page and participant HUD can be implemented against these directly. Static: nothing here connects to anything.</p>
+<div class="legend"><span>Popup frames are <code>360px</code> wide with <code>24px</code> padding, as specified.</span><span>Setup is a full tab at <code>720px</code>.</span><span>The HUD is shown at the current <code>240px</code> and the proposed <code>180px</code>.</span></div>
+</section>
+
+<!-- ================================================================ -->
+<section id="popup-lobby" class="section">
+<div class="eyebrow">01 / Popup · Lobby</div>
+<h2>Before the room.</h2>
+<p class="screens-intro">Shown while <code>snapshot.room</code> is null. One flow at a time: a Join / Create switch keeps purple and red present with equal weight, but only one action is on screen. Join is disabled until the code is six valid characters. Device permissions and the server are visible here, with their state, so nobody discovers a blocked microphone after joining.</p>
+<div class="shelf">
+
+<div>
+<div class="surface-label"><span>Lobby / Join, code not yet complete</span><span>360px</span></div>
+<div class="frame"><div class="card popup">
+<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<h3>A little closer.<br>Even from afar.</h3>
+<div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="true" class="seg-join" type="button">Join a room</button><button role="tab" aria-selected="false" class="seg-create" type="button">Create a room</button></div>
+<form novalidate>
+<label for="l1-name">Your name</label>
+<input id="l1-name" type="text" maxlength="24" value="Jamie" autocomplete="given-name">
+<label for="l1-code">Room code <span class="count">3 of 6</span></label>
+<input id="l1-code" type="text" maxlength="8" value="G7K" autocomplete="off" autocapitalize="characters" spellcheck="false">
+<button class="primary full not-ready" type="submit" disabled aria-disabled="true">Join room</button>
+</form>
+<div class="divider"></div>
+<ul class="readiness" aria-label="Ready to join">
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic"/></svg></span><span>Microphone allowed</span></li>
+<li class="warn"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam-off"/></svg></span><span>Camera not set up</span><a href="#setup">Allow</a></li>
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-server"/></svg></span><span>watch.example.com<span class="sr"> · Reachable</span></span><button class="iconbtn" type="button" aria-pressed="true" aria-label="Hide server address"><svg aria-hidden="true"><use href="#i-eye"/></svg></button><a href="#setup">Change</a></li>
+</ul>
+<p class="small muted footnote">Headphones on. Make yourself at home.</p>
+</div></div>
+<p class="drives">Drives: <code>room === null</code>. The tab switch is popup state, not room state. Join stays disabled until <code>isValidRoomCode(normalizeRoomCode(code))</code>; the count shows progress. Readiness rows: <code>micPermission</code>, <code>camPermission</code>, and the server host from <code>serverUrl</code>. The camera row is a warning only because it is optional; a blocked microphone is an error. The server row shows only the host; its state is the icon colour, success when reachable, warning while connecting, error when it cannot be reached, with the word kept for screen readers. The eye hides the address everywhere in the popup (row and callouts) behind a spoiler block, for screen sharing; it is a local preference, <code>showServerAddress</code>, shown by default.</p>
+</div>
+
+<div>
+<div class="surface-label"><span>Lobby / Join, ready</span><span>code valid</span></div>
+<div class="frame"><div class="card popup">
+<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<h3>A little closer.<br>Even from afar.</h3>
+<div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="true" class="seg-join" type="button">Join a room</button><button role="tab" aria-selected="false" class="seg-create" type="button">Create a room</button></div>
+<form novalidate>
+<label for="l2-name">Your name</label>
+<input id="l2-name" type="text" maxlength="24" value="Jamie">
+<label for="l2-code">Room code <span class="count ok">6 of 6</span></label>
+<input id="l2-code" type="text" maxlength="8" value="G7K2MX" autocomplete="off" autocapitalize="characters" spellcheck="false">
+<button class="primary full" type="submit">Join room</button>
+</form>
+<div class="divider"></div>
+<ul class="readiness" aria-label="Ready to join">
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic"/></svg></span><span>Microphone allowed</span></li>
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam"/></svg></span><span>Camera allowed · off until you turn it on</span></li>
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-server"/></svg></span><span>watch.example.com<span class="sr"> · Reachable</span></span><button class="iconbtn" type="button" aria-pressed="true" aria-label="Hide server address"><svg aria-hidden="true"><use href="#i-eye"/></svg></button><a href="#setup">Change</a></li>
+</ul>
+<p class="small muted footnote">Headphones on. Make yourself at home.</p>
+</div></div>
+<p class="drives">Drives: the code normalises as you type (lowercase, I/L→1, O→0) so pasting works. Enter submits. "Reachable" needs a lightweight probe when the popup opens: a WebSocket connect plus one <code>ping</code>, then close. That is new product work; until it exists the row shows the host only.</p>
+</div>
+
+<div>
+<div class="surface-label"><span>Lobby / Create</span><span>create tab</span></div>
+<div class="frame"><div class="card popup">
+<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<h3>A little closer.<br>Even from afar.</h3>
+<div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="false" class="seg-join" type="button">Join a room</button><button role="tab" aria-selected="true" class="seg-create" type="button">Create a room</button></div>
+<form novalidate>
+<label for="l3-name">Your name</label>
+<input id="l3-name" type="text" maxlength="24" value="Jamie">
+<p class="small muted helper">You’ll get a six-character code to share. You choose the episode; everyone can play or pause.</p>
+<button class="secondary full" type="submit">Create a room</button>
+<p class="status" role="status"></p>
+</form>
+<div class="divider"></div>
+<ul class="readiness" aria-label="Ready to host">
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic"/></svg></span><span>Microphone allowed</span></li>
+<li class="warn"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam-off"/></svg></span><span>Camera not set up</span><a href="#setup">Allow</a></li>
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-server"/></svg></span><span>watch.example.com<span class="sr"> · Reachable</span></span><button class="iconbtn" type="button" aria-pressed="true" aria-label="Hide server address"><svg aria-hidden="true"><use href="#i-eye"/></svg></button><a href="#setup">Change</a></li>
+</ul>
+<p class="small muted footnote">Headphones on. Make yourself at home.</p>
+</div></div>
+<p class="drives">Drives: the Create tab needs only a name. Red is the create colour throughout: the tab, the action. The server row matters most here: the code you share only works for friends pointed at the same server.</p>
+</div>
+
+<div>
+<div class="surface-label"><span>Lobby / Joining</span><span>joining: true</span></div>
+<div class="frame"><div class="card popup">
+<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<h3>A little closer.<br>Even from afar.</h3>
+<div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="true" class="seg-join" type="button" disabled>Join a room</button><button role="tab" aria-selected="false" class="seg-create" type="button" disabled>Create a room</button></div>
+<form novalidate>
+<label for="l4-name">Your name</label>
+<input id="l4-name" type="text" value="Jamie" disabled>
+<label for="l4-code">Room code</label>
+<input id="l4-code" type="text" value="G7K2MX" disabled>
+<button class="primary full" type="submit" disabled>Joining…</button>
+</form>
+<div class="divider"></div>
+<ul class="readiness" aria-label="Ready to join">
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic"/></svg></span><span>Microphone allowed</span></li>
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam"/></svg></span><span>Camera allowed · off until you turn it on</span></li>
+<li class="busy"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-server"/></svg></span><span>watch.example.com<span class="sr"> · Connecting</span></span><button class="iconbtn" type="button" aria-pressed="true" aria-label="Hide server address"><svg aria-hidden="true"><use href="#i-eye"/></svg></button></li>
+</ul>
+</div></div>
+<p class="drives">Drives: <code>joining === true</code> disables the switch, the fields and the action; the label reads "Joining…" or "Creating…". No spinner and no extra line: the label and the server row are the feedback.</p>
+</div>
+
+<div>
+<div class="surface-label"><span>Lobby / Room not found</span><span>lastError.code</span></div>
+<div class="frame"><div class="card popup">
+<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<h3>A little closer.<br>Even from afar.</h3>
+<div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="true" class="seg-join" type="button">Join a room</button><button role="tab" aria-selected="false" class="seg-create" type="button">Create a room</button></div>
+<form novalidate>
+<label for="l5-name">Your name</label>
+<input id="l5-name" type="text" value="Jamie">
+<label for="l5-code">Room code <span class="count ok">6 of 6</span></label>
+<input id="l5-code" type="text" value="G7K2MZ" aria-invalid="true" aria-describedby="l5-err">
+<div class="notice error" id="l5-err" role="alert"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-err"/></svg></span> Room not found</strong>
+<p>Check the code with your friend, and that you’re both on the same server.</p></div>
+<button class="primary full" type="submit">Try again</button>
+</form>
+<div class="divider"></div>
+<ul class="readiness" aria-label="Ready to join">
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic"/></svg></span><span>Microphone allowed</span></li>
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam"/></svg></span><span>Camera allowed · off until you turn it on</span></li>
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-server"/></svg></span><span>watch.example.com<span class="sr"> · Reachable</span></span><button class="iconbtn" type="button" aria-pressed="true" aria-label="Hide server address"><svg aria-hidden="true"><use href="#i-eye"/></svg></button><a href="#setup">Change</a></li>
+</ul>
+</div></div>
+<p class="drives">Drives: <code>lastError.code</code> in <code>ROOM_NOT_FOUND</code>, <code>ROOM_EXISTS</code>, <code>PEER_ID_TAKEN</code>. Name and code are kept. The server row stays green: the server answered, it just has no such room, which is why the message points at the server as well as the code.</p>
+</div>
+
+<div>
+<div class="surface-label"><span>Lobby / Server unreachable</span><span>SERVER_UNREACHABLE</span></div>
+<div class="frame"><div class="card popup">
+<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<h3>A little closer.<br>Even from afar.</h3>
+<div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="true" class="seg-join" type="button">Join a room</button><button role="tab" aria-selected="false" class="seg-create" type="button">Create a room</button></div>
+<form novalidate>
+<label for="l6-name">Your name</label>
+<input id="l6-name" type="text" value="Jamie">
+<label for="l6-code">Room code <span class="count ok">6 of 6</span></label>
+<input id="l6-code" type="text" value="G7K2MX">
+<button class="primary full not-ready" type="submit" disabled aria-disabled="true">Join room</button>
+</form>
+<div class="divider"></div>
+<ul class="readiness" aria-label="Ready to join">
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic"/></svg></span><span>Microphone allowed</span></li>
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam"/></svg></span><span>Camera allowed · off until you turn it on</span></li>
+<li class="err"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-server"/></svg></span><span><span class="spoiler" title="Hidden · hover or press to reveal">watch.example.com</span><span class="sr"> · Can’t reach it</span></span><button class="iconbtn" type="button" aria-pressed="false" aria-label="Show server address"><svg aria-hidden="true"><use href="#i-eye-off"/></svg></button><a href="#setup">Change</a></li>
+</ul>
+<div class="notice error" role="alert"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-err"/></svg></span> Can’t reach your server</strong>
+<p>Nothing answered at <span class="spoiler" title="Hidden · hover or press to reveal">wss://watch.example.com</span>. Check the address with the person hosting it, or make sure their machine is awake.</p></div>
+<div class="media-controls"><button class="primary" type="button">Open setup</button><button type="button">Try again</button></div>
+</div></div>
+<p class="drives">Drives: <code>lastError.code === 'SERVER_UNREACHABLE'</code>, or the probe failing. Join is disabled while the server is unreachable, because it cannot succeed. Recovery goes to setup; the address is never edited in the popup. Here the address is hidden: it is drawn as a spoiler block, in the row and in the callout, and reveals on hover or press without changing the preference.</p>
+</div>
+
+<div>
+<div class="surface-label"><span>Lobby / Microphone blocked</span><span>micPermission: denied</span></div>
+<div class="frame"><div class="card popup">
+<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<h3>A little closer.<br>Even from afar.</h3>
+<div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="true" class="seg-join" type="button">Join a room</button><button role="tab" aria-selected="false" class="seg-create" type="button">Create a room</button></div>
+<form novalidate>
+<label for="l7-name">Your name</label>
+<input id="l7-name" type="text" value="Jamie">
+<label for="l7-code">Room code <span class="count">0 of 6</span></label>
+<input id="l7-code" type="text" placeholder="G7K2MX">
+<button class="primary full not-ready" type="submit" disabled aria-disabled="true">Join room</button>
+</form>
+<div class="divider"></div>
+<ul class="readiness" aria-label="Ready to join">
+<li class="err"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic-off"/></svg></span><span>Microphone blocked</span><a href="#setup">Allow</a></li>
+<li class="warn"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam-off"/></svg></span><span>Camera not set up</span><a href="#setup">Allow</a></li>
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-server"/></svg></span><span>watch.example.com<span class="sr"> · Reachable</span></span><button class="iconbtn" type="button" aria-pressed="true" aria-label="Hide server address"><svg aria-hidden="true"><use href="#i-eye"/></svg></button><a href="#setup">Change</a></li>
+</ul>
+<p class="small muted footnote">You can still join without a microphone; nobody will hear you until it’s allowed.</p>
+</div></div>
+<p class="drives">Drives: <code>micPermission === 'denied'</code>. "Allow" sends <code>grantMic</code>, which opens setup in grant mode. Joining is still possible; the row stays red until the grant lands, because a blocked microphone is a real problem, not an option.</p>
+</div>
+
+</div>
+</section>
+
+<!-- ================================================================ -->
+<section id="popup-room" class="section">
+<div class="eyebrow">02 / Popup · In room</div>
+<h2>Everyone in one place.</h2>
+<p class="screens-intro">Shown while <code>snapshot.room</code> is set. The code is the hero, participants come from <code>participantsFrom(snapshot)</code> in server order, and every condition the session can report has a place above the list. Callouts carry only words; their action is a regular button on the surface directly beneath, so brand purple never sits inside a semantic tint.</p>
+<div class="shelf">
+
+<div>
+<div class="surface-label"><span>Room / Host, everyone connected</span><span>isLeader: true</span></div>
+<div class="frame"><div class="card popup">
+<div class="roomhead"><strong>Your room</strong><span class="chip host">Host</span></div>
+<p class="conn connected"><i></i>Connected · 3 in the room</p>
+<p class="small muted" style="margin:0 0 4px">Invite someone with this code.</p>
+<div class="row between"><span class="code">G7K2MX</span><button type="button">Copy</button></div>
+<p class="status" role="status"></p>
+<div class="peer row"><span class="avatar host" aria-hidden="true">J</span><div class="who"><strong>Jamie (you)</strong></div></div>
+<div class="peer row"><span class="avatar red" aria-hidden="true">A</span><div class="who"><strong>Alex</strong><p><span class="state connected"><i></i>Connected</span></p></div><span class="mini ok" title="Camera on" aria-label="Camera on"><svg><use href="#i-cam"/></svg></span></div>
+<div class="peer row"><span class="avatar" aria-hidden="true">S</span><div class="who"><strong>Sam</strong><p><span class="state connected"><i></i>Connected</span></p></div></div>
+<div class="divider"></div>
+<div class="media-controls"><button class="toggle media on" aria-pressed="true" type="button"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic"/></svg></span>Mic on</button><button class="toggle media off" aria-pressed="false" type="button"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam-off"/></svg></span>Camera off</button></div>
+<p class="status" role="status">Everyone can play or pause. You choose the episode.</p>
+<button class="danger full" type="button">Leave room</button>
+</div></div>
+<p class="drives">Drives: <code>room.code</code>, <code>socket === 'connected'</code>, <code>peers.length</code>, <code>isLeader</code> (chip, closing line), per-peer <code>peerMedia[id].connectionState</code> and <code>hasVideo</code>, <code>micOn</code>, <code>camOn</code>. The host ring on the avatar marks <code>room.leaderId</code>. Media controls carry an icon and a state colour: on is the success tone, off is the warning tone, and the label still says which. For other people only the camera icon is shown, from <code>hasVideo</code>; a remote mute is not signalled today (a muted track still arrives as silence), so it stays out until that exists.</p>
+</div>
+
+<div>
+<div class="surface-label"><span>Room / Guest, a peer still connecting</span><span>isLeader: false</span></div>
+<div class="frame"><div class="card popup">
+<div class="roomhead"><strong>Your room</strong><span class="chip">Guest</span></div>
+<p class="conn connected"><i></i>Connected · 3 in the room</p>
+<p class="small muted" style="margin:0 0 4px">Invite someone with this code.</p>
+<div class="row between"><span class="code">G7K2MX</span><button type="button">Copy</button></div>
+<p class="status success compact" role="status"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span>Room code copied.</p>
+<div class="peer row"><span class="avatar" aria-hidden="true">J</span><div class="who"><strong>Jamie (you)</strong></div></div>
+<div class="peer row"><span class="avatar red host" aria-hidden="true">A</span><div class="who"><strong>Alex <span class="chip host">Host</span></strong><p><span class="state connected"><i></i>Connected</span></p></div></div>
+<div class="peer row"><span class="avatar" aria-hidden="true">S</span><div class="who"><strong>Sam</strong><p><span class="state connecting"><i></i>Connecting…</span></p></div></div>
+<div class="divider"></div>
+<div class="media-controls"><button class="toggle media off" aria-pressed="false" type="button"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic-off"/></svg></span>Mic off</button><button class="toggle media on" aria-pressed="true" type="button"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam"/></svg></span>Camera on</button></div>
+<p class="status" role="status">Everyone can play or pause. Alex chooses the episode.</p>
+<button class="danger full" type="button">Leave room</button>
+</div></div>
+<p class="drives">Drives: a peer with no <code>peerMedia</code> entry yet, or <code>connectionState</code> in <code>new</code>/<code>connecting</code>, reads "Connecting…"; <code>failed</code> reads "Connection lost" in the error tone. Copy success is brief, then the status line returns to empty.</p>
+</div>
+
+<div>
+<div class="surface-label"><span>Room / Someone is buffering</span><span>stalledBy</span></div>
+<div class="frame"><div class="card popup">
+<div class="roomhead"><strong>Your room</strong><span class="chip host">Host</span></div>
+<p class="conn connected"><i></i>Connected · 3 in the room</p>
+<div class="notice warning" role="status"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-warn"/></svg></span> Alex is buffering</strong>
+<p>The show is paused. Press play when everyone is ready.</p></div>
+<div class="row between"><span class="code">G7K2MX</span><button type="button">Copy</button></div>
+<p class="status" role="status"></p>
+<div class="peer row"><span class="avatar host" aria-hidden="true">J</span><div class="who"><strong>Jamie (you)</strong></div></div>
+<div class="peer row"><span class="avatar red" aria-hidden="true">A</span><div class="who"><strong>Alex</strong><p><span class="state connected"><i></i>Connected · buffering</span></p></div></div>
+<div class="peer row"><span class="avatar" aria-hidden="true">S</span><div class="who"><strong>Sam</strong><p><span class="state connected"><i></i>Connected</span></p></div></div>
+<div class="divider"></div>
+<div class="media-controls"><button class="toggle media on" aria-pressed="true" type="button"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic"/></svg></span>Mic on</button><button class="toggle media off" aria-pressed="false" type="button"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam-off"/></svg></span>Camera off</button></div>
+<button class="danger full" type="button" style="margin-top:12px">Leave room</button>
+</div></div>
+<p class="drives">Drives: <code>stalledBy = { peerId, name }</code>. The notice stays until a play frame clears it. Resume is on the streaming player, never here.</p>
+</div>
+
+<div>
+<div class="surface-label"><span>Room / Reconnecting</span><span>socket ≠ connected</span></div>
+<div class="frame"><div class="card popup">
+<div class="roomhead"><strong>Your room</strong><span class="chip">Guest</span></div>
+<p class="conn connecting"><i></i>Reconnecting…</p>
+<div class="notice warning" role="status"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-warn"/></svg></span> Reconnecting to your room…</strong>
+<p>Your connection dropped. We’re trying again. Your friends stay where they are.</p></div>
+<div class="row between"><span class="code">G7K2MX</span><button type="button" disabled>Copy</button></div>
+<p class="status" role="status"></p>
+<div class="peer row"><span class="avatar" aria-hidden="true">J</span><div class="who"><strong>Jamie (you)</strong></div></div>
+<div class="peer row"><span class="avatar red host" aria-hidden="true">A</span><div class="who"><strong>Alex <span class="chip host">Host</span></strong><p><span class="state connecting"><i></i>Reconnecting</span></p></div></div>
+<div class="peer row"><span class="avatar" aria-hidden="true">S</span><div class="who"><strong>Sam</strong><p><span class="state connecting"><i></i>Reconnecting</span></p></div></div>
+<div class="divider"></div>
+<div class="media-controls"><button class="toggle media on" aria-pressed="true" type="button"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic"/></svg></span>Mic on</button><button class="toggle media off" aria-pressed="false" type="button"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam-off"/></svg></span>Camera off</button></div>
+<button class="danger full" type="button" style="margin-top:12px">Leave room</button>
+</div></div>
+<p class="drives">Drives: <code>socket</code> in <code>connecting</code>/<code>disconnected</code> with <code>lastError.code === 'RECONNECTING'</code>. Participants are kept in place and their state relabeled; "Connected" is not shown until confirmed. A brief success notice ("Connection restored") follows recovery, then this returns to neutral.</p>
+</div>
+
+<div>
+<div class="surface-label"><span>Room / Different episode</span><span>room.contentId ≠ this tab</span></div>
+<div class="frame"><div class="card popup">
+<div class="roomhead"><strong>Your room</strong><span class="chip">Guest</span></div>
+<p class="conn connected"><i></i>Connected · 3 in the room</p>
+<div class="notice info" role="status"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-info"/></svg></span> Your room is watching another episode</strong>
+<p>Open the room’s episode to catch up with your friends.</p></div>
+<button class="primary full" type="button" style="margin-bottom:14px">Go to episode</button>
+<div class="row between"><span class="code">G7K2MX</span><button type="button">Copy</button></div>
+<p class="status" role="status"></p>
+<div class="peer row"><span class="avatar" aria-hidden="true">J</span><div class="who"><strong>Jamie (you)</strong></div></div>
+<div class="peer row"><span class="avatar red host" aria-hidden="true">A</span><div class="who"><strong>Alex <span class="chip host">Host</span></strong><p><span class="state connected"><i></i>Connected</span></p></div></div>
+<div class="peer row"><span class="avatar" aria-hidden="true">S</span><div class="who"><strong>Sam</strong><p><span class="state connected"><i></i>Connected</span></p></div></div>
+<div class="divider"></div>
+<div class="media-controls"><button class="toggle media on" aria-pressed="true" type="button"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic"/></svg></span>Mic on</button><button class="toggle media off" aria-pressed="false" type="button"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam-off"/></svg></span>Camera off</button></div>
+<button class="danger full" type="button" style="margin-top:12px">Leave room</button>
+</div></div>
+<p class="drives">Drives: <code>room.contentId</code> and <code>room.watchUrl</code> set, and the active tab's content id differs. "Go to episode" calls <code>chrome.tabs.update</code> with the watch URL. Only shown when the URL exists.</p>
+</div>
+
+<div>
+<div class="surface-label"><span>Room / First one here</span><span>peers.length === 1</span></div>
+<div class="frame"><div class="card popup">
+<div class="roomhead"><strong>Your room</strong><span class="chip host">Host</span></div>
+<p class="conn connected"><i></i>Connected · just you so far</p>
+<h3 style="margin:8px 0 6px">You’re the first one here.</h3>
+<p class="small muted" style="margin:0 0 4px">Share the code and settle in.</p>
+<div class="row between"><span class="code">G7K2MX</span><button class="primary" type="button">Copy code</button></div>
+<p class="status" role="status"></p>
+<div class="peer row"><span class="avatar host" aria-hidden="true">J</span><div class="who"><strong>Jamie (you)</strong></div></div>
+<div class="divider"></div>
+<div class="media-controls"><button class="toggle media on" aria-pressed="true" type="button"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic"/></svg></span>Mic on</button><button class="toggle media off" aria-pressed="false" type="button"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam-off"/></svg></span>Camera off</button></div>
+<p class="status" role="status">Everyone can play or pause. You choose the episode.</p>
+<button class="danger full" type="button">Leave room</button>
+</div></div>
+<p class="drives">Drives: only <code>yourPeerId</code> in <code>peers</code>. Copy is promoted to primary; the list still shows your own tile. Never an empty list.</p>
+</div>
+
+<div>
+<div class="surface-label"><span>Room / Camera blocked</span><span>CAMERA_NOT_ALLOWED</span></div>
+<div class="frame"><div class="card popup">
+<div class="roomhead"><strong>Your room</strong><span class="chip">Guest</span></div>
+<p class="conn connected"><i></i>Connected · 3 in the room</p>
+<div class="row between"><span class="code">G7K2MX</span><button type="button">Copy</button></div>
+<p class="status" role="status"></p>
+<div class="peer row"><span class="avatar" aria-hidden="true">J</span><div class="who"><strong>Jamie (you)</strong></div></div>
+<div class="peer row"><span class="avatar red host" aria-hidden="true">A</span><div class="who"><strong>Alex <span class="chip host">Host</span></strong><p><span class="state connected"><i></i>Connected</span></p></div></div>
+<div class="peer row"><span class="avatar" aria-hidden="true">S</span><div class="who"><strong>Sam</strong><p><span class="state connected"><i></i>Connected</span></p></div></div>
+<div class="divider"></div>
+<div class="media-controls"><button class="toggle media on" aria-pressed="true" type="button"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic"/></svg></span>Mic on</button><button class="toggle media off" aria-pressed="false" type="button"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam-off"/></svg></span>Camera off</button></div>
+<div class="notice error" role="alert" style="margin-top:12px"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-err"/></svg></span> Camera access is blocked</strong>
+<p>You can stay in the room. Allow your camera on the setup page to turn it on.</p></div>
+<button class="primary full" type="button" style="margin-bottom:12px">Allow camera</button>
+<button class="danger full" type="button">Leave room</button>
+</div></div>
+<p class="drives">Drives: <code>lastError.code</code> in <code>CAMERA_NOT_ALLOWED</code>, <code>CAMERA_UNAVAILABLE</code> ("No camera found"), or <code>camPermission === 'denied'</code>. The toggle stays "Camera off". The notice sits by the control that caused it.</p>
+</div>
+
+</div>
+</section>
+
+<!-- ================================================================ -->
+<section id="setup" class="section">
+<div class="eyebrow">03 / Setup page</div>
+<h2>Make yourself comfortable.</h2>
+<p class="screens-intro">The options page, opened from the popup or in grant mode by the "Allow" actions. Two device permissions, the optional ducking switch, and the connection address with its own save feedback.</p>
+<div class="setup-stack">
+
+<div>
+<div class="surface-label"><span>Setup / Default</span><span>720px tab</span></div>
+<div class="setup-frame"><div class="card setup">
+<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<h3>A few things before movie night.</h3>
+<p class="muted">Your camera is optional. Headphones help everyone hear the conversation clearly.</p>
+<div class="setting"><div><strong>Microphone</strong><p>Let your friends hear you. Chrome asks once; the room reuses your answer.</p></div><button class="primary" type="button">Allow microphone</button></div>
+<div class="setting"><div><strong>Camera</strong><p>Say hello face to face, if you like. Off until you turn it on in a room.</p></div><button type="button">Allow camera</button></div>
+<div class="setting switch-row"><div><strong>Lower the show’s volume while I speak</strong><p>Off by default. With speakers, the show’s own audio can trigger this too.</p></div><button class="switch" role="switch" aria-checked="false" type="button" aria-label="Lower the show’s volume while I speak"><span class="thumb"></span></button></div>
+<details open>
+<summary>Connection settings</summary>
+<p>Use the connection address shared by the person hosting your server. You only need to set this once unless their address changes.</p>
+<form novalidate>
+<label for="s1-url">Connection address</label>
+<div class="field-wrap"><input type="password" id="s1-url" value="wss://watch.example.com" spellcheck="false" autocomplete="off" aria-describedby="s1-status"><button class="iconbtn infield" type="button" aria-pressed="false" aria-label="Show address"><svg aria-hidden="true"><use href="#i-eye-off"/></svg></button></div>
+<p id="s1-status" class="field-status ok" role="status"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span>Reachable · answered just now</p>
+<button class="save" type="submit">Save address</button>
+</form>
+</details>
+</div></div>
+<p class="drives">Drives: <code>navigator.permissions</code> state for each device, <code>ducking</code> and <code>serverUrl</code> from local storage. Save writes <code>serverUrl</code>; the switch sends <code>setDucking</code> live. The reachability line under the address comes from a probe (socket connect plus one <code>ping</code>, then close) run when the page opens and after each save; states are "Checking…", "Reachable", "Can’t reach it". That probe is new product work. The eye inside the field switches it between <code>type="password"</code> and <code>type="url"</code>; it follows the same <code>showServerAddress</code> preference as the popup, so hiding it in one place hides it everywhere. If you are in a room when you save, the line reads "Saved. Applies after you leave your current room."</p>
+</div>
+
+<div>
+<div class="surface-label"><span>Setup / After grants, invalid address</span><span>?grant=1</span></div>
+<div class="setup-frame"><div class="card setup">
+<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<h3>A few things before movie night.</h3>
+<p class="muted">Your camera is optional. Headphones help everyone hear the conversation clearly.</p>
+<div class="setting"><div><strong>Microphone</strong><p>Let your friends hear you.</p></div><span class="allowed"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span>Allowed</span></div>
+<div class="setting-block">
+<div class="setting"><div><strong>Camera</strong><p>Say hello face to face, if you like.</p></div><button type="button">Try again</button></div>
+<div class="notice error" role="alert"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-err"/></svg></span> Camera not allowed</strong>
+<p>Chrome or macOS blocked it (<code>NotAllowedError</code>). Check Chrome’s site settings for this extension and System Settings → Privacy &amp; Security → Camera, then try again.</p></div>
+</div>
+<div class="setting switch-row"><div><strong>Lower the show’s volume while I speak</strong><p>Off by default. With speakers, the show’s own audio can trigger this too.</p></div><button class="switch" role="switch" aria-checked="true" type="button" aria-label="Lower the show’s volume while I speak"><span class="thumb"></span></button></div>
+<details open>
+<summary>Connection settings</summary>
+<p>Use the connection address shared by the person hosting your server.</p>
+<form novalidate>
+<label for="s2-url">Connection address</label>
+<div class="field-wrap"><input type="url" id="s2-url" value="watch.example.com" spellcheck="false" autocomplete="off" aria-invalid="true" aria-describedby="s2-status"><button class="iconbtn infield" type="button" aria-pressed="true" aria-label="Hide address"><svg aria-hidden="true"><use href="#i-eye"/></svg></button></div>
+<p id="s2-status" class="field-status err" role="alert"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-err"/></svg></span>Enter an address beginning with wss:// or ws://.</p>
+<button class="save not-ready" type="submit" disabled aria-disabled="true">Save address</button>
+</form>
+</details>
+</div></div>
+<p class="drives">Drives: a granted device replaces its button with a labeled check; a <code>NotAllowedError</code> shows the error notice and a "Try again" action. Opened with <code>?grant=1</code> or <code>?grant=camera</code> the page prompts immediately and closes itself on success. Validation sits directly under the field and disables Save until the address parses.</p>
+</div>
+
+</div>
+</section>
+
+<!-- ================================================================ -->
+<section id="hud" class="section">
+<div class="eyebrow">04 / Participant HUD</div>
+<h2>Present, without taking over.</h2>
+<p class="screens-intro">The sidebar the content script mounts beside the player, in a shadow root so the host page cannot restyle it. You first, then arrival order, order never changes. Live video fills a tile when a camera is on; otherwise the initial and name. Fonts and tokens are embedded in the shadow root.</p>
+
+<div class="surface-label"><span>HUD / Page mode, current 240px rail</span><span>lib/sidebar/sidebar-view.ts</span></div>
+<div class="hud-frame"><div class="player">
+<div class="film"><span class="eyebrow">Streaming player · page narrowed by the rail width</span><div class="subtitle">“Glad we did this.”</div></div>
+<aside class="rail current" aria-label="Participants">
+<div class="tile video self mirrored speaking"><span class="name">You</span></div>
+<div class="tile video"><span class="badge-muted" title="Muted"><svg aria-hidden="true"><use href="#i-mic-off"/></svg><span class="sr">Muted</span></span><span class="name">Alex</span></div>
+<div class="tile"><div class="peerlabel"><div class="avatar" aria-hidden="true">S</div><strong>Sam</strong></div></div>
+</aside>
+</div></div>
+<p class="drives">Drives: <code>participantsFrom(snapshot, { selfFirst: true })</code> for the tiles, <code>loopback.streamFor(peerId)</code> for whether a tile shows video. Self video is mirrored; remote video is not. Name labels sit on a dark backing so they read over any picture. A muted participant gets a small mic-off badge in the warning tone at the top-left of their tile; it needs mute state on the wire (a <code>media</code> frame or a data-channel flag), which does not exist yet, so today only your own tile could show it. Speaking is the tile border turning purple, nothing else: no label, no motion, so it reads in the corner of the eye without pulling focus from the show. The offscreen document already measures each peer’s audio level for diagnostics (<code>RemoteMedia.audioPeaks</code>) and runs a speech detector on your own mic for ducking, so a <code>speaking</code> flag per participant in the snapshot needs no protocol change, only a threshold and a short hold so it does not flicker.</p>
+
+<div class="compare">
+<div>
+<div class="surface-label"><span>HUD / Reconnecting</span><span>socket ≠ connected</span></div>
+<div class="hud-frame"><div class="player">
+<div class="film"><span class="eyebrow">Streaming player</span><div class="subtitle">“Glad we did this.”</div></div>
+<aside class="rail current" aria-label="Participants">
+<div class="tile video self mirrored"><span class="name">You</span></div>
+<div class="tile video lost"><span class="name">Alex</span></div>
+<div class="tile lost"><div class="peerlabel"><div class="avatar" aria-hidden="true">S</div><strong>Sam</strong></div></div>
+<p class="rail-status" role="status"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-warn"/></svg></span>Reconnecting…</p>
+</aside>
+</div></div>
+<p class="drives">Drives: <code>socket</code> in <code>connecting</code>/<code>disconnected</code>. One compact warning line at the foot of the rail; the other tiles dim because their media will stall with the socket. Nothing is shown while connected: a persistent "Connected" would be noise during the show.</p>
+</div>
+<div>
+<div class="surface-label"><span>HUD / A peer dropped</span><span>peerMedia[id].connectionState</span></div>
+<div class="hud-frame"><div class="player">
+<div class="film"><span class="eyebrow">Streaming player</span><div class="subtitle">“Glad we did this.”</div></div>
+<aside class="rail current" aria-label="Participants">
+<div class="tile video self mirrored"><span class="name">You</span></div>
+<div class="tile video lost"><span class="badge-lost" title="Reconnecting"><svg aria-hidden="true"><use href="#i-warn"/></svg><span class="sr">Reconnecting</span></span><span class="name">Alex</span></div>
+<div class="tile"><div class="peerlabel"><div class="avatar" aria-hidden="true">S</div><strong>Sam</strong></div></div>
+</aside>
+</div></div>
+<p class="drives">Drives: a peer whose <code>connectionState</code> is <code>disconnected</code> or <code>failed</code> dims and gets a warning badge; the last frame stays so the tile does not jump. It clears itself when ICE restarts, and the tile is removed only on <code>peerLeft</code>.</p>
+</div>
+</div>
+
+<div class="compare">
+<div>
+<div class="surface-label"><span>HUD / Proposed 180px rail</span><span>validate with real video</span></div>
+<div class="hud-frame"><div class="player">
+<div class="film"><span class="eyebrow">Streaming player</span><div class="subtitle">“Glad we did this.”</div></div>
+<aside class="rail proposed" aria-label="Participants">
+<div class="tile video self mirrored"><span class="name">You</span></div>
+<div class="tile video"><span class="badge-muted" title="Muted"><svg aria-hidden="true"><use href="#i-mic-off"/></svg><span class="sr">Muted</span></span><span class="name">Alex</span></div>
+<div class="tile speaking"><div class="peerlabel"><div class="avatar" aria-hidden="true">S</div><strong>Sam</strong></div></div>
+<div class="tile"><span class="badge-muted" title="Muted"><svg aria-hidden="true"><use href="#i-mic-off"/></svg><span class="sr">Muted</span></span><div class="peerlabel"><div class="avatar red" aria-hidden="true">P</div><strong>Priya</strong></div></div>
+</aside>
+</div></div>
+<p class="drives">The design system proposes 180px on wide windows. Tiles keep the 4:3 ratio and 14px radius; four fit at 420px tall before overflow, which still needs a product decision.</p>
+</div>
+<div>
+<div class="surface-label"><span>HUD / Fullscreen</span><span>overlay on the fullscreen element</span></div>
+<div class="hud-frame"><div class="player fullscreen">
+<div class="film"><span class="eyebrow">Fullscreen element</span><div class="subtitle">“Glad we did this.”</div>
+<div class="fsbar"><span>▶</span><i><b></b></i><span>23:14 / 58:02</span></div></div>
+<aside class="rail current" aria-label="Participants">
+<div class="tile video self mirrored"><span class="name">You</span></div>
+<div class="tile video"><span class="badge-muted" title="Muted"><svg aria-hidden="true"><use href="#i-mic-off"/></svg><span class="sr">Muted</span></span><span class="name">Alex</span></div>
+<div class="tile"><div class="peerlabel"><div class="avatar" aria-hidden="true">S</div><strong>Sam</strong></div></div>
+</aside>
+</div></div>
+<p class="drives">Drives: <code>document.fullscreenElement</code>. The host gets the <code>overlay</code> class and is re-parented into the fullscreen element; <code>PageLayout</code> narrows its children so the player and its controls stay clear of the rail. Subtitles stay unobstructed.</p>
+</div>
+</div>
+</section>
+
+<footer class="footer">Gather &amp; Join · Screens · Applies design system v1.0 to the extension’s popup, setup page and participant HUD. Static mocks; nothing here connects to a room.</footer>
+</main>
+</body>
+</html>

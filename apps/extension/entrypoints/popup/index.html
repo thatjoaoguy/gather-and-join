@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Gather &amp; Join</title>
+  <link rel="stylesheet" href="../../lib/ui/system.css">
+  <style>
+    /* Compact popup: the design system's sizes are for a full page; the popup runs one step smaller. */
+    body { width: 340px; padding: 20px; max-height: 580px; overflow-y: auto; font-size: 13px; }
+    button { min-height: 38px; padding: 8px 14px; font-size: 13px; }
+    input[type=text] { min-height: 38px; padding: 8px 13px; font-size: 13px; }
+    label { font-size: 12px; margin-bottom: 5px; }
+    .notice { padding: 11px 13px; font-size: 12px; }
+    .divider { margin: 16px 0; }
+    .status { font-size: 11px; min-height: 18px; }
+    .lockup { display: block; width: 140px; height: auto; margin-bottom: 4px; }
+    h3.hero { font-size: 21px; margin: 14px 0 12px; }
+    .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: var(--r-control); background: var(--field); margin: 0 0 14px; }
+    .seg button { min-height: 32px; padding: 4px 10px; border: 0; border-radius: 16px; background: transparent; color: var(--muted); font-size: 12px; }
+    .seg button:hover:not(:disabled) { transform: none; background: var(--raised); }
+    .seg .seg-join[aria-selected=true] { background: var(--purple); color: var(--on-accent); }
+    .seg .seg-create[aria-selected=true] { background: var(--red); color: var(--on-accent); }
+    label .count { float: right; font-weight: 500; color: var(--muted); font-size: 11px; }
+    label .count.ok { color: var(--success); }
+    form input { margin-bottom: 12px; }
+    form .full { margin-bottom: 10px; }
+    .helper { padding: 0 14px; margin: 2px 0 12px; font-size: 11px; }
+    .readiness { list-style: none; margin: 0 0 4px; padding: 0; display: grid; gap: 4px; }
+    .readiness li { display: flex; align-items: center; gap: 8px; font-size: 11px; min-height: 24px; min-width: 0; /* grid items otherwise refuse to shrink below their text */ }
+    .readiness li > span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* Long hosts (tunnels) differ at the end, so the server row clips at the start: "…-quick-tunnel.trycloudflare.com". */
+    .readiness li.server > span:nth-child(2) { direction: rtl; text-align: left; unicode-bidi: isolate; }
+    .readiness li.server > span:nth-child(2) > * { unicode-bidi: isolate; direction: ltr; }
+    .readiness li.ok .ic { color: var(--success); }
+    .readiness li.busy .ic { color: var(--warning); }
+    .readiness li.warn .ic, .readiness li.warn > span:nth-child(2) { color: var(--warning); }
+    .readiness li.err .ic { color: var(--error); } .readiness li.err > span:nth-child(2) { color: var(--error); }
+    .readiness li.err.server > span:nth-child(2) { color: var(--text); }
+    .readiness a { font-size: 11px; font-weight: 700; flex: none; }
+    .footnote { margin: 10px 0 0; font-size: 11px; }
+    .roomhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 4px; }
+    .roomhead strong { font-size: 14px; }
+    .conn { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted); margin: 0 0 12px; }
+    .conn i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+    .conn.connected i { background: var(--success); } .conn.connecting i { background: var(--warning); }
+    .code { letter-spacing: .15em; font-size: 21px; font-weight: 700; overflow-wrap: anywhere; }
+    .invite { margin: 0 0 4px; font-size: 11px; }
+    .peer { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+    .peer:last-child { border: 0; }
+    .avatar { display: grid; place-items: center; background: #302539; border-radius: 50%; width: 32px; height: 32px; flex: none; color: var(--purple); font-size: 15px; font-weight: 700; }
+    .avatar.red { color: var(--red); } .avatar.host { box-shadow: inset 0 0 0 2px var(--purple); }
+    .who { min-width: 0; flex: 1; } .who strong { display: flex; align-items: center; gap: 8px; font-size: 12px; } .who p { margin: 0; font-size: 11px; color: var(--muted); }
+    .state { display: inline-flex; align-items: center; gap: 6px; } .state i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+    .state.connected i { background: var(--success); } .state.connecting i { background: var(--warning); } .state.failed i { background: var(--error); } .state.failed { color: var(--error); }
+    .mini { display: inline-grid; place-items: center; width: 16px; height: 16px; flex: none; } .mini svg { width: 100%; height: 100%; } .mini.ok { color: var(--success); } .mini.warn { color: var(--warning); }
+    .media-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .toggle { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .toggle.on { background: var(--success-bg); border-color: var(--success); } .toggle.on .ic { color: var(--success); }
+    .toggle.off { background: var(--warning-bg); border-color: var(--warning); } .toggle.off .ic { color: var(--warning); }
+    .closing { margin: 0 0 10px; }
+    #room-actions button { margin-bottom: 10px; }
+    .chip { font-size: 10px; padding: 3px 8px; }
+  </style>
+</head>
+<body>
+  <div id="view-lobby">
+    <img class="lockup" src="/brand/lockup.svg" alt="Gather &amp; Join">
+    <h3 class="hero">A little closer.<br>Even from afar.</h3>
+    <div class="seg" role="tablist" aria-label="Join or create">
+      <button id="tab-join" class="seg-join" role="tab" aria-selected="true" type="button">Join a room</button>
+      <button id="tab-create" class="seg-create" role="tab" aria-selected="false" type="button">Create a room</button>
+    </div>
+    <form id="lobby-form" novalidate>
+      <label for="name">Your name</label>
+      <input id="name" type="text" maxlength="24" autocomplete="given-name" placeholder="Your name">
+      <div id="join-fields">
+        <label for="code">Room code <span class="count" id="count">0 of 6</span></label>
+        <input id="code" type="text" maxlength="8" placeholder="G7K2MX" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      </div>
+      <p id="create-helper" class="small muted helper" hidden>You’ll get a six-character code to share. You choose the episode; everyone can play or pause.</p>
+      <div id="lobby-notice"></div>
+      <button id="submit" class="primary full" type="submit">Join room</button>
+      <div id="lobby-recovery"></div>
+    </form>
+    <div class="divider"></div>
+    <ul class="readiness" id="readiness" aria-label="Ready to join"></ul>
+    <p class="small muted footnote" id="lobby-foot">Headphones on. Make yourself at home.</p>
+  </div>
+
+  <div id="view-room" hidden>
+    <div class="roomhead"><strong>Your room</strong><span class="chip" id="role">Guest</span></div>
+    <p class="conn" id="conn"><i></i><span id="conn-label"></span></p>
+    <div id="room-notice"></div>
+    <div id="room-actions"></div>
+    <h3 id="first-here" hidden style="margin:8px 0 6px">You’re the first one here.</h3>
+    <p class="small muted invite" id="invite">Invite someone with this code.</p>
+    <div class="row between"><span class="code" id="room-code"></span><button id="copy" type="button">Copy</button></div>
+    <p class="status" id="copy-status" role="status"></p>
+    <div id="peers"></div>
+    <div class="divider"></div>
+    <div class="media-controls">
+      <button id="mic" class="toggle" type="button" aria-pressed="true"></button>
+      <button id="cam" class="toggle" type="button" aria-pressed="false"></button>
+    </div>
+    <div id="cam-notice"></div>
+    <p class="status closing" id="closing"></p>
+    <button id="leave" class="danger full" type="button">Leave room</button>
+  </div>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

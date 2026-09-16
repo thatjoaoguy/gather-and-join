@@ -1,0 +1,23 @@
+{
+  "name": "@gaj/extension",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "build:test": "GAJ_TEST=1 wxt build",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@gaj/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.0",
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.1",
+    "wxt": "^0.21.4"
+  }
+}

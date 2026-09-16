@@ -1,0 +1,26 @@
+{
+  "name": "@gaj/harness",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "node --experimental-strip-types src/player-server.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:e2e": "playwright test",
+    "test:sabotage": "node --experimental-strip-types src/sabotage-matrix.ts",
+    "launch": "node --experimental-strip-types src/launch-peers.ts",
+    "fixtures": "make -C . fixtures"
+  },
+  "dependencies": {
+    "@gaj/shared": "workspace:*",
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.0.0",
+    "@types/ws": "^8.18.0",
+    "typescript": "^5.9.0",
+    "@types/chrome": "^0.1.0"
+  }
+}

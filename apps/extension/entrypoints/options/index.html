@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="manifest.open_in_tab" content="true">
+  <title>Gather &amp; Join — Setup</title>
+  <link rel="stylesheet" href="../../lib/ui/system.css">
+  <style>
+    main { max-width: 720px; margin: 40px auto; padding: 0 16px 48px; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-panel); padding: 32px; }
+    .lockup { display: block; width: 188px; height: auto; margin-bottom: 8px; }
+    h3.hero { font-size: 26px; margin: 20px 0 8px; }
+    .setting { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+    .setting > div { min-width: 0; } .setting p { margin: 4px 0 0; font-size: 13px; color: var(--muted); } .setting button { flex: none; }
+    .setting-block { border-bottom: 1px solid var(--line); } .setting-block .setting { border-bottom: 0; padding-bottom: 12px; } .setting-block .notice { margin: 0 0 18px; }
+    .allowed { display: inline-flex; align-items: center; gap: 7px; color: var(--success); font-weight: 700; padding-right: 18px; }
+    .allowed .ic { color: var(--success); }
+    details { padding: 18px 0; } summary { cursor: pointer; font-weight: 700; padding: 10px 0; min-height: 44px; }
+    details > p { color: var(--muted); font-size: 13px; }
+    form label { margin-top: 16px; }
+    .save { margin-top: 0; }
+    @media (max-width: 600px) { .card { padding: 20px; } .setting { gap: 12px; flex-wrap: wrap; } }
+    pre.diag { background: var(--field); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 8px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); max-height: 360px; overflow: auto; white-space: pre-wrap; word-break: break-all; }
+    details.preview { padding: 6px 0 0; } details.preview summary { font-weight: 600; font-size: 13px; }
+    .diag-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+  </style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <img class="lockup" src="/brand/lockup.svg" alt="Gather &amp; Join">
+    <h3 class="hero">A few things before movie night.</h3>
+    <p class="muted">Your camera is optional. Headphones help everyone hear the conversation clearly.</p>
+
+    <div class="setting-block" id="mic-block">
+      <div class="setting"><div><strong>Microphone</strong><p>Let your friends hear you. Chrome asks once; the room reuses your answer.</p></div><div id="mic-action"><button class="primary" id="grant" type="button">Allow microphone</button></div></div>
+      <div id="mic-notice"></div>
+    </div>
+    <div class="setting-block" id="cam-block">
+      <div class="setting"><div><strong>Camera</strong><p>Say hello face to face, if you like. Off until you turn it on in a room.</p></div><div id="cam-action"><button id="grant-cam" type="button">Allow camera</button></div></div>
+      <div id="cam-notice"></div>
+    </div>
+    <div class="setting">
+      <div><strong id="ducking-label">Lower the show’s volume while I speak</strong><p>Off by default. With speakers, the show’s own audio can trigger this too.</p></div>
+      <button class="switch" id="ducking" role="switch" aria-checked="false" type="button" aria-labelledby="ducking-label"><span class="thumb"></span></button>
+    </div>
+
+    <details open>
+      <summary>Connection settings</summary>
+      <p>Use the connection address shared by the person hosting your server. You only need to set this once unless their address changes.</p>
+      <form id="server-form" novalidate>
+        <label for="server-url">Connection address</label>
+        <div class="field-wrap">
+          <input type="url" id="server-url" placeholder="wss://…" spellcheck="false" autocomplete="off" aria-describedby="server-status">
+          <button class="iconbtn infield" id="eye" type="button" aria-pressed="true" aria-label="Hide address"></button>
+        </div>
+        <p id="server-status" class="field-status" role="status"></p>
+        <button class="save" id="save" type="submit">Save address</button>
+        <p id="save-status" class="status" role="status"></p>
+      </form>
+    </details>
+    <details id="diag">
+      <summary>Diagnostics</summary>
+      <p>If a party went wrong, copy this and send it to whoever runs your server. It is the last few hundred things the extension did: room events, connection states, drift corrections. Nothing is sent anywhere by itself.</p>
+      <p id="diag-summary" class="muted" role="status"></p>
+      <div class="diag-actions"><button id="diag-copy" type="button">Copy diagnostics</button><button class="secondary" id="diag-refresh" type="button">Refresh</button></div>
+      <p id="diag-status" class="status" role="status"></p>
+      <details class="preview"><summary>Preview</summary><pre class="diag" id="diag-preview"></pre></details>
+    </details>
+  </div>
+</main>
+<script type="module" src="./main.ts"></script>
+</body>
+</html>

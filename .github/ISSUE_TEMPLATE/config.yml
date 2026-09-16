@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Streaming service terms, privacy, or takedown requests
+    url: https://github.com/thatjoaoguy/gather-and-join/blob/main/README.md#legal
+    about: Read the Legal section first; the contact email is on the Chrome Web Store listing.
