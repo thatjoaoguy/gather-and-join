@@ -1,2 +1,2 @@
-/** Build-time flag: true only for `GAJ_TEST=1` builds. */
-declare const __GAJ_TEST__: boolean;
+/** Build-time flag: true only for `GJ_TEST=1` builds. */
+declare const __GJ_TEST__: boolean;

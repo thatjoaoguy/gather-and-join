@@ -5,7 +5,7 @@
  * that resolves in dev mode, in production, and inside a page's shadow-root
  * HUD (where @font-face rules are ignored and must live in the host document).
  */
-const FONT_STYLE_ID = 'gaj-fonts';
+const FONT_STYLE_ID = 'gj-fonts';
 const WEIGHTS = [400, 500, 600, 700] as const;
 
 export function ensureQuicksand(doc: Document = document) {

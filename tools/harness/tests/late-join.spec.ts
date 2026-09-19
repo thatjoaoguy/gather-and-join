@@ -11,7 +11,7 @@ test('late join: joining 45s into playback lands within 500ms of the room within
     const late = await launchPeer(2);
     party.peers.push(late);
     await openPlayer(late);
-    await late.gaj('joinRoom', party.code, late.name);
+    await late.gj('joinRoom', party.code, late.name);
     const t0 = Date.now();
     await waitForCondition(async () => (await snapshot(late))?.room?.code === party.code, { label: 'late peer in room' });
     await waitForCondition(async () => { const s = await state(late); return s.paused === false && (await spreadMs([party.leader, late])).spread < 500; }, { timeout: 5000, label: 'late joiner within 500ms' });

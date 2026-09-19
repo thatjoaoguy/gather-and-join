@@ -12,18 +12,18 @@ export const SIDEBAR_WIDTH = 240;
 
 /** Narrow an element by the sidebar width, remembering its own inline width so it can be put back exactly. */
 function narrow(el: HTMLElement, tag: string): boolean {
-  if (el.dataset.gajShrunk) return el.dataset.gajShrunk === tag;
-  el.dataset.gajShrunk = tag;
-  el.dataset.gajPrevWidth = el.style.getPropertyValue('width');
-  el.dataset.gajPrevWidthPriority = el.style.getPropertyPriority('width');
+  if (el.dataset.gjShrunk) return el.dataset.gjShrunk === tag;
+  el.dataset.gjShrunk = tag;
+  el.dataset.gjPrevWidth = el.style.getPropertyValue('width');
+  el.dataset.gjPrevWidthPriority = el.style.getPropertyPriority('width');
   el.style.setProperty('width', `calc(100% - ${SIDEBAR_WIDTH}px)`, 'important');
   return true;
 }
 function restore(el: HTMLElement) {
-  if (!el.dataset.gajShrunk) return;
-  const prev = el.dataset.gajPrevWidth ?? '';
-  if (prev) el.style.setProperty('width', prev, el.dataset.gajPrevWidthPriority ?? ''); else el.style.removeProperty('width');
-  delete el.dataset.gajShrunk; delete el.dataset.gajPrevWidth; delete el.dataset.gajPrevWidthPriority;
+  if (!el.dataset.gjShrunk) return;
+  const prev = el.dataset.gjPrevWidth ?? '';
+  if (prev) el.style.setProperty('width', prev, el.dataset.gjPrevWidthPriority ?? ''); else el.style.removeProperty('width');
+  delete el.dataset.gjShrunk; delete el.dataset.gjPrevWidth; delete el.dataset.gjPrevWidthPriority;
 }
 
 export class PageLayout {
@@ -75,11 +75,11 @@ export class PageLayout {
   /** Fullscreen mode: narrow `fs`'s children except `except`; `null` restores what fullscreen mode narrowed. */
   shrinkFullscreenChildren(fs: HTMLElement | null, except: Element | null) {
     if (!fs) {
-      this.doc.querySelectorAll<HTMLElement>('[data-gaj-shrunk="fs"]').forEach(restore);
+      this.doc.querySelectorAll<HTMLElement>('[data-gj-shrunk="fs"]').forEach(restore);
       return;
     }
     for (const child of fs.children) {
-      if (child === except || !(child instanceof HTMLElement) || child.dataset.gajShrunk) continue;
+      if (child === except || !(child instanceof HTMLElement) || child.dataset.gjShrunk) continue;
       narrow(child, 'fs');
     }
   }

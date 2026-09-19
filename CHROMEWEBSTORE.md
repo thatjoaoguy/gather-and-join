@@ -6,8 +6,8 @@ they stay in step with it. Copy from here at submit time. Not shipped in the ZIP
 ## Submitting
 
 - Download the ZIP from the GitHub release (`gather-and-join-X.Y.Z-chrome.zip`).
-  The release workflow builds it with `GAJ_TEST` unset and checks the manifest
-  version. To build one by hand: `pnpm --filter @gaj/extension exec wxt zip`
+  The release workflow builds it with `GJ_TEST` unset and checks the manifest
+  version. To build one by hand: `pnpm --filter @gj/extension exec wxt zip`
   (output in `apps/extension/.output/*.zip`). Never zip the repository.
 - Load the production ZIP unpacked and smoke-test: popup, setup page, create and
   join, microphone grant, episode change. Check the service-worker console.
@@ -97,7 +97,7 @@ standalone element or anything that looks like an official HBO screen.
 | `https://play.hbomax.com/*` | host_permissions | The only site the extension operates on: it reads and controls the video player's play/pause/position and draws the participant tiles over it. |
 
 The production build contains no localhost or 127.0.0.1 host permissions; those
-exist only in the `GAJ_TEST=1` build for the test harness.
+exist only in the `GJ_TEST=1` build for the test harness.
 
 ## Data use disclosure
 

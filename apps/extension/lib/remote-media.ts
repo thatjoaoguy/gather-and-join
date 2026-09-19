@@ -3,7 +3,7 @@
  * survives page navigation), plus the diagnostics the test hook reads —
  * per-peer peak frequency bin and a sampled video pixel.
  */
-import type { PeerId } from '@gaj/shared';
+import type { PeerId } from '@gj/shared';
 
 type Remote = {
   stream: MediaStream;

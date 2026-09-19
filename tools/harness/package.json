@@ -1,5 +1,5 @@
 {
-  "name": "@gaj/harness",
+  "name": "@gj/harness",
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
@@ -13,7 +13,7 @@
     "fixtures": "make -C . fixtures"
   },
   "dependencies": {
-    "@gaj/shared": "workspace:*",
+    "@gj/shared": "workspace:*",
     "ws": "^8.21.3"
   },
   "devDependencies": {

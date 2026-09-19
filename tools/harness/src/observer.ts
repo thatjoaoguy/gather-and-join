@@ -5,7 +5,7 @@
  */
 import fs from 'node:fs';
 import WebSocket from 'ws';
-import type { C2S, S2C } from '@gaj/shared';
+import type { C2S, S2C } from '@gj/shared';
 
 export type Recorded = { t: number; msg: S2C };
 

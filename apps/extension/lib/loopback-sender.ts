@@ -4,7 +4,7 @@
  * local RTCPeerConnection. One sender per player port; it dies with the port.
  * Signaling rides the port itself. This side is impolite and drives offers.
  */
-import type { PeerId } from '@gaj/shared';
+import type { PeerId } from '@gj/shared';
 import { PerfectPeer, type SignalPayload } from './perfect-peer';
 
 export type LoopbackTrackInfo = { peerId: PeerId; name: string; streamId: string };

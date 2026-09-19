@@ -9,8 +9,8 @@ test('leader authority: non-leader navigate is rejected with an error frame; lea
 
     // Non-leader: explicit error, nobody moves.
     const errP = party.observer.next((r) => r.msg.type === 'navigate', 3000).then(() => 'navigated', () => 'no-navigate');
-    await f1.gaj('navigate', EPISODE(2));
-    await waitForCondition(async () => (await snapshot(f1))?.room !== null && (await f1.gaj<any>('getSnapshot')).lastError?.code === 'NOT_LEADER', { timeout: 5000, label: 'NOT_LEADER error surfaced' });
+    await f1.gj('navigate', EPISODE(2));
+    await waitForCondition(async () => (await snapshot(f1))?.room !== null && (await f1.gj<any>('getSnapshot')).lastError?.code === 'NOT_LEADER', { timeout: 5000, label: 'NOT_LEADER error surfaced' });
     expect(await errP).toBe('no-navigate');
     for (const p of party.peers) expect((await state(p)).contentId).toBe(EPISODE(1));
 

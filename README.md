@@ -56,7 +56,7 @@ always-on box at home, a tunnel from your laptop (`pnpm host` wraps the server i
 a Cloudflare quick tunnel and prints the URL), or a small cloud instance. The
 extension does not care which.
 
-1. Start it: `pnpm --filter @gaj/server start` (or
+1. Start it: `pnpm --filter @gj/server start` (or
    `node --experimental-strip-types apps/server/src/index.ts`, Node ≥ 22.6).
    `PORT` overrides the default 8080. It keeps room state in memory only.
 2. Make it reachable at a URL every participant can open. Use `wss://` for
@@ -129,7 +129,7 @@ pnpm install
 npx skills install                  # optional: agent skills pinned in skills-lock.json (Chrome extension + modern web guidance)
 pnpm dev:server                     # ws://localhost:8080
 pnpm dev:harness                    # fake player at http://localhost:4173
-pnpm --filter @gaj/extension build  # → apps/extension/.output/chrome-mv3
+pnpm --filter @gj/extension build  # → apps/extension/.output/chrome-mv3
 ```
 
 Load `apps/extension/.output/chrome-mv3` as an unpacked extension
@@ -139,8 +139,8 @@ options page once to allow the microphone and set the server URL.
 To watch the whole thing run without a subscription:
 
 ```sh
-pnpm --filter @gaj/extension build:test      # test build with the in-page hook
-pnpm --filter @gaj/harness launch 3          # 3 headed Chromes in one room on the fake player
+pnpm --filter @gj/extension build:test      # test build with the in-page hook
+pnpm --filter @gj/harness launch 3          # 3 headed Chromes in one room on the fake player
 ```
 
 ### How it stays in sync
@@ -257,8 +257,8 @@ pnpm verify              # lint → typecheck → unit → e2e (clean) → e2e s
 pnpm test:unit           # shared reducer/policy + server integration
 pnpm test:e2e            # Playwright: N Chromes with the test build, fake player, fake media
 pnpm test:sabotage       # each flag disables one mechanism; its guarding test must fail, the rest pass
-GAJ_SABOTAGE=drift pnpm test:e2e    # one sabotage run by hand
-GAJ_REUSE_SERVERS=1 TEST_SERVER_PORT=8080 TEST_PLAYER_PORT=4173 pnpm test:e2e   # against your own dev servers
+GJ_SABOTAGE=drift pnpm test:e2e    # one sabotage run by hand
+GJ_REUSE_SERVERS=1 TEST_SERVER_PORT=8080 TEST_PLAYER_PORT=4173 pnpm test:e2e   # against your own dev servers
 ```
 
 The Playwright suite spins up the server on `:18080` and the fake player on
@@ -275,7 +275,7 @@ When they are absent the suite writes minimal in-process equivalents, so ffmpeg 
 optional.
 
 The sabotage rows run concurrently, each on its own ports and Playwright output
-directory (`GAJ_SABOTAGE_PARALLEL`, default 4; set 1 on a small machine): about
+directory (`GJ_SABOTAGE_PARALLEL`, default 4; set 1 on a small machine): about
 3.5 minutes for the matrix on a 14-core laptop, 7 in sequence. Each row's full
 Playwright output is in `tools/harness/test-results/sabotage-logs/<flag>.log`.
 Sabotage runs cap every test at 100 s (the slowest passing one takes ~40 s) and
@@ -311,7 +311,7 @@ frames only) is worth more than usage numbers. What there is instead:
   Events: `listening`, `room_created`, `peer_joined`, `peer_left` (with
   `reason=leave|close|error|heartbeat`), `peer_evicted`, `leader_changed`,
   `join_rejected`, `content_set`, `navigate`, `navigate_rejected`, `stall`,
-  `signal_dropped`, `bad_message`, `room_expired`. `GAJ_LOG=0` silences it.
+  `signal_dropped`, `bad_message`, `room_expired`. `GJ_LOG=0` silences it.
 - **Extension diagnostics.** Each extension realm (service worker, offscreen
   document, and every player page via the offscreen document) keeps a ring buffer
   of its last 400 events in `chrome.storage.session`: room frames in and out,

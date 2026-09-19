@@ -5,7 +5,7 @@ import { waitForCondition, waitForHook, sleepMs, EPISODE, watchUrl, type Peer } 
 type Diag = { socketReconnects: number; remoteAudio: Record<string, { level: number; maxGapMs: number; lastAudibleAt: number }>; peerStats: Record<string, { connectionState: string }> };
 
 /** Read the offscreen document's mirrored diagnostics via the (persistent) extension page — independent of the player tab's lifetime. */
-const mirroredDiag = (p: Peer) => p.extPage.evaluate(() => chrome.storage.session.get('gajDiag').then((v: Record<string, unknown>) => v.gajDiag)) as Promise<Diag>;
+const mirroredDiag = (p: Peer) => p.extPage.evaluate(() => chrome.storage.session.get('gjDiag').then((v: Record<string, unknown>) => v.gjDiag)) as Promise<Diag>;
 
 test('navigation survival: socket, mesh and remote audio survive pushState, real load and leader navigate', async () => {
   // Continuous tones so any audible gap is a real drop, not the fixture envelope.
@@ -17,7 +17,7 @@ test('navigation survival: socket, mesh and remote audio survive pushState, real
     for (const p of party.peers) {
       await waitForCondition(async () => { const d = await mirroredDiag(p); return party.peers.filter((q) => q !== p).every((q) => (d?.remoteAudio?.[q.peerId]?.level ?? -Infinity) > -60); }, { timeout: 20_000, label: `${p.name} hears all peers` });
     }
-    for (const p of party.peers) await p.gaj('resetAudioGaps');
+    for (const p of party.peers) await p.gj('resetAudioGaps');
     const before = await Promise.all(party.peers.map(counters));
 
     // Sample connection state throughout, from outside the pages.

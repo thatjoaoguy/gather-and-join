@@ -1,10 +1,10 @@
 import { defineConfig } from 'wxt';
 import { resolve } from 'node:path';
-import { PLAYER_MATCHES, harness } from '@gaj/shared';
+import { PLAYER_MATCHES, harness } from '@gj/shared';
 
-// GAJ_TEST=1 enables the in-page test hook + sabotage flags. It is a build-time
+// GJ_TEST=1 enables the in-page test hook + sabotage flags. It is a build-time
 // gate so neither can ship in a normal build.
-const TEST_BUILD = process.env.GAJ_TEST === '1';
+const TEST_BUILD = process.env.GJ_TEST === '1';
 
 // One pattern per provider in packages/shared/src/providers.ts. The harness
 // (localhost fake player) is a provider too, but only test builds may match it:
@@ -48,7 +48,7 @@ export default defineConfig({
   },
   vite: () => ({
     define: {
-      __GAJ_TEST__: JSON.stringify(TEST_BUILD),
+      __GJ_TEST__: JSON.stringify(TEST_BUILD),
     },
   }),
 });

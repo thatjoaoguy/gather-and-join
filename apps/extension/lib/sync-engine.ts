@@ -10,7 +10,7 @@
 import {
   decideCorrection, expectedPositionMs, ECHO_SUPPRESS_MS, HEARTBEAT_MS, DRIFT_DEAD_ZONE_MS, DRIFT_HARD_SEEK_MS,
   type RoomState,
-} from '@gaj/shared';
+} from '@gj/shared';
 import type { Sabotage } from './constants';
 import type { VideoBinding } from './video-binding';
 

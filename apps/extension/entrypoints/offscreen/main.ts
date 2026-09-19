@@ -6,7 +6,7 @@
  * This file is wiring only. Room logic is `RoomSession`; transport is
  * `RoomClient`; the mesh is `Mesh`; page loopbacks are `LoopbackSender`.
  */
-import type { C2S, PeerId, S2C } from '@gaj/shared';
+import type { C2S, PeerId, S2C } from '@gj/shared';
 import { DEFAULT_SERVER_URL } from '../../lib/constants';
 import {
   PORT_PLAYER, PORT_POPUP, readTestConfig,
@@ -166,7 +166,7 @@ async function collectDiag(): Promise<Diag> {
   for (const id of Object.keys(pixels)) remoteVideo[id] = { rgb: pixels[id] ?? null, framesDecoded: framesDecoded[id] ?? 0 };
   return { socketReconnects: session.snapshot.socketReconnects, peerStats, remoteAudio: remote.audioPeaks(), remoteVideo, localMicLevel: local.level, ducked: session.ducked };
 }
-setInterval(() => { void collectDiag().then((diag) => kvSet('session', { gajDiag: diag })); }, __GAJ_TEST__ ? 250 : 2000);
+setInterval(() => { void collectDiag().then((diag) => kvSet('session', { gjDiag: diag })); }, __GJ_TEST__ ? 250 : 2000);
 
 // ---- port messages ---------------------------------------------------------------------------
 
@@ -199,14 +199,14 @@ async function onPlayerMessage(port: chrome.runtime.Port, m: PlayerToOffscreen) 
     case 'navigateRequest': session.navigateRequest(m.contentId, m.url); return;
     case 'loopback:want': if (m.want) ensureLoopback(port); else dropLoopback(port); return;
     case 'loopback:signal': void ensureLoopback(port).handle(m.payload as never); return;
-    case 'test:createRoom': if (__GAJ_TEST__) await session.createRoom(m.name, m.code); return;
-    case 'test:joinRoom': if (__GAJ_TEST__) await session.joinRoom(m.code, m.name); return;
-    case 'test:leaveRoom': if (__GAJ_TEST__) session.leaveRoom(); return;
-    case 'test:setCamera': if (__GAJ_TEST__) await session.setCamera(m.on); return;
-    case 'test:setMic': if (__GAJ_TEST__) session.setMic(m.on); return;
-    case 'test:getDiag': if (__GAJ_TEST__) post(port, { type: 'test:diag', id: m.id, diag: await collectDiag() }); return;
-    case 'test:resetAudioGaps': if (__GAJ_TEST__) remote.resetAudioGaps(); return;
-    case 'test:dropSocket': if (__GAJ_TEST__) session.dropSocketForTest(); return;
+    case 'test:createRoom': if (__GJ_TEST__) await session.createRoom(m.name, m.code); return;
+    case 'test:joinRoom': if (__GJ_TEST__) await session.joinRoom(m.code, m.name); return;
+    case 'test:leaveRoom': if (__GJ_TEST__) session.leaveRoom(); return;
+    case 'test:setCamera': if (__GJ_TEST__) await session.setCamera(m.on); return;
+    case 'test:setMic': if (__GJ_TEST__) session.setMic(m.on); return;
+    case 'test:getDiag': if (__GJ_TEST__) post(port, { type: 'test:diag', id: m.id, diag: await collectDiag() }); return;
+    case 'test:resetAudioGaps': if (__GJ_TEST__) remote.resetAudioGaps(); return;
+    case 'test:dropSocket': if (__GJ_TEST__) session.dropSocketForTest(); return;
   }
 }
 

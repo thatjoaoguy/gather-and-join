@@ -3,7 +3,7 @@
  * the sidebar's tiles both render this, so they cannot disagree about order,
  * naming, or which peers are hidden.
  */
-import type { PeerId } from '@gaj/shared';
+import type { PeerId } from '@gj/shared';
 import type { PeerMediaState, Snapshot } from './messages';
 import { isObserver } from './peer-id';
 
