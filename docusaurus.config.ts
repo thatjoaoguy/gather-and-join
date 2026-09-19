@@ -17,6 +17,7 @@ const config: Config = {
   projectName: REPO,
   trailingSlash: false,
   onBrokenLinks: 'throw',
+  onBrokenAnchors: 'throw',
   i18n: {defaultLocale: 'en', locales: ['en']},
 
   presets: [
