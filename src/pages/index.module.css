@@ -1,20 +1,20 @@
-.hero { padding: 72px 0 56px; background: var(--gaj-bg); }
+.hero { padding: 72px 0 56px; background: var(--gj-bg); }
 .hero .inner { display: grid; grid-template-columns: 1.4fr 1fr; gap: 56px; align-items: center; }
 .hero h1 { font-size: clamp(36px, 5vw, 60px); line-height: 1.12; margin: 0 0 16px; }
-.hero h1 em { font-style: normal; color: var(--gaj-purple); }
-.hero h1 span { color: var(--gaj-red); }
-.lead { font-size: 18px; color: var(--gaj-muted); max-width: 560px; margin-bottom: 28px; }
+.hero h1 em { font-style: normal; color: var(--gj-purple); }
+.hero h1 span { color: var(--gj-red); }
+.lead { font-size: 18px; color: var(--gj-muted); max-width: 560px; margin-bottom: 28px; }
 .actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.card { background: var(--gaj-surface); border: 1px solid var(--gaj-line); border-radius: 28px; padding: 28px; }
-.card div { display: flex; justify-content: space-between; gap: 20px; padding: 12px 0; border-bottom: 1px solid var(--gaj-line); }
+.card { background: var(--gj-surface); border: 1px solid var(--gj-line); border-radius: 28px; padding: 28px; }
+.card div { display: flex; justify-content: space-between; gap: 20px; padding: 12px 0; border-bottom: 1px solid var(--gj-line); }
 .card div:last-child { border: 0; }
-.card span { color: var(--gaj-muted); }
-.section { padding: 48px 0; border-top: 1px solid var(--gaj-line); }
+.card span { color: var(--gj-muted); }
+.section { padding: 48px 0; border-top: 1px solid var(--gj-line); }
 .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
-.feature { background: var(--gaj-surface); border: 1px solid var(--gaj-line); border-radius: 28px; padding: 26px; }
+.feature { background: var(--gj-surface); border: 1px solid var(--gj-line); border-radius: 28px; padding: 26px; }
 .feature h3 { font-size: 20px; margin: 0 0 10px; }
-.feature p { color: var(--gaj-muted); margin: 0; font-size: 15px; }
-.fine { color: var(--gaj-muted); font-size: 14px; max-width: 760px; }
+.feature p { color: var(--gj-muted); margin: 0; font-size: 15px; }
+.fine { color: var(--gj-muted); font-size: 14px; max-width: 760px; }
 @media (max-width: 900px) {
   .hero .inner { grid-template-columns: 1fr; gap: 28px; }
   .grid { grid-template-columns: 1fr; }
