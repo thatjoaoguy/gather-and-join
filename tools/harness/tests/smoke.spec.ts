@@ -3,7 +3,7 @@ import { startParty, snapshot, state, pressPlay } from '../src/party.ts';
 import { waitForCondition } from '../src/peers.ts';
 
 test('two peers join a room, play propagates, observer sees frames', async () => {
-  const party = await startParty({ n: 2, code: 'SM0K01' });
+  const party = await startParty({ n: 2 });
   try {
     const [a, b] = party.peers;
     expect((await snapshot(a!))!.isLeader).toBe(true);
@@ -16,7 +16,7 @@ test('two peers join a room, play propagates, observer sees frames', async () =>
     expect(pb.length).toBeGreaterThan(0);
     expect(pb[0]!.msg.originPeerId).toBe('peer1');
     expect(pb[0]!.msg.paused).toBe(false);
-    party.observer.writeJsonl('observer-logs/smoke.jsonl');
+    party.observer.writeJsonl(test.info().outputPath('smoke.jsonl'));
   } finally {
     await party.close();
   }

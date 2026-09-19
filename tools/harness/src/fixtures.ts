@@ -22,12 +22,24 @@ export function peerFixturePaths(index: number, continuous = false) {
 }
 
 /** `continuous`: constant tone instead of the ducking envelope (for audio-drop assertions). */
+/**
+ * Write via a temp file and rename: concurrent sabotage rows generate these at the same
+ * time, and an existence check alone would hand a half-written file to a Chrome that is
+ * already reading it. A truncated fixture fails a tone assertion for an invisible reason.
+ */
+function writeIfMissing(file: string, make: () => Buffer) {
+  if (fs.existsSync(file) && fs.statSync(file).size > 0) return;
+  const tmp = `${file}.tmp.${process.pid}`;
+  fs.writeFileSync(tmp, make());
+  fs.renameSync(tmp, file);
+}
+
 export function ensurePeerFixtures(index: number, continuous = false) {
   fs.mkdirSync(FIXTURES_DIR, { recursive: true });
   const { wav, y4m } = peerFixturePaths(index, continuous);
   const hz = PEER_TONES_HZ[index % PEER_TONES_HZ.length]!;
-  if (!fs.existsSync(wav)) fs.writeFileSync(wav, continuous ? continuousTone(hz, 4) : duckingTone(hz, 8));
-  if (!fs.existsSync(y4m)) fs.writeFileSync(y4m, solidY4m(PEER_COLORS[index % PEER_COLORS.length]!, 64, 48, 15, 2));
+  writeIfMissing(wav, () => (continuous ? continuousTone(hz, 4) : duckingTone(hz, 8)));
+  writeIfMissing(y4m, () => solidY4m(PEER_COLORS[index % PEER_COLORS.length]!, 64, 48, 15, 2));
   return { wav, y4m };
 }
 

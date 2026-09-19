@@ -25,7 +25,7 @@ async function serviceWorkerTargetId(p: Peer): Promise<string | null> {
 }
 
 test('service worker termination: the room, mesh and sync survive; navigation still relays after restart', async () => {
-  const party = await startParty({ n: 2, code: 'SWK001' });
+  const party = await startParty({ n: 2 });
   try {
     const [leader, follower] = party.peers as [Peer, Peer];
     await waitForMesh(party.peers);

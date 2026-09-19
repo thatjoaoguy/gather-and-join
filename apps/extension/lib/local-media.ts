@@ -3,9 +3,8 @@
  * offscreen document. Mic permission cannot be prompted here — it is granted
  * once from the options page and inherited by the extension origin.
  */
-export const DUCK_RMS_THRESHOLD = 0.02;
-export const DUCK_SILENCE_MS = 1000;
-export const DUCK_POLL_MS = 50;
+import { DUCK_RMS_THRESHOLD, DUCK_SILENCE_MS, DUCK_POLL_MS } from '@gj/shared';
+export { DUCK_RMS_THRESHOLD, DUCK_SILENCE_MS, DUCK_POLL_MS };
 
 import { log } from './log';
 import { kvGet } from './kv';

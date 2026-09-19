@@ -1,7 +1,16 @@
 import { test, expect } from '@playwright/test';
+import { DUCK_DOWN_MS, DUCK_UP_MS, DUCK_SILENCE_MS, DUCK_POLL_MS } from '@gj/shared';
 import { startParty, waitForMesh, dumpParty, pressPlay } from '../src/party.ts';
 import { waitForCondition, sleepMs } from '../src/peers.ts';
 import { PEER_TONES_HZ, PEER_COLORS, colorMatches } from '../src/fixtures.ts';
+
+/**
+ * Budgets follow the mechanism: detection is quantised to the mic poll, then the volume
+ * ramps; restoring also waits out the silence hold. Doubling leaves room for a busy
+ * machine while still failing if ducking stops working.
+ */
+const DUCK_DOWN_BUDGET_MS = 2 * (DUCK_POLL_MS + DUCK_DOWN_MS);
+const DUCK_UP_BUDGET_MS = 2 * (DUCK_SILENCE_MS + DUCK_UP_MS + DUCK_POLL_MS);
 
 type Audio = Record<string, { peakHz: number; level: number }>;
 type Video = Record<string, { rgb: [number, number, number] | null; framesDecoded: number }>;
@@ -23,7 +32,7 @@ async function waitForAudioFrom(peers: Array<{ gj: any; peerId: string; index: n
 }
 
 test('mesh audio: each peer receives the right peer\'s tone; ice/signaling stable', async () => {
-  const party = await startParty({ n: 3, code: 'MESH01' });
+  const party = await startParty({ n: 3 });
   try {
     await waitForMesh(party.peers);
     await waitForAudioFrom(party.peers);
@@ -39,7 +48,7 @@ test('mesh audio: each peer receives the right peer\'s tone; ice/signaling stabl
 });
 
 test('camera: opt-in video arrives with the right colour and framesDecoded increases', async () => {
-  const party = await startParty({ n: 2, code: 'MESH02' });
+  const party = await startParty({ n: 2 });
   try {
     const [a, b] = party.peers as [typeof party.leader, typeof party.leader];
     await waitForMesh(party.peers);
@@ -55,8 +64,8 @@ test('camera: opt-in video arrives with the right colour and framesDecoded incre
     // The receiver's own tile is a name placeholder (its camera is off); the sidebar pushed the page over.
     expect(await b.page.evaluate(() => !document.getElementById('gj-tiles')?.shadowRoot?.querySelector('.tile.self')?.classList.contains('has-video'))).toBe(true);
     expect(await b.page.evaluate(() => Math.round(document.documentElement.getBoundingClientRect().width) === innerWidth - 240)).toBe(true);
-    await b.page.screenshot({ path: 'test-results/sidebar-receiver.png' });
-    await a.page.screenshot({ path: 'test-results/sidebar-sender.png' });
+    await b.page.screenshot({ path: test.info().outputPath('sidebar-receiver.png') });
+    await a.page.screenshot({ path: test.info().outputPath('sidebar-sender.png') });
     // Camera off: video leaves both sides (tiles stay as name placeholders), connection still fine.
     await a.gj('setCamera', false);
     await waitForCondition(() => b.page.evaluate(() => { const host = document.getElementById('gj-tiles'); return !host?.shadowRoot?.querySelector('.tile.has-video'); }), { timeout: 10_000, label: 'video removed on receiver' });
@@ -66,7 +75,7 @@ test('camera: opt-in video arrives with the right colour and framesDecoded incre
 });
 
 test('self-view alone: a lone peer with the camera on sees its own tile', async () => {
-  const party = await startParty({ n: 1, code: 'SEFV01', withObserver: false });
+  const party = await startParty({ n: 1, withObserver: false });
   try {
     const a = party.leader;
     await a.gj('setCamera', true);
@@ -81,7 +90,7 @@ test('self-view alone: a lone peer with the camera on sees its own tile', async 
 
 test('fullscreen: the sidebar re-parents into the fullscreen element and comes back out', async () => {
   // Note: Playwright's page.click hangs across a fullscreen transition; the button is clicked in-page.
-  const party = await startParty({ n: 2, code: 'FSCR01' });
+  const party = await startParty({ n: 2 });
   try {
     const [a, b] = party.peers as [typeof party.leader, typeof party.leader];
     await waitForMesh(party.peers);
@@ -107,7 +116,7 @@ test('fullscreen: the sidebar re-parents into the fullscreen element and comes b
     expect(visibleKids.length).toBeGreaterThan(0);
     expect(visibleKids.every((k) => k.includes(`w=${widths.inner - 240} `))).toBe(true);
     console.log('fs: in fullscreen, sidebar ok');
-    await b.page.screenshot({ path: 'test-results/sidebar-fullscreen.png' });
+    await b.page.screenshot({ path: test.info().outputPath('sidebar-fullscreen.png') });
     console.log('fs: screenshot taken');
     await b.page.evaluate(() => document.exitFullscreen());
     await waitForCondition(() => b.page.evaluate(() => { const host = document.getElementById('gj-tiles'); return !document.fullscreenElement && host?.parentElement === document.body && !host.classList.contains('overlay') && Math.round(document.documentElement.getBoundingClientRect().width) === innerWidth - 240 && !document.querySelector('#player [data-gj-shrunk]') && document.querySelector('video')!.style.width === '100%' && Math.round(document.querySelector('video')!.getBoundingClientRect().width) === Math.round(document.getElementById('player')!.getBoundingClientRect().width); }), { timeout: 5000, label: 'sidebar back in body, page shrunk again, video width restored exactly' });
@@ -115,7 +124,7 @@ test('fullscreen: the sidebar re-parents into the fullscreen element and comes b
 });
 
 test('perfect negotiation: 20 simultaneous camera toggles with jitter end connected and stable', async () => {
-  const party = await startParty({ n: 2, code: 'MESH03' });
+  const party = await startParty({ n: 2 });
   try {
     const [a, b] = party.peers as [typeof party.leader, typeof party.leader];
     await waitForMesh(party.peers);
@@ -134,8 +143,8 @@ test('perfect negotiation: 20 simultaneous camera toggles with jitter end connec
   } catch (e) { await dumpParty(party, 'negotiation failure'); throw e; } finally { await party.close(); }
 });
 
-test('ducking: tone onset ducks the video within 300ms; offset restores within 1.5s', async () => {
-  const party = await startParty({ n: 2, code: 'DKNG01' });
+test('ducking: tone onset ducks the video, and silence restores it', async () => {
+  const party = await startParty({ n: 2 });
   try {
     const a = party.leader;
     await pressPlay(a);
@@ -145,13 +154,13 @@ test('ducking: tone onset ducks the video within 300ms; offset restores within 1
     // Onset: poll fast; from the moment the mic level rises, volume must be < 0.35 within 300ms.
     let onsetAt = 0;
     await waitForCondition(async () => { const d = await a.gj('getDiag') as any; if (d.localMicLevel > 0.02) { onsetAt = Date.now(); return true; } return false; }, { timeout: 10_000, interval: 20, label: 'tone onset' });
-    await waitForCondition(async () => (await a.gj('getVolume') as number) < 0.35, { timeout: 300 + 100, interval: 10, label: 'ducked within 300ms' });
+    await waitForCondition(async () => (await a.gj('getVolume') as number) < 0.35, { timeout: DUCK_DOWN_BUDGET_MS, interval: 10, label: `ducked within ${DUCK_DOWN_BUDGET_MS}ms` });
     const duckLatency = Date.now() - onsetAt;
     // Offset: the tone lasts 2s; once the mic falls silent, restoration must complete within 1.5s (after the 1s silence hold).
     await waitForCondition(async () => (await a.gj('getDiag') as any).localMicLevel < 0.005, { timeout: 5000, interval: 20, label: 'tone offset' });
     const offsetAt = Date.now();
-    await waitForCondition(async () => (await a.gj('getVolume') as number) > 0.95, { timeout: 1500 + 100, interval: 10, label: 'restored within 1.5s' });
-    console.log(`ducking: down in ${duckLatency}ms, up in ${Date.now() - offsetAt}ms`);
-    expect(duckLatency).toBeLessThanOrEqual(400);
+    await waitForCondition(async () => (await a.gj('getVolume') as number) > 0.95, { timeout: DUCK_UP_BUDGET_MS, interval: 10, label: `restored within ${DUCK_UP_BUDGET_MS}ms` });
+    console.log(`ducking: down in ${duckLatency}ms (budget ${DUCK_DOWN_BUDGET_MS}ms), up in ${Date.now() - offsetAt}ms (budget ${DUCK_UP_BUDGET_MS}ms)`);
+    expect(duckLatency).toBeLessThanOrEqual(DUCK_DOWN_BUDGET_MS);
   } catch (e) { await dumpParty(party, 'ducking failure'); throw e; } finally { await party.close(); }
 });

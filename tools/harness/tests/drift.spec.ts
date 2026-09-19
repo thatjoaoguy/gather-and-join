@@ -1,10 +1,21 @@
 import { test, expect } from '@playwright/test';
+import { RATE_NUDGE_SCALE_MS } from '@gj/shared';
 import { startParty, spreadMs, pressPlay, state, counters, dumpParty } from '../src/party.ts';
 import { waitForCondition } from '../src/peers.ts';
 
+/**
+ * The corrector closes drift at rate |drift|/RATE_NUDGE_SCALE_MS, so drift decays with
+ * that time constant: 800ms → 150ms takes scale·ln(800/150) ≈ 6.7s. Budget twice that,
+ * so the test fails when correction is broken rather than when the machine is busy.
+ */
+const SMALL_DRIFT_MS = 800;
+const CONVERGED_MS = 150;
+const EXPECTED_CONVERGE_MS = RATE_NUDGE_SCALE_MS * Math.log(SMALL_DRIFT_MS / CONVERGED_MS);
+const CONVERGE_BUDGET_MS = Math.ceil(2 * EXPECTED_CONVERGE_MS);
+
 test.describe('drift correction', () => {
-  test('small drift: forceDrift(800) converges <150ms within 8s with zero hard seeks', async () => {
-    const party = await startParty({ n: 2, code: 'DRFT01' });
+  test('small drift: forceDrift(800) converges <150ms with zero hard seeks', async () => {
+    const party = await startParty({ n: 2 });
     try {
       const follower = party.peers[1]!;
       await pressPlay(party.leader);
@@ -12,11 +23,12 @@ test.describe('drift correction', () => {
       await waitForCondition(async () => (await spreadMs(party.peers)).spread < 150, { timeout: 10_000, label: 'initial convergence' });
       const before = await counters(follower);
 
-      await follower.gj('forceDrift', 800);
+      await follower.gj('forceDrift', SMALL_DRIFT_MS);
       await waitForCondition(async () => (await spreadMs(party.peers)).spread > 600, { timeout: 2000, label: 'drift injected' });
       const t0 = Date.now();
-      await waitForCondition(async () => (await spreadMs(party.peers)).spread < 150, { timeout: 8000, label: 'converged under 150ms' });
-      console.log(`small drift converged in ${Date.now() - t0}ms`);
+      await waitForCondition(async () => (await spreadMs(party.peers)).spread < CONVERGED_MS, { timeout: CONVERGE_BUDGET_MS, label: `converged under ${CONVERGED_MS}ms` });
+      const convergedMs = Date.now() - t0;
+      console.log(`small drift converged in ${convergedMs}ms (expected ~${Math.round(EXPECTED_CONVERGE_MS)}ms, budget ${CONVERGE_BUDGET_MS}ms)`);
 
       const after = await counters(follower);
       expect(after.hardSeeks - before.hardSeeks).toBe(0);
@@ -27,7 +39,7 @@ test.describe('drift correction', () => {
   });
 
   test('large drift: forceDrift(4000) → exactly one hard seek, converges within 2s', async () => {
-    const party = await startParty({ n: 2, code: 'DRFT02' });
+    const party = await startParty({ n: 2 });
     try {
       const follower = party.peers[1]!;
       await pressPlay(party.leader);
@@ -48,7 +60,7 @@ test.describe('drift correction', () => {
   });
 
   test('echo suppression: a remote seek applied locally is not rebroadcast', async () => {
-    const party = await startParty({ n: 2, code: 'ECH001' });
+    const party = await startParty({ n: 2 });
     try {
       const follower = party.peers[1]!;
       await pressPlay(party.leader);

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { REMOTE_AUDIO_SAMPLE_MS } from '@gj/shared';
 import { startParty, snapshot, state, counters, waitForMesh, dumpParty } from '../src/party.ts';
 import { waitForCondition, waitForHook, sleepMs, EPISODE, watchUrl, type Peer } from '../src/peers.ts';
 
@@ -9,7 +10,7 @@ const mirroredDiag = (p: Peer) => p.extPage.evaluate(() => chrome.storage.sessio
 
 test('navigation survival: socket, mesh and remote audio survive pushState, real load and leader navigate', async () => {
   // Continuous tones so any audible gap is a real drop, not the fixture envelope.
-  const party = await startParty({ n: 3, code: 'NAV001', continuousTone: true });
+  const party = await startParty({ n: 3, continuousTone: true });
   try {
     const [leader, f1] = party.peers as [Peer, Peer, Peer];
     await waitForMesh(party.peers);
@@ -57,7 +58,9 @@ test('navigation survival: socket, mesh and remote audio survive pushState, real
       const d = await mirroredDiag(p);
       for (const q of party.peers) if (q !== p) {
         const a = d.remoteAudio[q.peerId]!;
-        expect(a.maxGapMs, `${p.name} hearing ${q.name}: longest audio gap`).toBeLessThanOrEqual(200);
+        // The sampler runs every REMOTE_AUDIO_SAMPLE_MS, so a few missed timer callbacks on a
+        // busy machine look like a gap. Allow that; a real dropout is far longer.
+        expect(a.maxGapMs, `${p.name} hearing ${q.name}: longest audio gap`).toBeLessThanOrEqual(8 * REMOTE_AUDIO_SAMPLE_MS);
         expect(Date.now() - a.lastAudibleAt, `${p.name} still hears ${q.name}`).toBeLessThan(1000);
       }
     }

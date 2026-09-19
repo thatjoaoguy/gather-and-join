@@ -3,7 +3,7 @@
  * player, plus the headless observer recording ground truth.
  */
 import { test } from '@playwright/test';
-import { isValidRoomCode } from '@gj/shared';
+import { generateRoomCode, isValidRoomCode } from '@gj/shared';
 import { Observer } from './observer.ts';
 import { launchPeer, openPlayer, closePeers, waitForCondition, EPISODE, SERVER_URL, type Peer, type Sabotage } from './peers.ts';
 
@@ -15,9 +15,9 @@ export type Party = {
   close(): Promise<void>;
 };
 
-export type PartyOptions = { n: number; code: string; sabotage?: Sabotage; headless?: boolean; contentId?: string; withObserver?: boolean; continuousTone?: boolean };
+export type PartyOptions = { n: number; /** Defaults to a fresh code: the server holds a room for ROOM_TTL_MS after the last peer leaves, so a re-run must not reuse one. */ code?: string; sabotage?: Sabotage; headless?: boolean; contentId?: string; withObserver?: boolean; continuousTone?: boolean };
 
-export async function startParty({ n, code, sabotage, headless, contentId = EPISODE(1), withObserver = true, continuousTone = false }: PartyOptions): Promise<Party> {
+export async function startParty({ n, code = generateRoomCode(), sabotage, headless, contentId = EPISODE(1), withObserver = true, continuousTone = false }: PartyOptions): Promise<Party> {
   if (!isValidRoomCode(code)) throw new Error(`test room code ${code} is not Crockford base32 (no I, L, O, U)`);
   const peers: Peer[] = [];
   for (let i = 0; i < n; i++) peers.push(await launchPeer(i, { sabotage, headless, continuousTone }));
@@ -25,10 +25,10 @@ export async function startParty({ n, code, sabotage, headless, contentId = EPIS
 
   const leader = peers[0]!;
   await leader.gj('createRoom', code, leader.name);
-  await waitForCondition(async () => (await snapshot(leader))?.room?.code === code && (await snapshot(leader))?.socket === 'connected', { label: 'leader in room' });
+  await waitForCondition(async () => inRoom(await snapshot(leader), code, true), { label: 'leader in room' });
   for (const p of peers.slice(1)) {
     await p.gj('joinRoom', code, p.name);
-    await waitForCondition(async () => (await snapshot(p))?.room?.code === code, { label: `${p.name} in room` });
+    await waitForCondition(async () => inRoom(await snapshot(p), code, false), { label: `${p.name} in room` });
   }
   const observer = new Observer(SERVER_URL, 'obs:harness');
   if (withObserver) {
@@ -47,21 +47,36 @@ export async function startParty({ n, code, sabotage, headless, contentId = EPIS
 }
 
 /** On failure: print every peer's state, counters and the tail of the observer log. */
+/** Throws on a server refusal (ROOM_EXISTS, ...) so the reason is the failure, not a timeout. */
+function inRoom(snap: Snap | null, code: string, needSocket: boolean): boolean {
+  const err = snap?.lastError;
+  if (err) throw new Error(`server refused: ${err.code}${err.message ? ` (${err.message})` : ''}`);
+  if (snap?.room?.code !== code) return false;
+  return !needSocket || snap.socket === 'connected';
+}
+
 export async function dumpParty(party: Party, label = 'dump') {
-  // A failure the sabotage matrix expects is not worth diagnosing, and the dump is slow against a jammed page.
+  // A failure the sabotage matrix expects still gets dumped: otherwise a row that failed for
+  // the wrong reason (load, ports, a lost room) is indistinguishable from the sabotage biting.
+  // The dump is slow against a jammed page, so cap it rather than skip it.
   const expected = process.env.GJ_EXPECT_FAIL;
-  if (expected && new RegExp(expected).test(test.info().title)) { console.log(`--- ${label}: expected under GJ_SABOTAGE=${process.env.GJ_SABOTAGE}, dump skipped ---`); return; }
+  const budgetMs = expected && new RegExp(expected).test(test.info().title) ? 5_000 : 30_000;
+  const timeout = new Promise<void>((resolve) => setTimeout(() => { console.log(`--- ${label}: dump cut short after ${budgetMs}ms ---`); resolve(); }, budgetMs));
+  await Promise.race([dumpPartyInner(party, label), timeout]);
+}
+
+async function dumpPartyInner(party: Party, label: string) {
   console.log(`--- ${label} ---`);
   for (const p of party.peers) {
     const [st, c, sn] = await Promise.all([state(p).catch(String), counters(p).catch(String), snapshot(p).catch(String)]);
     const s = sn as Snap | string;
     console.log(p.name, JSON.stringify(st), JSON.stringify(c), typeof s === 'string' ? s : JSON.stringify({ socket: s.socket, room: s.room, isLeader: s.isLeader, peerMedia: s.peerMedia }));
   }
-  const tail = party.observer.frames.slice(-15);
+  const tail = party.observer.frames.slice(-40);
   for (const f of tail) console.log('obs', f.t % 100000, JSON.stringify(f.msg));
   for (const p of party.peers) {
     const sess: any = await p.extPage.evaluate(() => chrome.storage.session.get(null)).catch(() => ({}));
-    for (const k of Object.keys(sess).filter((k) => k.startsWith('gjLog'))) console.log(`${p.name} ${k}\n  ` + sess[k].slice(-25).join('\n  '));
+    for (const k of Object.keys(sess).filter((k) => k.startsWith('gjLog'))) console.log(`${p.name} ${k}\n  ` + sess[k].slice(-120).join('\n  '));
   }
 }
 
@@ -69,6 +84,7 @@ export type Snap = {
   socket: string; socketReconnects: number; room: { code: string; contentId: string | null; paused: boolean; positionMs: number; leaderId: string } | null;
   peers: Array<{ peerId: string; name: string }>; yourPeerId: string; isLeader: boolean; camOn: boolean; micOn: boolean;
   peerMedia: Record<string, { connectionState: string; iceConnectionState: string; signalingState: string; hasAudio: boolean; hasVideo: boolean }>;
+  lastError: { code: string; message: string } | null;
 };
 export const snapshot = (p: Peer) => p.gj<Snap | null>('getSnapshot');
 

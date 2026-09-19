@@ -23,7 +23,7 @@ type Remote = {
 export type RemoteAudioDiag = { peakHz: number; level: number; lastAudibleAt: number; maxGapMs: number };
 /** dBFS at the peak bin above which a peer counts as audible. */
 const AUDIBLE_DB = -60;
-const SAMPLE_MS = 50;
+import { REMOTE_AUDIO_SAMPLE_MS as SAMPLE_MS } from '@gj/shared';
 /** Speaking: louder than this at the peak bin, held for SPEAK_HOLD_MS after the last loud sample. */
 export const SPEAK_DB = -45;
 export const SPEAK_HOLD_MS = 400;

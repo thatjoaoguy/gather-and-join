@@ -3,7 +3,7 @@ import { startParty, snapshot, state, dumpParty } from '../src/party.ts';
 import { waitForCondition, waitForHook, EPISODE } from '../src/peers.ts';
 
 test('leader authority: non-leader navigate is rejected with an error frame; leader navigate makes everyone follow', async () => {
-  const party = await startParty({ n: 3, code: 'ATHR01' });
+  const party = await startParty({ n: 3 });
   try {
     const [leader, f1, f2] = party.peers as [typeof party.leader, typeof party.leader, typeof party.leader];
 
@@ -29,7 +29,7 @@ test('leader authority: non-leader navigate is rejected with an error frame; lea
 });
 
 test('a tab off the room\'s episode cannot drive the room', async () => {
-  const party = await startParty({ n: 2, code: 'ATHR03' });
+  const party = await startParty({ n: 2 });
   try {
     const follower = party.peers[1]!;
     await follower.page.click('#next-push'); // follower wanders to E2; room stays on E1
@@ -44,7 +44,7 @@ test('a tab off the room\'s episode cannot drive the room', async () => {
 });
 
 test('autoplay-next: non-leaders suppress the countdown; only the leader transition propagates', async () => {
-  const party = await startParty({ n: 2, code: 'ATHR02' });
+  const party = await startParty({ n: 2 });
   try {
     const follower = party.peers[1]!;
     await follower.page.click('#show-up-next');
