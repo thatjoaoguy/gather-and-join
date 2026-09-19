@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/thatjoaoguy/gather-and-join/compare/v0.1.0...v0.1.1) (2026-09-19)
+
+
+### Bug Fixes
+
+* **extension:** stop a wedged service worker from silently breaking the popup and the room ([#4](https://github.com/thatjoaoguy/gather-and-join/issues/4)) ([ef8d781](https://github.com/thatjoaoguy/gather-and-join/commit/ef8d781bfa006bb79fed9be5636463c7fa6f27f4))
+
 ## [0.1.0](https://github.com/thatjoaoguy/gather-and-join/releases/tag/v0.1.0) (2026-09-19)
 
 First unlisted Chrome Web Store submission.
