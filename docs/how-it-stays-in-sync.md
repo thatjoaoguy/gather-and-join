@@ -28,4 +28,6 @@ propagates.
 Voice and video use a full mesh: every participant connects directly to every
 other one. Only STUN is used to find a path; there is no relay, which keeps
 media off any server but also means two participants behind very strict NATs
-may not connect. See [troubleshooting](/docs/troubleshooting).
+may not connect. See [troubleshooting](/docs/troubleshooting). A full mesh
+also means each person's upload grows with the room; see
+[how many people](/docs/watch-together#how-many-people).

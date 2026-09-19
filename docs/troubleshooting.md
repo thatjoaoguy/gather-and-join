@@ -7,10 +7,13 @@ title: Troubleshooting
 
 ## "Can't reach the server"
 
-- The address must start with `wss://` or `ws://`. `ws://` only works on the
-  same network.
 - Ask the host whether the server is still running and, for a laptop tunnel,
-  whether the address changed.
+  whether the address changed. A tunnel address is new every run.
+- The address should start with `wss://`. A `ws://` address with a local IP
+  only works for people on the host's own network; anyone else needs a
+  [tunnel or always-on server](/docs/host-a-server#quick-start-a-tunnel-from-your-laptop).
+- For a same-network setup, check that the host allowed `node` through their
+  firewall and that nobody is on a guest network.
 
 ## Nobody can hear me
 

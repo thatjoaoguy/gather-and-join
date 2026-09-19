@@ -25,7 +25,7 @@ export default function Home(): ReactNode {
           </div>
           <aside className={styles.card} aria-label="At a glance">
             <div><strong>Works with</strong><span>HBO Max</span></div>
-            <div><strong>Room size</strong><span>A household or a few friends</span></div>
+            <div><strong>Room size</strong><span>Best up to 6 on camera, more on voice</span></div>
             <div><strong>Server</strong><span>Self-hosted, one file, no accounts</span></div>
             <div><strong>Cost</strong><span>Free, open source (MIT)</span></div>
           </aside>

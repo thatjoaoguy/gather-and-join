@@ -18,8 +18,8 @@ server shares with you. Chrome keeps it updated automatically.
 
 1. Click the extension's icon and open **Connection & device setup**.
 2. Press **Allow microphone**. Allow the camera too if you want to use it.
-3. Paste the **connection address** the host shared with you (it starts with
-   `wss://`, or `ws://` on the same network) and press **Save address**.
+3. Paste the **connection address** the host shared with you (it usually starts
+   with `wss://`) and press **Save address**.
 
 You only do this once, unless the host's address changes.
 
