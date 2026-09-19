@@ -33,8 +33,12 @@ an HBO Max subscription. If a change touches sync behaviour, add or adjust a
 test in `tools/harness/tests`; the suite asserts numbers (drift, seeks,
 re-attaches), not screenshots.
 
-CI runs the same `pnpm verify` steps on every pull request to `main` and on
-every push to `main`, where a failure stops the release.
+CI runs lint, typecheck, unit tests and the build on every pull request to
+`main` and on every push to `main`, where a failure stops the release. The
+end-to-end suite and the sabotage matrix are **not** in CI yet: peers
+intermittently fail to connect on a runner, which made most runs red for
+reasons unrelated to the change under test. Run them locally before opening a
+pull request.
 
 Things a change must preserve, because they are product decisions:
 

@@ -1,10 +1,5 @@
 name: 'Setup'
-description: 'pnpm, Node and the workspace dependencies, optionally the Playwright browser'
-inputs:
-  playwright:
-    description: 'Install the Playwright Chromium build the harness drives'
-    required: false
-    default: 'false'
+description: 'pnpm, Node and the workspace dependencies'
 runs:
   using: 'composite'
   steps:
@@ -21,9 +16,3 @@ runs:
     - name: 📥 Install
       shell: bash
       run: pnpm install --frozen-lockfile
-
-    - name: 🎭 Install Playwright Chromium
-      if: inputs.playwright == 'true'
-      shell: bash
-      run: pnpm exec playwright install --with-deps chromium
-      working-directory: tools/harness
