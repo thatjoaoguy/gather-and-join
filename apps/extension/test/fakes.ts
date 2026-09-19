@@ -48,20 +48,34 @@ export class FakePeerConnection extends FakeEventTarget {
   onnegotiationneeded: (() => Promise<void> | void) | null = null;
   onicecandidate: ((ev: { candidate: unknown }) => void) | null = null;
   oniceconnectionstatechange: (() => void) | null = null;
+  onconnectionstatechange: (() => void) | null = null;
   remoteDescriptions: unknown[] = [];
+  /** The live one, which is what tells a candidate whether it can be added yet. */
+  remoteDescription: unknown = null;
   candidates: unknown[] = [];
+  transceivers: { kind: string; direction: string }[] = [];
   restartIce = vi.fn();
   constructor(public readonly config: unknown) { super(); FakePeerConnection.instances.push(this); }
+  addTransceiver(kind: string, init?: { direction?: string }) {
+    const t = { kind, direction: init?.direction ?? 'sendrecv' };
+    this.transceivers.push(t);
+    return t as unknown as RTCRtpTransceiver;
+  }
   addTrack(track: FakeTrack, _stream: FakeStream) { const s = new FakeSender(track); this.senders.push(s); return s as unknown as RTCRtpSender; }
   removeTrack(sender: RTCRtpSender) { this.senders = this.senders.filter((s) => s !== (sender as unknown as FakeSender)); }
   async setLocalDescription() { this.localDescription = { type: 'offer', sdp: 'x', toJSON() { return { type: this.type, sdp: this.sdp }; } }; }
-  async setRemoteDescription(d: unknown) { this.remoteDescriptions.push(d); }
-  async addIceCandidate(c: unknown) { this.candidates.push(c); }
+  async setRemoteDescription(d: unknown) { this.remoteDescriptions.push(d); this.remoteDescription = d; }
+  async addIceCandidate(c: unknown) {
+    // Chrome throws here when no remote description is set, and the candidate is lost.
+    if (!this.remoteDescription) throw new Error('InvalidStateError: remote description not set');
+    this.candidates.push(c);
+  }
   async getStats() { return new Map(); }
   close() { this.closed = true; }
   /** Simulate a remote track arriving. */
   receive(track: FakeTrack, stream: FakeStream) { this.ontrack?.({ track, streams: [stream] }); }
-  setState(s: string) { this.connectionState = s; this.emit('connectionstatechange'); }
+  setState(s: string) { this.connectionState = s; this.onconnectionstatechange?.(); this.emit('connectionstatechange'); }
+  setIceState(s: string) { this.iceConnectionState = s; this.oniceconnectionstatechange?.(); this.emit('iceconnectionstatechange'); }
 }
 
 export function installFakeRtc() {
