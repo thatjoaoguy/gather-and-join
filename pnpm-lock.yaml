@@ -181,7 +181,7 @@ importers:
 
   apps/extension:
     dependencies:
-      '@gaj/shared':
+      '@gj/shared':
         specifier: workspace:*
         version: link:../../packages/shared
     devDependencies:
@@ -200,7 +200,7 @@ importers:
 
   apps/server:
     dependencies:
-      '@gaj/shared':
+      '@gj/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       ws:
@@ -231,7 +231,7 @@ importers:
 
   tools/harness:
     dependencies:
-      '@gaj/shared':
+      '@gj/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       ws:

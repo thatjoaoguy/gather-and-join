@@ -189,11 +189,11 @@ async function buildReport(): Promise<{ text: string; summary: string }> {
       : `Not in a room right now (socket ${s.socket}).`;
   }
 
-  const logKeys = Object.keys(session).filter((k) => k.startsWith('gajLog:')).sort();
+  const logKeys = Object.keys(session).filter((k) => k.startsWith('gjLog:')).sort();
   for (const k of logKeys) {
     const lines = session[k];
     if (!Array.isArray(lines)) continue;
-    out.push('', `--- log: ${k.slice('gajLog:'.length)} (${lines.length} lines) ---`, ...lines.map(String));
+    out.push('', `--- log: ${k.slice('gjLog:'.length)} (${lines.length} lines) ---`, ...lines.map(String));
   }
   if (logKeys.length === 0) out.push('', '--- no log lines yet ---');
   return { text: out.join('\n'), summary };

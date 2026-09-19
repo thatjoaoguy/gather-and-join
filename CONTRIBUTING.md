@@ -14,7 +14,7 @@ pnpm install
 pnpm exec playwright install --with-deps chromium   # from tools/harness, once
 pnpm dev:server                                       # ws://localhost:8080
 pnpm dev:harness                                      # fake player at http://localhost:4173
-pnpm --filter @gaj/extension build                    # → apps/extension/.output/chrome-mv3
+pnpm --filter @gj/extension build                    # → apps/extension/.output/chrome-mv3
 ```
 
 Load `apps/extension/.output/chrome-mv3` unpacked in Chrome (`chrome://extensions`

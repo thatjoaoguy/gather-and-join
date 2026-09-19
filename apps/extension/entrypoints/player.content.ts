@@ -5,7 +5,7 @@
  * a Port relays everything to the offscreen document.
  */
 import { defineContentScript } from 'wxt/utils/define-content-script';
-import { parseContentId, PLAYER_MATCHES } from '@gaj/shared';
+import { parseContentId, PLAYER_MATCHES } from '@gj/shared';
 import { PORT_PLAYER, readTestConfig, type Diag, type OffscreenToPlayer, type PlayerToOffscreen, type Snapshot } from '../lib/messages';
 import { adapterForHost, isHarnessHost } from '../lib/providers';
 import { participantsFrom } from '../lib/participants';
@@ -127,7 +127,7 @@ export default defineContentScript({
       setTimeout(() => { if (diagWaiters.delete(id)) reject(new Error('diag timeout')); }, 5000);
     });
 
-    if (__GAJ_TEST__ && isHarnessHost(location.hostname)) {
+    if (__GJ_TEST__ && isHarnessHost(location.hostname)) {
       installTestBridge({
         ping: () => 'pong',
         getState: () => {

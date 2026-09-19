@@ -3,7 +3,7 @@
  * player, plus the headless observer recording ground truth.
  */
 import { test } from '@playwright/test';
-import { isValidRoomCode } from '@gaj/shared';
+import { isValidRoomCode } from '@gj/shared';
 import { Observer } from './observer.ts';
 import { launchPeer, openPlayer, closePeers, waitForCondition, EPISODE, SERVER_URL, type Peer, type Sabotage } from './peers.ts';
 
@@ -24,10 +24,10 @@ export async function startParty({ n, code, sabotage, headless, contentId = EPIS
   for (const p of peers) await openPlayer(p, contentId);
 
   const leader = peers[0]!;
-  await leader.gaj('createRoom', code, leader.name);
+  await leader.gj('createRoom', code, leader.name);
   await waitForCondition(async () => (await snapshot(leader))?.room?.code === code && (await snapshot(leader))?.socket === 'connected', { label: 'leader in room' });
   for (const p of peers.slice(1)) {
-    await p.gaj('joinRoom', code, p.name);
+    await p.gj('joinRoom', code, p.name);
     await waitForCondition(async () => (await snapshot(p))?.room?.code === code, { label: `${p.name} in room` });
   }
   const observer = new Observer(SERVER_URL, 'obs:harness');
@@ -49,8 +49,8 @@ export async function startParty({ n, code, sabotage, headless, contentId = EPIS
 /** On failure: print every peer's state, counters and the tail of the observer log. */
 export async function dumpParty(party: Party, label = 'dump') {
   // A failure the sabotage matrix expects is not worth diagnosing, and the dump is slow against a jammed page.
-  const expected = process.env.GAJ_EXPECT_FAIL;
-  if (expected && new RegExp(expected).test(test.info().title)) { console.log(`--- ${label}: expected under GAJ_SABOTAGE=${process.env.GAJ_SABOTAGE}, dump skipped ---`); return; }
+  const expected = process.env.GJ_EXPECT_FAIL;
+  if (expected && new RegExp(expected).test(test.info().title)) { console.log(`--- ${label}: expected under GJ_SABOTAGE=${process.env.GJ_SABOTAGE}, dump skipped ---`); return; }
   console.log(`--- ${label} ---`);
   for (const p of party.peers) {
     const [st, c, sn] = await Promise.all([state(p).catch(String), counters(p).catch(String), snapshot(p).catch(String)]);
@@ -61,7 +61,7 @@ export async function dumpParty(party: Party, label = 'dump') {
   for (const f of tail) console.log('obs', f.t % 100000, JSON.stringify(f.msg));
   for (const p of party.peers) {
     const sess: any = await p.extPage.evaluate(() => chrome.storage.session.get(null)).catch(() => ({}));
-    for (const k of Object.keys(sess).filter((k) => k.startsWith('gajLog'))) console.log(`${p.name} ${k}\n  ` + sess[k].slice(-25).join('\n  '));
+    for (const k of Object.keys(sess).filter((k) => k.startsWith('gjLog'))) console.log(`${p.name} ${k}\n  ` + sess[k].slice(-25).join('\n  '));
   }
 }
 
@@ -70,12 +70,12 @@ export type Snap = {
   peers: Array<{ peerId: string; name: string }>; yourPeerId: string; isLeader: boolean; camOn: boolean; micOn: boolean;
   peerMedia: Record<string, { connectionState: string; iceConnectionState: string; signalingState: string; hasAudio: boolean; hasVideo: boolean }>;
 };
-export const snapshot = (p: Peer) => p.gaj<Snap | null>('getSnapshot');
+export const snapshot = (p: Peer) => p.gj<Snap | null>('getSnapshot');
 
 export type State = { positionMs: number | null; paused: boolean | null; contentId: string | null; atUnixMs: number; playbackRate: number | null; generation: string | null };
-export const state = (p: Peer) => p.gaj<State>('getState');
+export const state = (p: Peer) => p.gj<State>('getState');
 export type Counters = { hardSeeks: number; rateAdjustments: number; reattaches: number; socketReconnects: number; portReconnects: number };
-export const counters = (p: Peer) => p.gaj<Counters>('getCounters');
+export const counters = (p: Peer) => p.gj<Counters>('getCounters');
 
 /** Wait until every mesh connection on every peer is `connected`. */
 export async function waitForMesh(peers: Peer[], timeout = 30_000) {

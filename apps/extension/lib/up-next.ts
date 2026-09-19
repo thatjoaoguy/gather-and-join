@@ -32,11 +32,11 @@ export class UpNextSuppressor {
     for (const sel of this.selectors.panel) {
       this.root.querySelectorAll<HTMLElement>(sel).forEach((el) => {
         if (this.suppress) {
-          for (const d of this.selectors.dismiss) el.querySelectorAll<HTMLElement>(d).forEach((b) => { if (!b.dataset.gajDismissed) { b.dataset.gajDismissed = '1'; b.click(); } });
-          el.dataset.gajHidden = '1';
+          for (const d of this.selectors.dismiss) el.querySelectorAll<HTMLElement>(d).forEach((b) => { if (!b.dataset.gjDismissed) { b.dataset.gjDismissed = '1'; b.click(); } });
+          el.dataset.gjHidden = '1';
           el.style.setProperty('display', 'none', 'important');
-        } else if (el.dataset.gajHidden) {
-          delete el.dataset.gajHidden;
+        } else if (el.dataset.gjHidden) {
+          delete el.dataset.gjHidden;
           el.style.removeProperty('display');
         }
       });

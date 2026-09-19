@@ -79,7 +79,7 @@ export function startPlayerServer(port = PLAYER_PORT): Promise<http.Server> {
     res.writeHead(404); res.end('not found');
   });
   return new Promise((resolve) => server.listen(port, '127.0.0.1', () => {
-    console.log(`[gaj-player] http://localhost:${port}/  media=${loadMedia().main.mime}`);
+    console.log(`[gj-player] http://localhost:${port}/  media=${loadMedia().main.mime}`);
     resolve(server);
   }));
 }

@@ -8,12 +8,12 @@
  *  - Anyone → background: `chrome.runtime.sendMessage({target: 'background', ...})`.
  *  - Background → offscreen: `chrome.runtime.sendMessage({target: 'offscreen', ...})`.
  */
-import type { PeerId, PeerInfo, RoomState } from '@gaj/shared';
+import type { PeerId, PeerInfo, RoomState } from '@gj/shared';
 import type { Sabotage } from './constants';
 import { kvGet } from './kv';
 
-export const PORT_PLAYER = 'gaj-player';
-export const PORT_POPUP = 'gaj-popup';
+export const PORT_PLAYER = 'gj-player';
+export const PORT_POPUP = 'gj-popup';
 
 export type PeerMediaState = {
   connectionState: RTCPeerConnectionState;
@@ -145,7 +145,7 @@ export type PeerStats = {
 };
 
 export async function readTestConfig(): Promise<{ sabotage: Sabotage; testPeerId: string | null; serverUrl: string | null }> {
-  if (!__GAJ_TEST__) return { sabotage: null, testPeerId: null, serverUrl: null };
+  if (!__GJ_TEST__) return { sabotage: null, testPeerId: null, serverUrl: null };
   const v = await kvGet('local', ['sabotage', 'testPeerId', 'serverUrl']);
   return {
     sabotage: (v.sabotage as Sabotage) ?? null,

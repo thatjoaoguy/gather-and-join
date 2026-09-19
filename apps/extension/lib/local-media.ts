@@ -27,7 +27,7 @@ export class LocalMedia {
 
   async ensureMic(): Promise<MediaStreamTrack | null> {
     if (this.micStream) return this.micStream.getAudioTracks()[0] ?? null;
-    if (__GAJ_TEST__) {
+    if (__GJ_TEST__) {
       // Test seam: a real microphone takes a while to come up; the fake one is instant.
       const delay = Number((await kvGet('local', ['testMicDelayMs'])).testMicDelayMs ?? 0);
       if (delay > 0) await new Promise((r) => setTimeout(r, delay));

@@ -3,7 +3,7 @@
  * offscreen document. The peer with the lexicographically lower peerId is the
  * impolite side (it ends up as the offerer); the higher id is polite.
  */
-import type { PeerId } from '@gaj/shared';
+import type { PeerId } from '@gj/shared';
 import { STUN_SERVERS } from './constants';
 import { PerfectPeer, type SignalPayload } from './perfect-peer';
 

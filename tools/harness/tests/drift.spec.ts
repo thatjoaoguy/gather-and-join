@@ -12,7 +12,7 @@ test.describe('drift correction', () => {
       await waitForCondition(async () => (await spreadMs(party.peers)).spread < 150, { timeout: 10_000, label: 'initial convergence' });
       const before = await counters(follower);
 
-      await follower.gaj('forceDrift', 800);
+      await follower.gj('forceDrift', 800);
       await waitForCondition(async () => (await spreadMs(party.peers)).spread > 600, { timeout: 2000, label: 'drift injected' });
       const t0 = Date.now();
       await waitForCondition(async () => (await spreadMs(party.peers)).spread < 150, { timeout: 8000, label: 'converged under 150ms' });
@@ -35,7 +35,7 @@ test.describe('drift correction', () => {
       await waitForCondition(async () => (await spreadMs(party.peers)).spread < 150, { timeout: 10_000, label: 'initial convergence' });
       const before = await counters(follower);
 
-      await follower.gaj('forceDrift', 4000);
+      await follower.gj('forceDrift', 4000);
       const t0 = Date.now();
       await waitForCondition(async () => (await spreadMs(party.peers)).spread < 250, { timeout: 2000, label: 'converged after hard seek' });
       console.log(`large drift converged in ${Date.now() - t0}ms`);

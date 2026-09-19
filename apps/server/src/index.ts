@@ -9,14 +9,14 @@
  *   ROOM_TTL_MS        override room expiry (tests)
  *   WATCH_URL_TEMPLATE fallback for building `watchUrl` from a contentId when neither the
  *                      client nor the shared `watchUrlFor` knows it, e.g. "http://localhost:4173/watch/{contentId}"
- *   GAJ_LOG=0          silence the event log (one line per room event on stdout)
+ *   GJ_LOG=0          silence the event log (one line per room event on stdout)
  */
 import { WebSocketServer, WebSocket, type RawData } from 'ws';
 import {
   parseC2S, applyPlayback, applyNavigate, createRoomState, isValidRoomCode, watchUrlFor as canonicalWatchUrl,
   ROOM_TTL_MS as DEFAULT_ROOM_TTL_MS,
   type C2S, type S2C, type RoomState, type PeerId, type PeerInfo, type ErrorCode, type MediaFlags,
-} from '@gaj/shared';
+} from '@gj/shared';
 
 type Peer = { peerId: PeerId; name: string; socket: WebSocket; joinedAt: number; seq: number; media?: MediaFlags };
 type Room = { state: RoomState; peers: Map<PeerId, Peer>; expiry: NodeJS.Timeout | null; leaderGrace: NodeJS.Timeout | null };
@@ -42,7 +42,7 @@ const now = () => Date.now();
 //   2026-09-18T20:01:02.345Z peer_joined room=RM0001 peer=a name=Ana peers=2 leader=a
 type LogValue = string | number | boolean | null | undefined;
 type LogSink = (line: string) => void;
-let logSink: LogSink = process.env.GAJ_LOG === '0' ? () => {} : (line) => process.stdout.write(line + '\n');
+let logSink: LogSink = process.env.GJ_LOG === '0' ? () => {} : (line) => process.stdout.write(line + '\n');
 
 function logEvent(event: string, fields: Record<string, LogValue> = {}) {
   const kv = Object.entries(fields)
@@ -248,6 +248,6 @@ export function _rooms() { return rooms; }
 /** Test-only: capture event-log lines instead of writing them to stdout. */
 export function _setLogSink(sink: LogSink) { logSink = sink; }
 
-if (process.argv[1] && /index\.ts$/.test(process.argv[1]) && process.env.GAJ_NO_AUTOSTART !== '1') {
+if (process.argv[1] && /index\.ts$/.test(process.argv[1]) && process.env.GJ_NO_AUTOSTART !== '1') {
   startServer();
 }

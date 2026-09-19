@@ -3,7 +3,7 @@
  * readiness) and room (code, participants, media, recovery). Screens follow
  * docs/design-system/screens/index.html.
  */
-import { parseContentId, isValidRoomCode, normalizeRoomCode, ROOM_CODE_LENGTH } from '@gaj/shared';
+import { parseContentId, isValidRoomCode, normalizeRoomCode, ROOM_CODE_LENGTH } from '@gj/shared';
 import { PORT_POPUP, type OffscreenToPopup, type PopupToOffscreen, type Snapshot } from '../../lib/messages';
 import { participantsFrom, type Participant } from '../../lib/participants';
 import { ReconnectingPort } from '../../lib/port';

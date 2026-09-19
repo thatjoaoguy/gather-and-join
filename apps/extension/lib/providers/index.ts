@@ -1,4 +1,4 @@
-import { providerForHost, harness } from '@gaj/shared';
+import { providerForHost, harness } from '@gj/shared';
 import type { PlayerAdapter } from './player-adapter';
 import { hbomaxAdapter } from './hbomax';
 import { harnessAdapter } from './harness';

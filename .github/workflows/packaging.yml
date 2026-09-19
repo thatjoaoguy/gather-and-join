@@ -26,9 +26,9 @@ jobs:
     - name: 🧰 Setup
       uses: ./.github/actions/setup
 
-    # GAJ_TEST must stay unset: it adds the test hook and localhost host permissions.
+    # GJ_TEST must stay unset: it adds the test hook and localhost host permissions.
     - name: 📦 Zip Extension
-      run: pnpm --filter @gaj/extension exec wxt zip
+      run: pnpm --filter @gj/extension exec wxt zip
 
     - name: ✅ Verify Store ZIP
       run: |

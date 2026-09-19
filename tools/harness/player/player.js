@@ -124,7 +124,7 @@
       : 'no video element';
   }, 250);
 
-  // Page-level test helpers (the extension's __gaj hook is separate).
+  // Page-level test helpers (the extension's __gj hook is separate).
   window.__fakePlayer = { goTo, createVideo, startCountdown, video, generation: () => generation };
 
   render();

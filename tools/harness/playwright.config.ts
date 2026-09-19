@@ -5,8 +5,8 @@ const ROOT = path.resolve(import.meta.dirname, '..', '..');
 // Test servers use high ports so a dev server (or anything else) on 8080/4173 never collides.
 export const TEST_SERVER_PORT = Number(process.env.TEST_SERVER_PORT ?? 18080);
 export const TEST_PLAYER_PORT = Number(process.env.TEST_PLAYER_PORT ?? 14173);
-// GAJ_REUSE_SERVERS=1 runs the suite against servers you started yourself (e.g. the dev servers on 8080/4173).
-const REUSE = process.env.GAJ_REUSE_SERVERS === '1';
+// GJ_REUSE_SERVERS=1 runs the suite against servers you started yourself (e.g. the dev servers on 8080/4173).
+const REUSE = process.env.GJ_REUSE_SERVERS === '1';
 process.env.SERVER_URL ??= `ws://localhost:${TEST_SERVER_PORT}`;
 process.env.PLAYER_ORIGIN ??= `http://localhost:${TEST_PLAYER_PORT}`;
 
@@ -16,7 +16,7 @@ export default defineConfig({
   workers: 1,
   fullyParallel: false,
   retries: 0,
-  timeout: Number(process.env.GAJ_TEST_TIMEOUT_MS ?? 180_000),
+  timeout: Number(process.env.GJ_TEST_TIMEOUT_MS ?? 180_000),
   expect: { timeout: 10_000 },
   reporter: process.env.CI ? [['list'], ['json', { outputFile: 'test-results/results.json' }]] : [['list'], ['json', { outputFile: 'test-results/results.json' }]],
   globalSetup: './src/global-setup.ts',

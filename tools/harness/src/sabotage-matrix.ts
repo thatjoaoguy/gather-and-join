@@ -5,7 +5,7 @@
  *
  *   pnpm test:sabotage            # whole matrix, rows in parallel on separate ports
  *   pnpm test:sabotage reattach   # one flag
- *   GAJ_SABOTAGE_PARALLEL=1 pnpm test:sabotage   # rows one after another (small machines)
+ *   GJ_SABOTAGE_PARALLEL=1 pnpm test:sabotage   # rows one after another (small machines)
  */
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -41,7 +41,7 @@ type Result = { title: string; status: string };
 const BASE_SERVER_PORT = Number(process.env.TEST_SERVER_PORT ?? 18080);
 const BASE_PLAYER_PORT = Number(process.env.TEST_PLAYER_PORT ?? 14173);
 /** Rows run concurrently, each on its own ports; drop to 1 on a small machine. */
-const PARALLEL = Math.max(1, Number(process.env.GAJ_SABOTAGE_PARALLEL ?? 4));
+const PARALLEL = Math.max(1, Number(process.env.GJ_SABOTAGE_PARALLEL ?? 4));
 const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** One suite run, isolated from the others: own ports, own Playwright output dir, own log file. */
@@ -58,12 +58,12 @@ function runSuite(sabotage: string, slot: number): Promise<{ results: Result[]; 
     const child = spawn('pnpm', ['exec', 'playwright', 'test', '--grep-invert', grepInvert, '--reporter=list,json', '--output', `test-results/sabotage-${sabotage}`], {
       cwd: root,
       env: {
-        ...process.env, GAJ_SABOTAGE: sabotage, GAJ_SKIP_BUILD: '1', PLAYWRIGHT_JSON_OUTPUT_NAME: resultsFile,
+        ...process.env, GJ_SABOTAGE: sabotage, GJ_SKIP_BUILD: '1', PLAYWRIGHT_JSON_OUTPUT_NAME: resultsFile,
         TEST_SERVER_PORT: String(BASE_SERVER_PORT + slot * 10), TEST_PLAYER_PORT: String(BASE_PLAYER_PORT + slot * 10),
         // Expected failures skip the diagnostic dump (its calls crawl against a page the sabotage has jammed), and
         // every test gets a shorter cap: the slowest passing test is ~40s, and an expected failure needs no more.
-        GAJ_EXPECT_FAIL: MATRIX[sabotage]!.map(esc).join('|'),
-        GAJ_TEST_TIMEOUT_MS: '100000',
+        GJ_EXPECT_FAIL: MATRIX[sabotage]!.map(esc).join('|'),
+        GJ_TEST_TIMEOUT_MS: '100000',
       },
       stdio: ['ignore', out, out],
     });
@@ -99,7 +99,7 @@ const runNext = (): Promise<void> | null => {
   const slot = slotsFree.shift()!;
   return runSuite(flag, slot).then(({ results, log, seconds }) => {
     const mustFail = MATRIX[flag]!;
-    console.log(`\n=== GAJ_SABOTAGE=${flag} (${seconds}s, log: ${path.relative(process.cwd(), log)}) ===`);
+    console.log(`\n=== GJ_SABOTAGE=${flag} (${seconds}s, log: ${path.relative(process.cwd(), log)}) ===`);
     for (const r of results) {
       const expectedFail = mustFail.some((m) => r.title.includes(m));
       const good = expectedFail ? r.status === 'failed' : r.status === 'passed';

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { S2C, C2S } from '@gaj/shared';
+import type { S2C, C2S } from '@gj/shared';
 import { RoomSession, type ClientHandlers, type MeshHandlers, type SessionClient, type SessionMesh, type SessionEvents, type ServerProbe } from '../lib/room-session';
 import { FakeTrack, FakeStream, FakePeerConnection, installFakeRtc } from './fakes';
 
@@ -110,7 +110,7 @@ describe('RoomSession', () => {
     expect(session.snapshot).toMatchObject({ joining: false, isLeader: true, room: { code: 'RM0001' }, lastError: null });
     expect([...mesh.peers.keys()]).toEqual(['p2', 'obs:1']); // the real Mesh filters observers; the session hands over everyone else
     await vi.advanceTimersByTimeAsync(0);
-    expect(kv.store.session.gajDesiredRoom).toEqual({ code: 'RM0001', peerId: 'me', name: 'Ana' });
+    expect(kv.store.session.gjDesiredRoom).toEqual({ code: 'RM0001', peerId: 'me', name: 'Ana' });
     expect(events.snapshot).toHaveBeenCalled();
   });
 
@@ -305,7 +305,7 @@ describe('RoomSession', () => {
 
   it('boot rejoins the room a previous offscreen document was in, keeping the peer id and counting the recreation', async () => {
     const storage = kv();
-    storage.store.session = { gajDesiredRoom: { code: 'RM0009', peerId: 'old-id', name: 'Ana' }, gajReconnects: 2 };
+    storage.store.session = { gjDesiredRoom: { code: 'RM0009', peerId: 'old-id', name: 'Ana' }, gjReconnects: 2 };
     storage.store.local = { ducking: true };
     const { session, client, events } = setup({ kvStore: storage });
     await session.boot();
@@ -338,7 +338,7 @@ describe('RoomSession', () => {
     expect(events.videoRemoved).toHaveBeenCalledWith('me');
     expect(session.snapshot).toMatchObject({ room: null, peers: [], isLeader: false, joining: false });
     await vi.advanceTimersByTimeAsync(0);
-    expect(kv.store.session.gajDesiredRoom).toBeNull();
+    expect(kv.store.session.gjDesiredRoom).toBeNull();
     client.frame({ type: 'error', code: 'ROOM_NOT_FOUND', message: 'x' });
     expect(client.rejoins).toEqual([]); // lastRoom was cleared
   });

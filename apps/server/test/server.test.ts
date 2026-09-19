@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import WebSocket from 'ws';
-import type { C2S, S2C } from '@gaj/shared';
+import type { C2S, S2C } from '@gj/shared';
 
-process.env.GAJ_NO_AUTOSTART = '1';
+process.env.GJ_NO_AUTOSTART = '1';
 process.env.ROOM_TTL_MS = '200';
 process.env.LEADER_GRACE_MS = '300';
-process.env.GAJ_LOG = '0';
+process.env.GJ_LOG = '0';
 const { startServer, _rooms, _setLogSink } = await import('../src/index.ts');
 
 const PORT = 18_081;

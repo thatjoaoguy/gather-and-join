@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { installFakeWebSocket, FakeWebSocket } from './fakes';
 import { RoomClient } from '../lib/room-client';
-import { PING_SAMPLES } from '@gaj/shared';
+import { PING_SAMPLES } from '@gj/shared';
 
 const desired = { code: 'ABC123', peerId: 'p1', name: 'Ana', create: true };
 

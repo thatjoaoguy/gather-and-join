@@ -1,7 +1,7 @@
 /**
- * MAIN-world half of the in-page test hook: defines `window.__gaj` for
+ * MAIN-world half of the in-page test hook: defines `window.__gj` for
  * Playwright and forwards each call to the isolated-world content script over
- * postMessage. Only built when GAJ_TEST=1 (see wxt.config.ts) and only matched
+ * postMessage. Only built when GJ_TEST=1 (see wxt.config.ts) and only matched
  * on localhost, so it cannot ship.
  */
 import { defineContentScript } from 'wxt/utils/define-content-script';
@@ -16,13 +16,13 @@ export default defineContentScript({
   world: 'MAIN',
   runAt: 'document_start',
   main() {
-    if (!__GAJ_TEST__) return;
+    if (!__GJ_TEST__) return;
     let seq = 0;
     const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
     window.addEventListener('message', (ev) => {
       if (ev.source !== window) return;
       const d = ev.data;
-      if (!d || d.__gaj !== 'res') return;
+      if (!d || d.__gj !== 'res') return;
       const p = pending.get(d.id);
       if (!p) return;
       pending.delete(d.id);
@@ -31,11 +31,11 @@ export default defineContentScript({
     const call = (method: string, ...args: unknown[]) => new Promise((resolve, reject) => {
       const id = ++seq;
       pending.set(id, { resolve, reject });
-      window.postMessage({ __gaj: 'req', id, method, args }, '*');
-      setTimeout(() => { if (pending.delete(id)) reject(new Error(`__gaj.${method} timed out`)); }, 10_000);
+      window.postMessage({ __gj: 'req', id, method, args }, '*');
+      setTimeout(() => { if (pending.delete(id)) reject(new Error(`__gj.${method} timed out`)); }, 10_000);
     });
     const hook: Record<string, (...a: unknown[]) => Promise<unknown>> = {};
     for (const m of METHODS) hook[m] = (...a: unknown[]) => call(m, ...a);
-    (window as any).__gaj = hook;
+    (window as any).__gj = hook;
   },
 });

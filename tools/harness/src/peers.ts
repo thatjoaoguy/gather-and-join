@@ -25,16 +25,16 @@ export type Peer = {
   page: Page;
   extensionId: string;
   userDataDir: string;
-  /** Call a `window.__gaj` method on the player page. */
-  gaj<T = unknown>(method: string, ...args: unknown[]): Promise<T>;
+  /** Call a `window.__gj` method on the player page. */
+  gj<T = unknown>(method: string, ...args: unknown[]): Promise<T>;
   /** Evaluate against the extension's popup page (has chrome.* APIs). */
   extPage: Page;
 };
 
 export type LaunchOptions = { headless?: boolean; sabotage?: Sabotage; profileRoot?: string; slowMo?: number; continuousTone?: boolean; /** Use the machine's real mic/camera instead of fixtures (feel checks). */ realMedia?: boolean };
 
-/** Sabotage flag from the environment (`GAJ_SABOTAGE=reattach pnpm test:e2e`), unless a caller overrides it. */
-const ENV_SABOTAGE = ((process.env.GAJ_SABOTAGE || null) as Sabotage);
+/** Sabotage flag from the environment (`GJ_SABOTAGE=reattach pnpm test:e2e`), unless a caller overrides it. */
+const ENV_SABOTAGE = ((process.env.GJ_SABOTAGE || null) as Sabotage);
 
 export async function launchPeer(index: number, opts: LaunchOptions = {}): Promise<Peer> {
   const { wav, y4m } = ensurePeerFixtures(index, opts.continuousTone ?? false);
@@ -79,7 +79,7 @@ export async function launchPeer(index: number, opts: LaunchOptions = {}): Promi
   const page = await context.newPage();
   const peer: Peer = {
     index, peerId, name: peerId, context, page, extensionId, extPage, userDataDir,
-    gaj: (method, ...args) => peer.page.evaluate(([m, a]) => (window as any).__gaj[m](...a), [method, args] as const),
+    gj: (method, ...args) => peer.page.evaluate(([m, a]) => (window as any).__gj[m](...a), [method, args] as const),
   };
   return peer;
 }
@@ -91,8 +91,8 @@ export async function openPlayer(peer: Peer, contentId = EPISODE(1)) {
 }
 
 export async function waitForHook(peer: Peer, timeout = 15_000) {
-  await peer.page.waitForFunction(() => typeof (window as any).__gaj?.ping === 'function', null, { timeout });
-  await waitForCondition(async () => (await peer.gaj('ping').catch(() => null)) === 'pong', { timeout, label: 'content script bridge' });
+  await peer.page.waitForFunction(() => typeof (window as any).__gj?.ping === 'function', null, { timeout });
+  await waitForCondition(async () => (await peer.gj('ping').catch(() => null)) === 'pong', { timeout, label: 'content script bridge' });
 }
 
 export async function closePeers(peers: Peer[]) {

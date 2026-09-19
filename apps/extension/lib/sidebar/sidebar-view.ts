@@ -9,7 +9,7 @@
  * and Quicksand is declared in the host document because @font-face inside a
  * shadow root is ignored.
  */
-import type { PeerId } from '@gaj/shared';
+import type { PeerId } from '@gj/shared';
 import { ICONS } from '../ui/icons';
 import { SIDEBAR_WIDTH, type PageLayout } from './page-layout';
 import { ensureQuicksand } from '../ui/fonts';
@@ -75,7 +75,7 @@ export class SidebarView {
     if (!this.host) {
       ensureQuicksand(this.doc);
       this.host = this.doc.createElement('div');
-      this.host.id = 'gaj-tiles';
+      this.host.id = 'gj-tiles';
       const shadow = this.host.attachShadow({ mode: 'open' });
       const style = this.doc.createElement('style');
       style.textContent = STYLE;

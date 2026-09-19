@@ -3,7 +3,7 @@
  * re-sends and maps each incoming stream to the peer it belongs to. Polite side
  * of perfect negotiation; the offscreen side offers.
  */
-import type { PeerId } from '@gaj/shared';
+import type { PeerId } from '@gj/shared';
 import type { LoopbackTrackInfo } from '../loopback-sender';
 import { PerfectPeer, type SignalPayload } from '../perfect-peer';
 

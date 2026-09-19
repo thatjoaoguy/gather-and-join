@@ -3,7 +3,7 @@
  * backoff and re-joins the desired room; counts reconnects so tests can assert
  * a navigation never caused one.
  */
-import { estimateOffset, PING_SAMPLES, OFFSET_REFRESH_MS, type C2S, type S2C, type PingSample } from '@gaj/shared';
+import { estimateOffset, PING_SAMPLES, OFFSET_REFRESH_MS, type C2S, type S2C, type PingSample } from '@gj/shared';
 
 export type SocketStatus = 'disconnected' | 'connecting' | 'connected';
 export type DesiredRoom = { code: string; peerId: string; name: string; create: boolean };

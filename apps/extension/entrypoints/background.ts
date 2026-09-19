@@ -5,7 +5,7 @@
  * pages on behalf of contexts that cannot (offscreen, popup).
  */
 import { defineBackground } from 'wxt/utils/define-background';
-import { parseContentId, PLAYER_HOSTS } from '@gaj/shared';
+import { parseContentId, PLAYER_HOSTS } from '@gj/shared';
 import { readTestConfig, type ToBackground, type ToOffscreen } from '../lib/messages';
 import { log } from '../lib/log';
 
@@ -71,11 +71,11 @@ export default defineBackground(() => {
   const onNav = async (d: { tabId: number; url: string; frameId: number }) => {
     if (d.frameId !== 0) return;
     log('background', 'navigation', d.url);
-    if (__GAJ_TEST__ && (await readTestConfig()).sabotage === 'offscreen') {
+    if (__GJ_TEST__ && (await readTestConfig()).sabotage === 'offscreen') {
       // Sabotage: pretend long-lived state lived in a context that dies on navigation.
       // Only episode *transitions* count (the tab was already on a player page), so the
       // first load of a page does not race the room join.
-      const key = `gajLastUrl:${d.tabId}`;
+      const key = `gjLastUrl:${d.tabId}`;
       const prev = (await chrome.storage.session.get(key))[key] as string | undefined;
       await chrome.storage.session.set({ [key]: d.url });
       if (prev && (await hasOffscreen())) await chrome.offscreen.closeDocument();

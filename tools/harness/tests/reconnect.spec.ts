@@ -11,7 +11,7 @@ test('socket drop: the client rejoins with the same identity, sync and mesh carr
     await waitForCondition(async () => (await state(follower)).paused === false, { label: 'follower playing' });
 
     // The follower's socket dies like a network drop would (no leave frame).
-    await follower.gaj('dropSocket');
+    await follower.gj('dropSocket');
     await waitForCondition(async () => (await counters(follower)).socketReconnects >= 1, { timeout: 10_000, label: 'reconnected' });
     await waitForCondition(async () => { const s = await snapshot(follower); return s?.socket === 'connected' && s.room?.code === party.code && s.yourPeerId === 'peer2' && !s.isLeader; }, { timeout: 15_000, label: 'back in the room as the same peer' });
     // Leadership is untouched and everyone still sees each other.
@@ -24,7 +24,7 @@ test('socket drop: the client rejoins with the same identity, sync and mesh carr
     await waitForCondition(async () => (await state(follower)).positionMs! > 50_000, { timeout: 5000, label: 'follower followed the seek after rejoin' });
 
     // Now the leader drops: leadership must survive the blip (grace period), not pass to the follower.
-    await leader.gaj('dropSocket');
+    await leader.gj('dropSocket');
     await waitForCondition(async () => { const s = await snapshot(leader); return s?.socket === 'connected' && s.room?.code === party.code && (await counters(leader)).socketReconnects >= 1; }, { timeout: 15_000, label: 'leader reconnected' });
     expect((await snapshot(leader))!.isLeader).toBe(true);
     expect((await snapshot(follower))!.isLeader).toBe(false);

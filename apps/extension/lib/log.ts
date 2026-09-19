@@ -16,7 +16,7 @@ const FLUSH_MS = 250;
 type Sink = (line: string) => void;
 
 export const LOG_REALM = detectRealm();
-const key = `gajLog:${LOG_REALM}`;
+const key = `gjLog:${LOG_REALM}`;
 const lines: string[] = [];
 let tag = '';
 let sink: Sink | null = LOG_REALM === 'page' ? null : storageSink;

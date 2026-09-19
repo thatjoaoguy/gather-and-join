@@ -1,5 +1,5 @@
 {
-  "name": "@gaj/extension",
+  "name": "@gj/extension",
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
@@ -7,13 +7,13 @@
   "scripts": {
     "dev": "wxt",
     "build": "wxt build",
-    "build:test": "GAJ_TEST=1 wxt build",
+    "build:test": "GJ_TEST=1 wxt build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:unit": "vitest run",
     "postinstall": "wxt prepare"
   },
   "dependencies": {
-    "@gaj/shared": "workspace:*"
+    "@gj/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.0",

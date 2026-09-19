@@ -9,7 +9,7 @@
  * player, duck for the ducker, and video for whoever re-streams camera tracks
  * into pages (the loopback senders).
  */
-import { generateRoomCode, isValidRoomCode, normalizeRoomCode, type C2S, type MediaFlags, type PeerId, type S2C } from '@gaj/shared';
+import { generateRoomCode, isValidRoomCode, normalizeRoomCode, type C2S, type MediaFlags, type PeerId, type S2C } from '@gj/shared';
 import type { PeerMediaState, ServerStatus, Snapshot } from './messages';
 import type { SignalPayload } from './perfect-peer';
 import type { DesiredRoom, SocketStatus } from './room-client';
@@ -187,20 +187,20 @@ export class RoomSession {
   private async persist() {
     const s = this.snapshot;
     const desired = s.room ? { code: s.room.code, peerId: s.yourPeerId, name: this.desiredName } : null;
-    await this.deps.kv.set('session', { gajDesiredRoom: desired, gajReconnects: s.socketReconnects });
+    await this.deps.kv.set('session', { gjDesiredRoom: desired, gjReconnects: s.socketReconnects });
   }
 
   // ---- boot ----------------------------------------------------------------------
 
   /** If a previous offscreen document was in a room, rejoin it. */
   async boot() {
-    const [prefs, s] = await Promise.all([this.deps.kv.get('local', ['ducking', 'serverUrl']), this.deps.kv.get('session', ['gajDesiredRoom', 'gajReconnects'])]);
+    const [prefs, s] = await Promise.all([this.deps.kv.get('local', ['ducking', 'serverUrl']), this.deps.kv.get('session', ['gjDesiredRoom', 'gjReconnects'])]);
     this.duckingEnabled = prefs.ducking === true;
     const cfg = await this.deps.readTestConfig();
     this.snapshot.server = serverStatus(cfg.serverUrl ?? (prefs.serverUrl as string | undefined) ?? this.deps.defaultServerUrl);
-    const desired = s.gajDesiredRoom as { code: string; peerId: string; name: string } | null | undefined;
+    const desired = s.gjDesiredRoom as { code: string; peerId: string; name: string } | null | undefined;
     if (!desired) return;
-    this.bootReconnects = ((s.gajReconnects as number) ?? 0) + 1;
+    this.bootReconnects = ((s.gjReconnects as number) ?? 0) + 1;
     this.snapshot.socketReconnects = this.bootReconnects;
     this.snapshot.yourPeerId = desired.peerId;
     await this.join(desired.code, desired.name, false);
