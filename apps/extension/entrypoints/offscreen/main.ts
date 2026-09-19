@@ -92,8 +92,8 @@ const session = new RoomSession(
       (status) => { log('room', 'socket', status, url); h.onStatus(status); },
       (url) => { log('room', 'connect failed', url); h.onConnectFailed(url); },
     ),
-    createMesh: (myId, h) => {
-      const mesh = new Mesh(myId, h.sendSignal, h.onTrack, (id) => { tracePeerState(id, mesh.peers.get(id)?.pp.pc); h.onStateChange(id); });
+    createMesh: (myId, h, opts) => {
+      const mesh = new Mesh(myId, h.sendSignal, h.onTrack, (id) => { tracePeerState(id, mesh.peers.get(id)?.pp.pc); h.onStateChange(id); }, opts?.iceServers);
       return mesh;
     },
     probe: probeServer,

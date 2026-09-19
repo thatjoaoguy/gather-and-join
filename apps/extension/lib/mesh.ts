@@ -23,12 +23,14 @@ export class Mesh {
     private readonly sendSignal: (to: PeerId, payload: SignalPayload) => void,
     private readonly onTrack: (peerId: PeerId, stream: MediaStream, track: MediaStreamTrack) => void,
     private readonly onStateChange: (peerId: PeerId) => void,
+    /** Defaults to public STUN. Tests pass [] so ICE stays on host candidates. */
+    private readonly iceServers: RTCIceServer[] = STUN_SERVERS,
   ) {}
 
   add(peerId: PeerId) {
     if (this.peers.has(peerId) || peerId === this.myId || isObserver(peerId)) return;
     const polite = this.myId > peerId;
-    const pp = new PerfectPeer(polite, (payload) => this.sendSignal(peerId, payload), { iceServers: STUN_SERVERS });
+    const pp = new PerfectPeer(polite, (payload) => this.sendSignal(peerId, payload), { iceServers: this.iceServers });
     const entry: MeshPeer = { pp, stream: null, videoSender: null, audioSender: null };
     pp.pc.ontrack = (ev) => {
       const stream = ev.streams[0] ?? new MediaStream([ev.track]);

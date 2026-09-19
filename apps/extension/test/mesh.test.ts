@@ -4,9 +4,9 @@ import { Mesh } from '../lib/mesh';
 
 beforeEach(installFakeRtc);
 
-const make = (myId = 'b') => {
+const make = (myId = 'b', iceServers?: RTCIceServer[]) => {
   const sendSignal = vi.fn(); const onTrack = vi.fn(); const onState = vi.fn();
-  return { mesh: new Mesh(myId, sendSignal, onTrack, onState), sendSignal, onTrack, onState };
+  return { mesh: new Mesh(myId, sendSignal, onTrack, onState, iceServers), sendSignal, onTrack, onState };
 };
 
 describe('Mesh', () => {
@@ -62,4 +62,11 @@ describe('Mesh', () => {
     expect(pc.closed).toBe(true);
     expect(mesh.peers.size).toBe(0);
   });
+
+  it('uses the ICE servers it is given, so tests can stay on host candidates', () => {
+    const { mesh } = make('b', []);
+    mesh.add('c');
+    expect((FakePeerConnection.instances[0]!.config as any).iceServers).toEqual([]);
+  });
+
 });

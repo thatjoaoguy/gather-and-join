@@ -82,7 +82,7 @@ function setup(opts: { local?: ReturnType<typeof fakeLocal>; kvStore?: ReturnTyp
   const probe = vi.fn<ServerProbe>(async () => ({ ok: true, rttMs: 12 }));
   const session = new RoomSession({
     createClient: c.create, createMesh: m.create, probe, local: l.local as never, remote, kv: storage,
-    readTestConfig: async () => ({ sabotage: null, testPeerId: opts.testPeerId ?? null, serverUrl: null }),
+    readTestConfig: async () => ({ sabotage: null, testPeerId: opts.testPeerId ?? null, serverUrl: null, iceServers: null }),
     defaultServerUrl: 'ws://default', now: () => Date.now(), newPeerId: () => 'me', newRoomCode: () => codes.shift()!,
   }, events);
   return { session, client: c.client, mesh: m.mesh, local: l, remote, events, kv: storage, probe };

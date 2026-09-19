@@ -144,14 +144,16 @@ export type PeerStats = {
   audioPacketsReceived: number;
 };
 
-export async function readTestConfig(): Promise<{ sabotage: Sabotage; testPeerId: string | null; serverUrl: string | null }> {
-  if (!__GJ_TEST__) return { sabotage: null, testPeerId: null, serverUrl: null };
+export async function readTestConfig(): Promise<{ sabotage: Sabotage; testPeerId: string | null; serverUrl: string | null; iceServers: RTCIceServer[] | null }> {
+  if (!__GJ_TEST__) return { sabotage: null, testPeerId: null, serverUrl: null, iceServers: null };
   // Read through the service worker in the offscreen document; a miss means "no test
   // config", never a rejected join.
-  const v = await kvGet('local', ['sabotage', 'testPeerId', 'serverUrl']).catch(() => ({}) as Record<string, unknown>);
+  const v = await kvGet('local', ['sabotage', 'testPeerId', 'serverUrl', 'iceServers']).catch(() => ({}) as Record<string, unknown>);
   return {
     sabotage: (v.sabotage as Sabotage) ?? null,
     testPeerId: (v.testPeerId as string) ?? null,
     serverUrl: (v.serverUrl as string) ?? null,
+    // [] is meaningful (host candidates only), so distinguish it from "unset".
+    iceServers: Array.isArray(v.iceServers) ? (v.iceServers as RTCIceServer[]) : null,
   };
 }
