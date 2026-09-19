@@ -60,9 +60,6 @@ export async function launchPeer(index: number, opts: LaunchOptions = {}): Promi
       '--autoplay-policy=no-user-gesture-required',
       '--disable-background-timer-throttling',
       '--disable-renderer-backgrounding',
-      // Peers share one machine. Hidden behind mDNS `.local` names, their host candidates
-      // sometimes fail to resolve; ICE then fails (~30s) and only a restartIce recovers.
-      '--disable-features=WebRtcHideLocalIpsWithMdns',
     ],
     viewport: { width: 900, height: 600 },
   });
