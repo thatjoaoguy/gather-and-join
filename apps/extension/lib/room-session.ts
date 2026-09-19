@@ -274,7 +274,19 @@ export class RoomSession {
   }
 
   leaveRoom() {
+    this.teardown();
+    this.patch({ lastError: null });
+  }
+
+  /**
+   * Put this client back in the lobby: drop the socket, the mesh and the devices, and
+   * empty every trace of the room from the snapshot. `lastError` is left alone so a
+   * teardown forced by the server can explain itself on the lobby screen.
+   */
+  private teardown() {
     this.lastRoom = null;
+    this.rejoinAttempts = 0;
+    this.pendingCreate = 0;
     this.client.leave();
     this.mesh?.removeAll();
     this.mesh = null;
@@ -541,6 +553,7 @@ export class RoomSession {
 
   private onError(code: string, message: string) {
     const s = this.snapshot;
+    const wasInRoom = !!s.room;
     s.joining = false;
     s.lastError = { code, message };
     if (code === 'ROOM_EXISTS' && this.pendingCreate > 0) {
@@ -564,7 +577,18 @@ export class RoomSession {
       this.patch({ lastError: { code: 'RECONNECTING', message: 'Room lost — reconnecting…' } });
       return;
     }
-    if (code === 'ROOM_NOT_FOUND' || code === 'PEER_ID_TAKEN' || code === 'ROOM_EXISTS') { this.client.leave(); this.lastRoom = null; }
+    if (code === 'ROOM_NOT_FOUND' || code === 'PEER_ID_TAKEN' || code === 'ROOM_EXISTS') {
+      // Out of retries. The socket goes, but the mesh does not drop itself: WebRTC needs
+      // the server only to introduce peers, so audio and video keep flowing and the room
+      // would sit there looking connected while no new peer could ever reach it. End it
+      // properly and say why, instead of leaving a UI stuck on "Reconnecting…" forever.
+      const gone = code === 'ROOM_NOT_FOUND' && wasInRoom;
+      this.teardown();
+      this.patch(gone
+        ? { lastError: { code: 'ROOM_GONE', message: 'Your room is gone — the server lost it and it did not come back.' } }
+        : { lastError: { code, message } });
+      return;
+    }
     this.broadcast();
   }
 }

@@ -71,7 +71,10 @@ const popupPorts = new Set<chrome.runtime.Port>();
 const loopbacks = new Map<chrome.runtime.Port, LoopbackSender>();
 
 function post(port: chrome.runtime.Port, m: OffscreenToPlayer | OffscreenToPopup) {
-  try { port.postMessage(m); } catch { /* port gone */ }
+  // A throw here is not always a dead port: a payload that will not structured-clone
+  // fails the same way, and silently losing the snapshot leaves a UI blank with no
+  // trace anywhere. Say so, then carry on — one bad port must not stop the others.
+  try { port.postMessage(m); } catch (e) { log('offscreen', 'post failed', port.name, m.type, String(e)); }
 }
 function toPlayers(m: OffscreenToPlayer) { for (const p of playerPorts) post(p, m); }
 function toEveryone(m: { type: 'snapshot'; snapshot: Snapshot }) { for (const p of playerPorts) post(p, m); for (const p of popupPorts) post(p, m); }
@@ -95,7 +98,13 @@ const session = new RoomSession(
     },
     probe: probeServer,
     local, remote,
-    kv: { get: kvGet, set: kvSet },
+    // This document has no chrome.storage of its own, so every read and write is a
+    // round-trip to the service worker. The session stays free of logging and of
+    // storage failure handling; both live here, at the seam.
+    kv: {
+      get: (area, keys) => kvGet(area, keys).catch((e) => { log('offscreen', 'storage read failed', area, String(e)); return {}; }),
+      set: (area, data) => kvSet(area, data).catch((e) => { log('offscreen', 'storage write failed', area, Object.keys(data).join(','), String(e)); }),
+    },
     readTestConfig,
     defaultServerUrl: DEFAULT_SERVER_URL,
   },
@@ -166,7 +175,7 @@ async function collectDiag(): Promise<Diag> {
   for (const id of Object.keys(pixels)) remoteVideo[id] = { rgb: pixels[id] ?? null, framesDecoded: framesDecoded[id] ?? 0 };
   return { socketReconnects: session.snapshot.socketReconnects, peerStats, remoteAudio: remote.audioPeaks(), remoteVideo, localMicLevel: local.level, ducked: session.ducked };
 }
-setInterval(() => { void collectDiag().then((diag) => kvSet('session', { gjDiag: diag })); }, __GJ_TEST__ ? 250 : 2000);
+setInterval(() => { void collectDiag().then((diag) => kvSet('session', { gjDiag: diag })).catch(() => { /* reported by the log's own write */ }); }, __GJ_TEST__ ? 250 : 2000);
 
 // ---- port messages ---------------------------------------------------------------------------
 

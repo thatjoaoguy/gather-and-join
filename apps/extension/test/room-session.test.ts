@@ -303,6 +303,72 @@ describe('RoomSession', () => {
     expect(g.session.snapshot).toMatchObject({ joining: false, lastError: { code: 'ROOM_NOT_FOUND' } });
   });
 
+  it('ends the room for good once ROOM_NOT_FOUND retries run out, instead of pinning the UI on reconnecting', async () => {
+    // WebRTC needs the server only to introduce peers, so the mesh keeps carrying audio
+    // and video long after the socket is gone. Leaving the room in the snapshot meant a
+    // popup stuck on "Reconnecting…" forever over a call that looked perfectly fine.
+    const { session, client, mesh, remote, events, local, kv } = setup();
+    await session.joinRoom('RM0001', 'Bea');
+    client.connect();
+    client.frame(roomFrame({ isLeader: false, yourPeerId: 'me', peers: [{ peerId: 'me', name: 'Bea' }, { peerId: 'p2', name: 'Ana' }] }));
+    await session.setCamera(true);
+
+    for (let i = 0; i < 40; i++) {
+      client.frame({ type: 'error', code: 'ROOM_NOT_FOUND', message: 'x' });
+      await vi.advanceTimersByTimeAsync(3000);
+    }
+    expect(client.rejoins).toHaveLength(40);
+    expect(session.snapshot.room).not.toBeNull(); // still trying, still in the room
+
+    client.frame({ type: 'error', code: 'ROOM_NOT_FOUND', message: 'x' });
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(client.rejoins).toHaveLength(40); // no forty-first
+    expect(session.snapshot).toMatchObject({ room: null, peers: [], isLeader: false, joining: false, camOn: false });
+    expect(session.snapshot.lastError).toEqual({ code: 'ROOM_GONE', message: expect.stringContaining('gone') });
+    expect(session.mesh).toBeNull();
+    expect(mesh.removedAll).toBe(1);
+    expect(remote.detach).toHaveBeenCalledWith('p2');
+    expect(events.videoRemoved).toHaveBeenCalledWith('p2');
+    expect(local.local.micStream).toBeNull();
+    expect(local.local.camStream).toBeNull();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(kv.store.session.gjDesiredRoom).toBeNull();
+  });
+
+  it('ends the room once PEER_ID_TAKEN retries run out', async () => {
+    const { session, client } = setup();
+    await session.joinRoom('RM0001', 'Ana');
+    client.connect();
+    client.frame(roomFrame({ isLeader: true }));
+    for (let i = 0; i < 10; i++) {
+      client.frame({ type: 'error', code: 'PEER_ID_TAKEN', message: 'x' });
+      await vi.advanceTimersByTimeAsync(2000);
+    }
+    expect(client.rejoins).toHaveLength(10);
+    client.frame({ type: 'error', code: 'PEER_ID_TAKEN', message: 'still there' });
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(client.rejoins).toHaveLength(10);
+    expect(session.snapshot.room).toBeNull();
+    expect(session.snapshot.lastError).toEqual({ code: 'PEER_ID_TAKEN', message: 'still there' });
+  });
+
+  it('a room that ends leaves the lobby ready for the next one', async () => {
+    const { session, client, local } = setup();
+    await session.joinRoom('RM0001', 'Bea');
+    client.connect();
+    client.frame(roomFrame({ isLeader: false, yourPeerId: 'me' }));
+    for (let i = 0; i <= 40; i++) {
+      client.frame({ type: 'error', code: 'ROOM_NOT_FOUND', message: 'x' });
+      await vi.advanceTimersByTimeAsync(3000);
+    }
+    expect(session.snapshot.lastError?.code).toBe('ROOM_GONE');
+
+    await session.createRoom('Bea');
+    expect(session.snapshot).toMatchObject({ joining: true, lastError: null });
+    expect(local.local.micStream).not.toBeNull(); // the mesh and the mic were rebuilt
+    expect(session.mesh).not.toBeNull();
+  });
+
   it('boot rejoins the room a previous offscreen document was in, keeping the peer id and counting the recreation', async () => {
     const storage = kv();
     storage.store.session = { gjDesiredRoom: { code: 'RM0009', peerId: 'old-id', name: 'Ana' }, gjReconnects: 2 };

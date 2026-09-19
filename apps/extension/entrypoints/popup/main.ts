@@ -86,6 +86,9 @@ function renderLobby(s: Snapshot) {
       const addr = showServer ? `<code>${esc(s.server.url)}</code>` : `<span class="spoiler" tabindex="0">${esc(s.server.url)}</span>`;
       notice = `<div class="notice error" role="alert"><strong>${ic('err')} Can’t reach your server</strong><p>Nothing answered at ${addr}. Check the address with the person hosting it, or make sure their machine is awake.</p></div>`;
       recovery = `<div class="media-controls"><button class="primary" id="open-setup" type="button">Open setup</button><button id="retry-probe" type="button">Try again</button></div>`;
+    } else if (err.code === 'ROOM_GONE') {
+      // Not a mistyped code: we were in this room and the server lost it for good.
+      notice = `<div class="notice error" role="alert"><strong>${ic('err')} Your room ended</strong><p>${esc(err.message)} Create a new one, or ask for a new code.</p></div>`;
     } else if (['ROOM_NOT_FOUND', 'ROOM_EXISTS', 'PEER_ID_TAKEN', 'BAD_CODE'].includes(err.code)) {
       const title = err.code === 'ROOM_NOT_FOUND' ? 'Room not found' : err.code === 'BAD_CODE' ? 'That code isn’t right' : 'Couldn’t join';
       const body = err.code === 'ROOM_NOT_FOUND' ? 'Check the code with your friend, and that you’re both on the same server.' : err.code === 'BAD_CODE' ? 'Room codes are 6 letters or digits.' : err.message;

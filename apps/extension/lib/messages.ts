@@ -146,7 +146,9 @@ export type PeerStats = {
 
 export async function readTestConfig(): Promise<{ sabotage: Sabotage; testPeerId: string | null; serverUrl: string | null }> {
   if (!__GJ_TEST__) return { sabotage: null, testPeerId: null, serverUrl: null };
-  const v = await kvGet('local', ['sabotage', 'testPeerId', 'serverUrl']);
+  // Read through the service worker in the offscreen document; a miss means "no test
+  // config", never a rejected join.
+  const v = await kvGet('local', ['sabotage', 'testPeerId', 'serverUrl']).catch(() => ({}) as Record<string, unknown>);
   return {
     sabotage: (v.sabotage as Sabotage) ?? null,
     testPeerId: (v.testPeerId as string) ?? null,
