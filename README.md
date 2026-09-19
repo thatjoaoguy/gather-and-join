@@ -15,5 +15,4 @@ privacy policy), `src/pages/index.tsx` (landing page). Styling follows the
 design system in `docs/design-system` on `main`; brand assets and fonts under
 `static/` are copies of it.
 
-Before the first deploy, set `OWNER` in `docusaurus.config.ts` and, in the
-repository settings, set Pages → Source to **GitHub Actions**.
+Before the first deploy, set Pages → Source to **GitHub Actions** in the repository settings.

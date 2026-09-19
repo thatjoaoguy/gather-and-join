@@ -2,8 +2,7 @@ import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
-// Replace OWNER with the GitHub owner once the repository exists.
-const OWNER = 'OWNER';
+const OWNER = 'thatjoaoguy';
 const REPO = 'gather-and-join';
 
 const config: Config = {

@@ -14,7 +14,7 @@ party.
 ## Run it
 
 ```sh
-git clone <repository url>
+git clone https://github.com/thatjoaoguy/gather-and-join.git
 cd gather-and-join
 pnpm install
 pnpm --filter @gaj/server start      # listens on port 8080; PORT=9000 to change it
