@@ -44,12 +44,23 @@ function storageSink(line: string) {
   flush ??= setTimeout(() => { flush = null; void persist(); }, FLUSH_MS);
 }
 
+let warnedUnwritable = false;
+
 async function persist() {
   try {
     primed ??= prime();
     await primed;
     await kvSet('session', { [key]: lines.slice() });
-  } catch { /* no storage here (unit tests) or the context is going away */ }
+    warnedUnwritable = false;
+  } catch (e) {
+    // Unit tests have no storage, and a context on its way out cannot write either, so
+    // this stays quiet — but a realm that reaches chrome.storage through the service
+    // worker (the offscreen document) writes nothing at all once that stops answering,
+    // and an empty diagnostics log then reads as "nothing happened". Say it once.
+    if (warnedUnwritable) return;
+    warnedUnwritable = true;
+    console.warn(`[${LOG_REALM}] diagnostics log is not reaching chrome.storage.session:`, e);
+  }
 }
 
 /** First write after a restart: keep what the previous incarnation of this realm logged, behind a marker. */
