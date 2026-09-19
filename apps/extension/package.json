@@ -9,7 +9,8 @@
     "build": "wxt build",
     "build:test": "GAJ_TEST=1 wxt build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "postinstall": "wxt prepare"
   },
   "dependencies": {
     "@gaj/shared": "workspace:*"

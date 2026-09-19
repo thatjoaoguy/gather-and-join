@@ -1,0 +1,30 @@
+name: 🚀 Release
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+
+concurrency:
+  # Releases run one at a time and are never cancelled halfway through.
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Tests
+    uses: ./.github/workflows/test.yml
+    permissions:
+      contents: read
+
+  create-release:
+    name: Release
+    needs: test
+    uses: ./.github/workflows/versioning-semver.yml
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    secrets: inherit

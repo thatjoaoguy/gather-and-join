@@ -1,0 +1,44 @@
+name: 🧪 Tests
+on:
+  pull_request:
+    branches:
+      - main
+  # Pushes to main run this through release.yml, so a failure there stops the release.
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # A new push to a PR supersedes the run in progress; main and release runs are never cancelled.
+  group: tests-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+# The end-to-end suite and the sabotage matrix are not here yet: peers intermittently
+# fail to connect on a runner ("timed out after 30000ms waiting for full mesh connected"),
+# which made most runs red for reasons unrelated to the change under test. Run them
+# locally (`pnpm test:e2e`, `pnpm test:sabotage [row]`) until that is understood.
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 📂 Checkout
+        uses: actions/checkout@v7
+
+      - name: 🧰 Setup
+        uses: ./.github/actions/setup
+
+      - name: 🔎 Lint
+        run: pnpm lint
+
+      - name: 🔎 Typecheck
+        run: pnpm typecheck
+
+      - name: 🧪 Unit tests
+        run: pnpm test:unit
+
+      - name: 🏗️ Build
+        run: pnpm build

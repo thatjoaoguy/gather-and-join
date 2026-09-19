@@ -1,0 +1,59 @@
+name: 🔄 Versioning (Semantic)
+on:
+  workflow_call:
+    inputs:
+      dryRun:
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      # PAT: once main is protected, the default GITHUB_TOKEN (github-actions[bot])
+      # can no longer push the release commit. Falls back to GITHUB_TOKEN until then.
+      GH_TOKEN:
+        required: false
+
+jobs:
+  semantic-release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      new_release_published: ${{ steps.release.outputs.new_release_published }}
+      new_release_version: ${{ steps.release.outputs.new_release_version }}
+    steps:
+    - name: 📂 Checkout
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: 🚀 Semantic Release
+      id: release
+      uses: cycjimmy/semantic-release-action@v6
+      with:
+        dry_run: ${{ inputs.dryRun }}
+        extra_plugins: |
+          @semantic-release/exec@7
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+
+    - name: 📄 Summary
+      run: |
+        if [ '${{ steps.release.outputs.new_release_published }}' == 'true' ] && [ '${{ inputs.dryRun }}' != 'true' ]; then
+          echo "ℹ️ Released version \`${{ steps.release.outputs.new_release_version }}\`" | tee -a "$GITHUB_STEP_SUMMARY"
+        else
+          echo "ℹ️ No version released" | tee -a "$GITHUB_STEP_SUMMARY"
+        fi
+
+  package:
+    name: Package
+    needs: semantic-release
+    if: ${{ needs.semantic-release.outputs.new_release_published == 'true' && inputs.dryRun != true }}
+    uses: ./.github/workflows/packaging.yml
+    permissions:
+      contents: write
+    with:
+      version: ${{ needs.semantic-release.outputs.new_release_version }}

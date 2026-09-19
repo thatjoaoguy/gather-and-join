@@ -33,6 +33,13 @@ an HBO Max subscription. If a change touches sync behaviour, add or adjust a
 test in `tools/harness/tests`; the suite asserts numbers (drift, seeks,
 re-attaches), not screenshots.
 
+CI runs lint, typecheck, unit tests and the build on every pull request to
+`main` and on every push to `main`, where a failure stops the release. The
+end-to-end suite and the sabotage matrix are **not** in CI yet: peers
+intermittently fail to connect on a runner, which made most runs red for
+reasons unrelated to the change under test. Run them locally before opening a
+pull request.
+
 Things a change must preserve, because they are product decisions:
 
 - Mic on by default, camera opt-in, ducking off by default.
@@ -51,7 +58,8 @@ the DOM hazards a real service has; extend it when a new service introduces a
 new one, so the behaviour stays testable without a subscription.
 
 Adding a service adds a host permission. Chrome disables the extension for
-existing users until they accept it, so note that in the changelog entry.
+existing users until they accept it, so say so in the commit subject; it lands
+in the release notes.
 
 ## Design
 
@@ -63,6 +71,24 @@ there at build time; do not add second copies under `apps/extension/public/`.
 
 One change per commit, imperative subject line, a body that says why. Reference
 issues where they exist.
+
+Subjects follow [Conventional Commits](https://www.conventionalcommits.org/)
+(Angular preset), because they drive releases. Every push to `main` that passes
+CI runs [semantic-release](https://semantic-release.gitbook.io/), which reads the
+commits since the last tag and:
+
+| Commit | Release |
+| --- | --- |
+| `fix: ...` | patch (`0.1.0` → `0.1.1`) |
+| `feat: ...` | minor (`0.1.0` → `0.2.0`) |
+| `BREAKING CHANGE:` in the body | major |
+| `docs:`, `chore:`, `ci:`, `test:`, `refactor:`, ... | none |
+
+A release sets the version in every `package.json`, prepends the notes to
+`CHANGELOG.md`, tags `vX.Y.Z`, and publishes a GitHub release with the Chrome
+Web Store ZIP attached. Don't edit versions or the changelog by hand. When a
+pull request is squash-merged, its title becomes the commit subject, so give the
+title the same form.
 
 ## Reporting bugs
 

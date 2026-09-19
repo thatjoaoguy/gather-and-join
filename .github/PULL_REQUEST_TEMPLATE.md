@@ -7,6 +7,6 @@
 - [ ] `pnpm verify` passes locally (lint, typecheck, unit, build, e2e, sabotage matrix).
 - [ ] Sync behaviour changes come with a harness test that asserts a number.
 - [ ] Product decisions preserved: mic on by default, camera opt-in, ducking off, manual resume, leader-only episode changes, no media through the server.
-- [ ] No new host permission, or the changelog entry says users will be prompted to accept it.
-- [ ] `CHANGELOG.md` updated under Unreleased.
+- [ ] No new host permission, or the commit subject says users will be prompted to accept it.
+- [ ] The PR title follows Conventional Commits (`feat:`, `fix:`, ...); it decides the release and becomes the changelog entry.
 - [ ] If the store listing, permissions, or data handling changed: `CHROMEWEBSTORE.md` and the privacy page on the `docs` branch updated to match.
