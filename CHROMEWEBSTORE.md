@@ -5,13 +5,16 @@ they stay in step with it. Copy from here at submit time. Not shipped in the ZIP
 
 ## Submitting
 
-- Build the ZIP with `pnpm --filter @gaj/extension exec wxt zip` (output in
-  `apps/extension/.output/*.zip`) with `GAJ_TEST` unset. Never zip the repository.
+- Download the ZIP from the GitHub release (`gather-and-join-X.Y.Z-chrome.zip`).
+  The release workflow builds it with `GAJ_TEST` unset and checks the manifest
+  version. To build one by hand: `pnpm --filter @gaj/extension exec wxt zip`
+  (output in `apps/extension/.output/*.zip`). Never zip the repository.
 - Load the production ZIP unpacked and smoke-test: popup, setup page, create and
   join, microphone grant, episode change. Check the service-worker console.
 - The store rejects any upload whose version is not strictly higher than the last
-  one it accepted, including rejected submissions. Bump the patch digit on every
-  re-upload; WXT reads the version from `apps/extension/package.json`.
+  one it accepted, including rejected submissions. Every release bumps the
+  version, so re-upload a new release rather than a rebuilt ZIP; to get one
+  after a rejection, merge the fix as a `fix:` commit.
 - Adding a streaming service later adds a host permission, which disables the
   extension for existing users until they accept it. Announce it.
 
@@ -136,4 +139,5 @@ re-converges afterwards).
 - Push the `docs` branch, then Settings → Pages → Source: **GitHub Actions**. The
   `deploy-docs` workflow publishes on every push to `docs`; the privacy policy URL
   above then resolves.
-- Tag `v0.1.0` at the submitted commit and attach the store ZIP to the release.
+- Releases are tagged `vX.Y.Z` with the store ZIP attached by the release
+  workflow; `v0.1.0` was tagged by hand at the first submission.

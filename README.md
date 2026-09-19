@@ -1,6 +1,6 @@
 # Gather & Join
 
-[![ci](https://github.com/thatjoaoguy/gather-and-join/actions/workflows/ci.yml/badge.svg)](https://github.com/thatjoaoguy/gather-and-join/actions/workflows/ci.yml)
+[![release](https://github.com/thatjoaoguy/gather-and-join/actions/workflows/release.yml/badge.svg)](https://github.com/thatjoaoguy/gather-and-join/actions/workflows/release.yml)
 
 Watch together in sync, with voice and video. Gather & Join is a Chrome
 extension that keeps a small group on the same second of the same episode and

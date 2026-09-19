@@ -1,0 +1,76 @@
+name: 📦 Package
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'The released version to package (e.g., 1.2.3)'
+        required: true
+        type: string
+
+jobs:
+  package-extension:
+    name: Package Extension
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      releaseVersion: ${{ inputs.version }}
+      releaseTag: v${{ inputs.version }}
+    steps:
+    # The tag points at the release commit, whose package.json carries the new version.
+    - name: 📂 Checkout
+      uses: actions/checkout@v7
+      with:
+        ref: ${{ env.releaseTag }}
+
+    - name: 🧰 Setup pnpm
+      uses: pnpm/action-setup@v6
+
+    - name: 🧰 Setup Node
+      uses: actions/setup-node@v7
+      with:
+        node-version: 26
+        cache: pnpm
+
+    - name: 📥 Install
+      run: pnpm install --frozen-lockfile
+
+    # GAJ_TEST must stay unset: it adds the test hook and localhost host permissions.
+    - name: 📦 Zip Extension
+      run: pnpm --filter @gaj/extension exec wxt zip
+
+    - name: ✅ Verify Store ZIP
+      run: |
+        shopt -s nullglob
+        archives=(apps/extension/.output/*-chrome.zip)
+        if [[ ${#archives[@]} -ne 1 ]]; then
+          echo "::error::Expected exactly one chrome ZIP, found ${#archives[@]}"
+          exit 1
+        fi
+        archive="${archives[0]}"
+
+        packedVersion=$(unzip -p "$archive" manifest.json | jq -r '.version')
+        if [[ "$packedVersion" != "$releaseVersion" ]]; then
+          echo "::error::Manifest version $packedVersion does not match release $releaseVersion"
+          exit 1
+        fi
+        if unzip -p "$archive" manifest.json | grep -q localhost; then
+          echo "::error::Manifest references localhost; this is a test build"
+          exit 1
+        fi
+
+        expected="gather-and-join-$releaseVersion-chrome.zip"
+        mv "$archive" "$expected"
+        echo "PACKAGE_ARCHIVE=$expected" >> "$GITHUB_ENV"
+        echo "✅ Packed \`$expected\`" | tee -a "$GITHUB_STEP_SUMMARY"
+
+    - name: 🗂️ Upload ZIP Artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: gather-and-join-${{ env.releaseVersion }}-chrome
+        path: ${{ env.PACKAGE_ARCHIVE }}
+
+    - name: 📎 Attach ZIP to Release
+      run: gh release upload "$releaseTag" "$PACKAGE_ARCHIVE" --clobber
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
