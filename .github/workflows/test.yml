@@ -15,10 +15,12 @@ concurrency:
   group: tests-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
-# The end-to-end suite and the sabotage matrix are not here yet: peers intermittently
-# fail to connect on a runner ("timed out after 30000ms waiting for full mesh connected"),
-# which made most runs red for reasons unrelated to the change under test. Run them
-# locally (`pnpm test:e2e`, `pnpm test:sabotage [row]`) until that is understood.
+# The end-to-end suite and the sabotage matrix stay out of CI. Peers intermittently fail
+# to connect on a runner ("timed out after 30000ms waiting for full mesh connected"),
+# which made most runs red for reasons unrelated to the change under test. The harness and
+# the ICE candidate handling have since been made deterministic, and one full run on a
+# runner was clean — but one run is not a success rate, so they do not gate anything here.
+# Run them locally: `pnpm test:e2e`, `pnpm test:sabotage [row]`.
 jobs:
   verify:
     name: Verify
