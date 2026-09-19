@@ -23,17 +23,8 @@ jobs:
       with:
         ref: ${{ env.releaseTag }}
 
-    - name: 🧰 Setup pnpm
-      uses: pnpm/action-setup@v6
-
-    - name: 🧰 Setup Node
-      uses: actions/setup-node@v7
-      with:
-        node-version: 26
-        cache: pnpm
-
-    - name: 📥 Install
-      run: pnpm install --frozen-lockfile
+    - name: 🧰 Setup
+      uses: ./.github/actions/setup
 
     # GAJ_TEST must stay unset: it adds the test hook and localhost host permissions.
     - name: 📦 Zip Extension
