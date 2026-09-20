@@ -34,6 +34,24 @@ two of them usually fixes it. Everyone else in the room is unaffected.
 Someone is buffering. The popup names who. Their connection to the streaming
 service is the issue, not the room.
 
+## Google Drive says "Unable to load video"
+
+You are signed in to several Google accounts and the link opened under the
+wrong one — a Drive link that carries no account always opens under the first
+one. Open the file's own URL directly, or switch account on the Drive page.
+This is also why the popup's **Go to episode** button can miss on Drive: the
+account order differs on every computer, so no single link is right for
+everyone in the room.
+
+If switching account does not help, the file may simply not be shared with you.
+Ask whoever started the room to share it; View access is enough.
+
+## "You can't view or download this file at this time"
+
+That is Google Drive's own limit on how many people may stream one file at
+once, not the extension and not your connection. It clears on its own. Cameras,
+voice and the room itself are unaffected — only the video is.
+
 ## We drift during ads
 
 Expected on ad-supported plans. The room re-converges after the break.
@@ -42,4 +60,5 @@ Expected on ad-supported plans. The room re-converges after the break.
 
 Open the setup page, expand **Diagnostics**, and press **Copy diagnostics**.
 Paste that into a bug report. It contains display names and the server host,
-but no media and nothing from the streaming service.
+but no media, nothing from the streaming service, and nothing from your Drive
+beyond the file identifier already in the page address.

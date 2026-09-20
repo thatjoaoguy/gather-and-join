@@ -5,10 +5,11 @@ description: Every piece of data Gather & Join handles, and who sees it.
 
 # Privacy Policy for Gather & Join
 
-Last updated: 2026-09-19
+Last updated: 2026-09-20
 
 Gather & Join is a browser extension that keeps a group in sync while they
-watch a streaming service together and adds a voice call between them. This
+watch a streaming service, or a video file on Google Drive, together, and adds
+a voice call between them. This
 page describes every piece of data the extension handles.
 
 ## Who operates what
@@ -25,8 +26,8 @@ When you create or join a room, the extension sends the server:
 
 - the **display name** you typed,
 - the **room code**,
-- an **identifier of the episode** the room is watching (taken from the page
-  address, never the video itself),
+- an **identifier of the episode or file** the room is watching (taken from the
+  page address, never the video itself),
 - **play, pause, and position** events, and stall notices,
 - the connection setup messages needed to reach the other participants.
 
@@ -67,16 +68,25 @@ somewhere yourself.
 No browsing history, no account credentials, no payment details, no analytics,
 no telemetry, no crash reports, no recordings of audio or video, no content from
 the streaming service. The extension loads no remote code. It reads only the
-pages of the streaming service it supports, and only to control the player.
+pages of the services it supports, and only to control the player.
+
+On Google Drive specifically: no file contents, no file names, no folder
+listings, and nothing else from your Drive. The only thing the extension takes
+from a Drive page is the file identifier already visible in the address bar,
+which it shares with the room so everyone opens the same file.
 
 ## Permissions
 
-The extension asks Chrome for: access to the supported streaming site (to
-control the player and draw the participant rail), tab URLs (to know which
-episode is open and to take you to the room's episode), navigation events (to
-follow episode changes), scripting (to re-attach to tabs that were already
-open), an offscreen document (to keep the call alive across page changes), and
-local storage (for your settings).
+The extension asks Chrome for: access to the sites it supports (to control the
+player and draw the participant rail), tab URLs (to know which episode or file
+is open and to take you to the room's), navigation events (to follow changes of
+episode), scripting (to re-attach to tabs that were already open), an offscreen
+document (to keep the call alive across page changes), and local storage (for
+your settings).
+
+The site access is granted per site, and on Drive it is deliberately narrow:
+only the file viewer at `drive.google.com/file/...`. The extension does not run
+on My Drive, Docs, Sheets, or the file picker, and has no access to them.
 
 ## Retention and deletion
 

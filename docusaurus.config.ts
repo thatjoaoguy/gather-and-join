@@ -7,7 +7,7 @@ const REPO = 'gather-and-join';
 
 const config: Config = {
   title: 'Gather & Join',
-  tagline: 'Watch together in sync, with voice and video. Each viewer uses their own subscription.',
+  tagline: 'Watch together in sync, with voice and video. Everyone plays from their own account.',
   favicon: 'brand/icon-32.png',
   future: {v4: true},
 
