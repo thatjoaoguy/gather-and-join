@@ -237,6 +237,12 @@ describe('http surface', () => {
     await new Promise((r) => setTimeout(r, 400));
   });
 
+  it('labels text as utf-8, so the em dash is not mojibake in a browser', async () => {
+    const res = await get('/');
+    expect(res.type).toBe('text/plain; charset=utf-8');
+    expect(res.body).toContain('—');
+  });
+
   it('404s anything else and refuses non-GET', async () => {
     expect((await get('/admin')).status).toBe(404);
     expect((await get('/health', { method: 'POST' })).status).toBe(405);

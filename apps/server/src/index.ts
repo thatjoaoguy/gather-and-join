@@ -231,7 +231,11 @@ const VERSION = typeof __GJ_VERSION__ === 'string' ? __GJ_VERSION__ : (process.e
 const startedAt = now();
 
 function respond(res: ServerResponse, status: number, type: string, body: string) {
-  res.writeHead(status, { 'content-type': type, 'content-length': Buffer.byteLength(body), 'cache-control': 'no-store' });
+  // The charset is not optional: a browser decodes an unlabelled text/plain as
+  // windows-1252, which turns the em dash in the page below into mojibake.
+  // content-length is a byte count, not a character count, hence Buffer.byteLength.
+  const contentType = type.startsWith('text/') ? `${type}; charset=utf-8` : type;
+  res.writeHead(status, { 'content-type': contentType, 'content-length': Buffer.byteLength(body), 'cache-control': 'no-store' });
   res.end(body); // Node drops the body itself on HEAD.
 }
 
