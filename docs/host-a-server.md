@@ -116,33 +116,47 @@ pointing at it.
 
 ### On a hosting service
 
-Services that run a container — [Fly.io](https://fly.io),
-[Render](https://render.com), [Railway](https://railway.com) and others — give
-you an `https://` address with a certificate already set up, so there is no
-reverse proxy and no router to configure. Point them at the image:
+Services that run a container give you an `https://` address with a certificate
+already set up, so there is no reverse proxy and no router to configure. Point
+them at the image:
 
 ```text
 ghcr.io/thatjoaoguy/gather-and-join-server:latest
 ```
 
-Then check three settings, whatever the service calls them:
+**[Render](https://render.com) does this for free.** Create a web service from
+that image. Free services sleep after 15 minutes with no traffic, which sounds
+fatal and is not: a party in progress keeps the connection busy, so it can only
+sleep once everybody has left. What it does mean is that the first person to
+join after a quiet spell waits up to a minute while it wakes. If you know when
+the party starts, open the `/health` address in a browser a few minutes early
+and it will be awake.
+
+**[Fly.io](https://fly.io) is not free.** Its trial is two hours of running time
+or seven days, whichever ends first, and then the app stops until you add a
+card. After that it is around $2 a month. The repository has a
+[`fly.toml`](https://github.com/thatjoaoguy/gather-and-join/blob/main/apps/server/fly.toml)
+with the settings below already filled in, and its comments explain the one
+thing you must pass on the command line: `fly deploy --ha=false`. Without it Fly
+starts two machines, which breaks the party for the reason below — and uses up
+the two-hour trial in one.
+
+[Railway](https://railway.com) has a free plan, but its $1 of monthly credit
+does not cover a server that stays on; that starts at $5 a month.
+
+Whichever you use, check three settings:
 
 | Setting | Value |
 | --- | --- |
 | Port | `8080` |
 | Health check path | `/health` |
-| Number of instances | exactly **1**, and never sleeping |
+| Number of instances | exactly **1** |
 
 The last one matters more than it looks. The server keeps rooms in its own
 memory, so **two instances means two separate parties**: people who type the
-same room code land on different copies and never see each other. Services that
-add instances under load, or that put an app to sleep when it is idle, will
-break a party in the middle. Turn both off — free plans that sleep after a few
-minutes are not suitable.
-
-Fly.io users can start from the
-[`fly.toml`](https://github.com/thatjoaoguy/gather-and-join/blob/main/apps/server/fly.toml)
-in the repository, which has all of this set already.
+same room code land on different copies and never see each other. Nothing
+reports this — it simply looks as though your friends never arrived. Turn off
+anything that adds instances under load.
 
 Always use `wss://` for an address on the internet: the connection carries
 display names and room codes, and only TLS keeps them private in transit.
