@@ -68,7 +68,9 @@ memory, stores nothing on disk, and never sees any video.
 
 **The short version: deploy the published image on Render's free tier.** It costs
 nothing, needs no credit card, and gives an address that does not change between
-parties — so everyone pastes it once, ever.
+parties — so everyone pastes it once, ever. Render is an unaffiliated third-party
+company; their limits and terms are theirs to change, and your room's signaling
+passes through their infrastructure.
 
 1. At [dashboard.render.com](https://dashboard.render.com), choose **New → Web
    Service**, then the **Existing Image** tab, and paste
@@ -145,9 +147,11 @@ the element right after an ad).
 ## Legal
 
 Gather & Join is independent software. It is not affiliated with, endorsed by,
-or sponsored by any streaming service. Service names are trademarks of their
-respective owners and are used here only to identify the sites the extension
-works with.
+or sponsored by any streaming service, nor by any hosting provider named in this
+documentation. Those names are trademarks of their respective owners and are used
+here only to identify the sites the extension works with and the places the
+server can be run. A provider is suggested because it happens to fit, not through
+any arrangement, and nothing is received for naming it.
 
 What it does and does not do:
 
