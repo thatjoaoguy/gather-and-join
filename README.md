@@ -66,67 +66,62 @@ One person in the group runs the server and shares its address; everyone else
 pastes that address into the extension's setup page once. It holds room state in
 memory, stores nothing on disk, and never sees any video.
 
-You do **not** need this repository to host it. Pick whichever line below matches
-the machine you have.
+**The short version: deploy the published image on Render's free tier.** It costs
+nothing, needs no credit card, and gives an address that does not change between
+parties — so everyone pastes it once, ever. Render is an unaffiliated third-party
+company; their limits and terms are theirs to change, and your room's signaling
+passes through their infrastructure.
 
-### A machine you already have
+1. At [dashboard.render.com](https://dashboard.render.com), choose **New → Web
+   Service**, then the **Existing Image** tab, and paste
+   `ghcr.io/thatjoaoguy/gather-and-join-server:latest`.
+2. Name it something only your group would guess; the name becomes the address.
+3. Under **Compute**, select the **$0/month Free** plan — Render pre-selects the
+   $7 one.
+4. Deploy. Nothing under **Advanced** needs changing — Render watches the port,
+   which for one process with no database is the same as watching the server.
+5. Open the address Render gives you. A running server says so in plain text,
+   and `/health` reports its version, uptime and how many people are connected.
+6. Share that address with `wss://` in place of `https://`.
 
-**Docker** — nothing to install but Docker itself:
+The [hosting guide](https://thatjoaoguy.github.io/gather-and-join/docs/host-a-server)
+walks through the same steps with screenshots, and covers what the free tier's
+sleep does and does not mean. Short answer: it cannot sleep mid-party, and waking
+takes about 12 seconds.
+
+### The other two ways
+
+- **[From your own machine](https://thatjoaoguy.github.io/gather-and-join/docs/host-on-your-machine)**
+  — run the server, then `cloudflared tunnel --url http://localhost:8080` in
+  front of it, and share the printed address with `wss://`. Good for one
+  evening; the address changes every run and the room ends when the laptop
+  sleeps. (From a checkout, `pnpm host` does both at once.)
+- **[On your local network](https://thatjoaoguy.github.io/gather-and-join/docs/host-on-your-network)**
+  — everyone on the same Wi-Fi, sharing `ws://<your-ip>:8080`. Nothing is exposed
+  to the internet.
+
+### Running it anywhere else
+
+The server is one Node program with no database and nothing on disk. It ships as
+a container image and as a single file, so it runs on anything with **Docker** or
+**Node ≥ 22.6**:
 
 ```bash
-docker run -d --name gather-and-join --restart unless-stopped \
-  -p 8080:8080 ghcr.io/thatjoaoguy/gather-and-join-server:latest
+docker run -d --restart unless-stopped -p 8080:8080 \
+  ghcr.io/thatjoaoguy/gather-and-join-server:latest
+
+node gather-and-join-server-0.3.1.mjs     # from the latest release
 ```
 
-**One file and Node ≥ 22.6** — download `gather-and-join-server-<version>.mjs`
-from the [latest release](https://github.com/thatjoaoguy/gather-and-join/releases/latest)
-and run it:
+Wherever it runs it needs port `8080` (or `PORT` set to match), `/health` as the
+health check if that host requires one, and **exactly one copy** — rooms live in
+one process's memory, so a second copy silently splits the party in two under
+the same room code.
 
-```bash
-node gather-and-join-server-1.2.3.mjs      # PORT=9000 to move it off 8080
-```
-
-Either way, open `http://localhost:8080/` in a browser: the server answers in
-plain text if it is up. `/health` returns JSON with the version, uptime, and the
-number of live rooms and participants.
-
-Then make it reachable by everyone. On a shared Wi-Fi, a `ws://` LAN address is
-enough (Chrome does not apply mixed-content blocking to extension pages). For
-anything beyond the local network, use `wss://`: signaling carries display names
-and room codes, and only TLS keeps them private in transit.
-
-### A laptop, for one evening
-
-`pnpm host` (from a clone) wraps the server in a Cloudflare quick tunnel and
-prints the `wss://` URL. Without a clone, run the server as above and put a
-tunnel in front of it yourself:
-
-```bash
-cloudflared tunnel --protocol http2 --url http://localhost:8080
-```
-
-Swap the printed `https://` for `wss://` and share that. The URL is new every
-time, so everyone re-enters it for each party — and the room dies when the laptop
-sleeps.
-
-### Always-on, at a stable address
-
-Worth it if you do this regularly: participants enter the URL **once, ever**, and
-nobody has to keep a terminal open. Any host that runs a container works — on
-Render, Railway, or anything similar, deploy the image
-`ghcr.io/thatjoaoguy/gather-and-join-server:latest` and set three things:
-
-| Setting | Value | Why |
-| --- | --- | --- |
-| Port | `8080` | or set `PORT` to match what the platform expects |
-| Health check | `/health` | the WebSocket paths answer `426` to a plain GET |
-| Instances | exactly **1**, no idle sleep | see below |
-
-Rooms live in the memory of a single process. **A second instance silently splits
-the party** — two people with the same code land on different machines and never
-see each other — and an instance that sleeps when idle drops every open
-WebSocket. Turn off autoscaling and idle suspension; free tiers that spin down
-after a few minutes are not suitable.
+Use `wss://` for anything beyond the local network: signaling carries display
+names and room codes, and only TLS keeps them private in transit. Plain `ws://`
+to a LAN address is fine (Chrome does not apply mixed-content blocking to
+extension pages).
 
 ### What hosting commits you to
 
@@ -152,9 +147,11 @@ the element right after an ad).
 ## Legal
 
 Gather & Join is independent software. It is not affiliated with, endorsed by,
-or sponsored by any streaming service. Service names are trademarks of their
-respective owners and are used here only to identify the sites the extension
-works with.
+or sponsored by any streaming service, nor by any hosting provider named in this
+documentation. Those names are trademarks of their respective owners and are used
+here only to identify the sites the extension works with and the places the
+server can be run. A provider is suggested because it happens to fit, not through
+any arrangement, and nothing is received for naming it.
 
 What it does and does not do:
 
