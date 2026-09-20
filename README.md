@@ -76,10 +76,10 @@ parties — so everyone pastes it once, ever.
 2. Name it something only your group would guess; the name becomes the address.
 3. Under **Compute**, select the **$0/month Free** plan — Render pre-selects the
    $7 one.
-4. Under **Advanced**, set **Health Check Path** to `/health`. The field suggests
-   `/healthz`, which this server does not answer.
-5. Deploy, then open the address Render gives you. A running server says so in
-   plain text.
+4. Deploy. Nothing under **Advanced** needs changing — Render watches the port,
+   which for one process with no database is the same as watching the server.
+5. Open the address Render gives you. A running server says so in plain text,
+   and `/health` reports its version, uptime and how many people are connected.
 6. Share that address with `wss://` in place of `https://`.
 
 The [hosting guide](https://thatjoaoguy.github.io/gather-and-join/docs/host-a-server)
@@ -112,8 +112,9 @@ node gather-and-join-server-0.3.1.mjs     # from the latest release
 ```
 
 Wherever it runs it needs port `8080` (or `PORT` set to match), `/health` as the
-health check, and **exactly one copy** — rooms live in one process's memory, so a
-second copy silently splits the party in two under the same room code.
+health check if that host requires one, and **exactly one copy** — rooms live in
+one process's memory, so a second copy silently splits the party in two under
+the same room code.
 
 Use `wss://` for anything beyond the local network: signaling carries display
 names and room codes, and only TLS keeps them private in transit. Plain `ws://`
