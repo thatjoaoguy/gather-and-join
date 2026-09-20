@@ -116,10 +116,10 @@ pointing at it.
 
 ### On a hosting service
 
-Services that run a container — [Fly.io](https://fly.io),
-[Render](https://render.com), [Railway](https://railway.com) and others — give
-you an `https://` address with a certificate already set up, so there is no
-reverse proxy and no router to configure. Point them at the image:
+Services that run a container — [Render](https://render.com),
+[Railway](https://railway.com) and others — give you an `https://` address with
+a certificate already set up, so there is no reverse proxy and no router to
+configure. Point them at the image:
 
 ```text
 ghcr.io/thatjoaoguy/gather-and-join-server:latest
@@ -139,10 +139,6 @@ same room code land on different copies and never see each other. Services that
 add instances under load, or that put an app to sleep when it is idle, will
 break a party in the middle. Turn both off — free plans that sleep after a few
 minutes are not suitable.
-
-Fly.io users can start from the
-[`fly.toml`](https://github.com/thatjoaoguy/gather-and-join/blob/main/apps/server/fly.toml)
-in the repository, which has all of this set already.
 
 Always use `wss://` for an address on the internet: the connection carries
 display names and room codes, and only TLS keeps them private in transit.
