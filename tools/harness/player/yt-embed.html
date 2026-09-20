@@ -1,0 +1,69 @@
+<!doctype html>
+<!--
+  Fake YouTube-embed player, the shape Google Drive actually uses for video.
+
+  Served on 127.0.0.1 while the Drive-shaped page is on localhost, so the frame
+  is genuinely cross-origin: the extension cannot touch this <video>, exactly as
+  it cannot touch the one inside youtube.googleapis.com/embed/.
+
+  The protocol below is what the real embed was observed doing (2026-09-19):
+   - a `listening` handshake is answered with `alreadyInitialized`, because
+     Drive's own page script already owns the widget channel;
+   - commands are honoured anyway;
+   - `infoDelivery` with currentTime/playerState/playbackRate/duration is
+     broadcast to the parent every ~266ms (measured median 266, max 277).
+-->
+<meta charset="utf-8">
+<title>embed</title>
+<style>html,body{margin:0;background:#000;height:100%}video{width:100%;height:100%}</style>
+<video id="v" src="/media/main" preload="auto" playsinline loop></video>
+<script>
+(() => {
+  const v = document.getElementById('v');
+  const TICK_MS = 266; // measured cadence of the real embed
+  const parentOrigin = '*';
+
+  // YT player states: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering.
+  let state = -1;
+  v.addEventListener('playing', () => { state = 1; });
+  v.addEventListener('play', () => { state = v.readyState >= 3 ? 1 : 3; });
+  v.addEventListener('pause', () => { state = 2; });
+  v.addEventListener('waiting', () => { state = 3; });
+  v.addEventListener('ended', () => { state = 0; });
+
+  const post = (msg) => parent.postMessage(JSON.stringify(msg), parentOrigin);
+  const info = () => ({
+    currentTime: v.currentTime,
+    playerState: state,
+    playbackRate: v.playbackRate,
+    duration: isFinite(v.duration) ? v.duration : 0,
+  });
+
+  // The real embed pushes on a timer, not per frame. That coarseness is the
+  // whole point of this fixture: it is what the handle has to paper over.
+  setInterval(() => post({ event: 'infoDelivery', info: info() }), TICK_MS);
+
+  const COMMANDS = {
+    playVideo: () => v.play().catch(() => {}),
+    pauseVideo: () => v.pause(),
+    seekTo: (secs) => { v.currentTime = Number(secs) || 0; },
+    setPlaybackRate: (r) => { v.playbackRate = Number(r) || 1; },
+    setVolume: (pct) => { v.volume = Math.max(0, Math.min(1, Number(pct) / 100)); },
+    mute: () => { v.muted = true; },
+    unMute: () => { v.muted = false; },
+  };
+
+  addEventListener('message', (e) => {
+    let d = e.data;
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch { return; } }
+    if (!d || typeof d !== 'object') return;
+    if (d.event === 'listening') { post({ event: 'alreadyInitialized' }); return; }
+    if (d.event !== 'command') return;
+    const fn = COMMANDS[d.func];
+    if (!fn) return;
+    fn.apply(null, d.args || []);
+    // State-changing commands report back immediately, like the real player.
+    post({ event: 'infoDelivery', info: info() });
+  });
+})();
+</script>

@@ -23,11 +23,11 @@ export class PartySidebar {
 
   constructor(
     private readonly port: Sender,
-    findVideo: (root: ParentNode) => HTMLVideoElement | null,
+    findAnchor: (root: ParentNode) => HTMLElement | null,
     private readonly doc: Document = document,
   ) {
     this.loopback = new LoopbackReceiver((payload) => port.send({ type: 'loopback:signal', payload }), () => this.render());
-    this.view = new SidebarView(new PageLayout(findVideo, doc), (url) => doc.location.assign(url), doc);
+    this.view = new SidebarView(new PageLayout(findAnchor, doc), (url) => doc.location.assign(url), doc);
   }
 
   /** Players re-render their container on fullscreen and other transitions and drop foreign children with it; poll and put the sidebar back. */

@@ -16,6 +16,18 @@ affiliated with, endorsed by, or sponsored by any streaming service (see
 ## Supported services
 
 - HBO Max
+- Google Drive — for video files you own or that are shared with you
+
+Drive is not a subscription service, so two things work differently. The file
+must be shared with **every** participant's Google account, and Drive rate-limits
+a single file streamed by several people at once ("Sorry, you can't view or
+download this file at this time"), which is exactly the situation a watch party
+creates. An accepted limitation: an unqualified Drive link opens under the viewer's
+*first* Google account, so on a profile signed into several accounts the popup's
+**Go to episode** button can land on "Unable to load video". Open the file's URL
+directly in that case. This is not planned for a fix — the account index is
+per-profile, so there is no single index the room could hand out that is right
+for everyone in it.
 
 More are planned. Adding one is a provider entry plus an adapter; see
 [Streaming providers](#streaming-providers).
@@ -184,6 +196,16 @@ Two facts discovered while building that shape the code:
   viewer presses its own "Cancel autoplay" button. On non-leaders the extension
   presses that same control on the viewer's behalf and hides the countdown
   panel, so the room stays on one episode until the leader moves it.
+- **Not every player is a `<video>` you can reach.** Google Drive has no `<video>`
+  in the page at all: playback runs in a cross-origin iframe on
+  `youtube.googleapis.com`, reachable only through the YouTube widget
+  postMessage protocol. `lib/providers/yt-embed-media.ts` wraps that protocol in
+  the slice of `HTMLVideoElement` the rest of the code already speaks, so
+  `SyncEngine` needed no changes. Position arrives as a pushed sample every
+  ~266 ms and is dead-reckoned from the local clock in between; measured against
+  the real element that estimate holds to a p95 of ~2 ms (see
+  `tools/harness/src/embed-drift-probe.ts`), because the error comes from tick
+  latency, not tick spacing.
 - **Offscreen documents have no `chrome.storage`** (only `chrome.runtime`). Anything
   the offscreen document persists or reads from storage goes through the service
   worker (`lib/kv.ts`).

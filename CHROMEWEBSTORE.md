@@ -24,30 +24,30 @@ they stay in step with it. Copy from here at submit time. Not shipped in the ZIP
 Gather & Join
 
 **Short description**
-Watch together in sync, with voice and video, on HBO Max. Each viewer uses their own subscription.
+Watch together in sync, with voice and video, on HBO Max and Google Drive. Everyone plays from their own account.
 
 **Detailed description**
 
-Gather & Join keeps a small group in sync while they watch the same episode on HBO Max, and adds a voice call (video optional) so it feels like one room.
+Gather & Join keeps a small group in sync while they watch the same thing on HBO Max or Google Drive, and adds a voice call (video optional) so it feels like one room.
 
-Currently works with HBO Max. More services are on the way.
+Works with HBO Max and with video files on Google Drive. More services are on the way.
 
 What it does
 Play, pause, and seek are shared: when anyone presses play, everyone plays. If someone's stream buffers, the room pauses and the popup says who. When the room leader changes episodes, everyone is taken to the same one. A voice call runs alongside the show and survives episode changes. Camera is opt-in, and small video tiles appear over the player when it is on. An optional setting lowers the show's volume while you speak.
 
 How to use it
 1. One person hosts the companion server (included in the project, open source) at an address everyone can reach, and shares that address. Each participant enters it once on the extension's setup page.
-2. Open an episode on HBO Max, click the extension, and press Create room. Read out the six-character code.
+2. Open an episode on HBO Max, or a video file on Google Drive, click the extension, and press Create room. Read out the six-character code.
 3. Everyone else clicks the extension, types the code, and presses Join. If they are on a different episode, one button takes them to the right one.
 4. Use headphones. Echo cancellation is tuned for the call, not for a show playing out of speakers.
 
 Privacy
-Your video and audio go directly between the people in the room, never through a server. The companion server sees only your chosen display name, the room code, which episode the room is on, and the play/pause position. Nothing is recorded, nothing is sold, and there are no analytics. Playback of the show itself is untouched: every viewer streams from their own HBO Max account as usual.
+Your video and audio go directly between the people in the room, never through a server. The companion server sees only your chosen display name, the room code, which episode the room is on, and the play/pause position. Nothing is recorded, nothing is sold, and there are no analytics. Playback itself is untouched: every viewer streams from their own HBO Max account, or their own Google Drive, as usual. The extension never downloads, copies, or relays the video.
 
 Support
 Questions and bug reports: https://github.com/thatjoaoguy/gather-and-join/issues
 
-Gather & Join is independent software and is not affiliated with, endorsed by, or sponsored by HBO Max or Warner Bros. Discovery. HBO Max is a trademark of its owner. Each viewer needs their own HBO Max subscription.
+Gather & Join is independent software and is not affiliated with, endorsed by, or sponsored by HBO Max, Warner Bros. Discovery, or Google. HBO Max and Google Drive are trademarks of their owners. Each viewer needs their own HBO Max subscription, and for Drive the file must be shared with each viewer's own Google account.
 
 **Category**
 Social & Communication
@@ -89,12 +89,13 @@ standalone element or anything that looks like an official HBO screen.
 
 | Permission | Type | Justification |
 |------------|------|---------------|
-| `tabs` | permissions | Read the URL of the HBO Max tab to know which episode the room is on, open the room's episode when a joiner is on a different one, and switch the user to that tab. |
-| `webNavigation` | permissions | Detect when the user moves between episodes inside HBO Max (in-app navigation without a full page load) so the room follows the leader's episode change. Filtered to play.hbomax.com only. |
-| `scripting` | permissions | Re-inject the player script into HBO Max tabs that were already open when the extension was installed or updated, so the user does not have to reload. |
+| `tabs` | permissions | Read the URL of the player tab to know which episode or file the room is on, open it when a joiner is elsewhere, and switch the user to that tab. |
+| `webNavigation` | permissions | Detect when the user moves between episodes inside HBO Max (in-app navigation without a full page load) so the room follows the leader's change. Filtered to play.hbomax.com and drive.google.com only. |
+| `scripting` | permissions | Re-inject the player script into player tabs that were already open when the extension was installed or updated, so the user does not have to reload. |
 | `offscreen` | permissions | Keep the voice call and the room connection alive while the user navigates between episodes. Audio playback and peer connections cannot survive page navigation otherwise. |
 | `storage` | permissions | Save the user's display name, the companion server address, and the voice-ducking preference on the device. |
-| `https://play.hbomax.com/*` | host_permissions | The only site the extension operates on: it reads and controls the video player's play/pause/position and draws the participant tiles over it. |
+| `https://play.hbomax.com/*` | host_permissions | One of the two sites the extension operates on: it reads and controls the video player's play/pause/position and draws the participant tiles over it. |
+| `https://drive.google.com/file/*` | host_permissions | Same purpose, for Drive-hosted video. Deliberately scoped to the file viewer path: the extension does not run on My Drive, Docs, Sheets, the file picker, or anywhere else in Drive, and it neither reads nor transmits file contents, names, or any other Drive data. The only thing it takes from the page is the file id already visible in the URL. |
 
 The production build contains no localhost or 127.0.0.1 host permissions; those
 exist only in the `GJ_TEST=1` build for the test harness.
@@ -113,7 +114,7 @@ exist only in the `GJ_TEST=1` build for the test harness.
 | Location | No | | | |
 | Web history | No | | | |
 | User activity | Yes: play/pause/seek events and playback position | Yes, to the companion server and room peers | Keep playback in sync | No |
-| Website content | Yes: the episode identifier from the HBO Max page URL | Yes, to the companion server and room peers | Take everyone to the same episode | No |
+| Website content | Yes: the episode identifier from the HBO Max page URL, or the file id from the Google Drive URL | Yes, to the companion server and room peers | Take everyone to the same episode or file | No |
 
 Notes for the form: the server is hosted by the users themselves, not operated by the
 developer. No `chrome.storage.sync` (nothing goes to Google). No analytics, no telemetry,
@@ -124,15 +125,19 @@ the extension's core functionality, and not used for creditworthiness or lending
 
 ## Notes for reviewers
 
-> This extension needs two things the reviewer may not have: an HBO Max subscription and a running companion server.
+> This extension needs a running companion server, and for the HBO Max flow a subscription. The Google Drive flow needs neither: any video file in the reviewer's own Drive works.
 > Test server: wss://[fill in before submitting; keep it up for the review window]
-> Steps: install → open the extension's setup page → paste the server address → Save. Open any episode on play.hbomax.com → click the extension → Create room. A second browser profile can Join with the six-character code; play/pause on one follows on the other.
+> Steps: install → open the extension's setup page → paste the server address → Save. Open any episode on play.hbomax.com, or any video file at drive.google.com/file/d/<id>/view → click the extension → Create room. A second browser profile can Join with the six-character code; play/pause on one follows on the other. For the Drive flow the file must be shared with the second profile's Google account.
 > Without a subscription, the same flow can be seen on the demo video: [link]
 > Microphone and camera are requested only when the user clicks Allow on the setup page; they are never recorded and never touch a server.
 
 Known limitations to expect during review: a fresh install does nothing until a server
 address is configured, and ad-supported HBO Max tiers desync during ad breaks (the room
-re-converges afterwards).
+re-converges afterwards). On Google Drive, a link opened without an account hint resolves
+to the viewer's first Google account, so on a profile signed into several accounts the
+"Go to episode" button may show "Unable to load video" — opening the file URL directly
+works. Drive also rate-limits a single file streamed by several viewers at once; that is
+a Drive quota, not an extension fault.
 
 ## Repository steps
 

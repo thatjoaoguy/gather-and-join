@@ -14,6 +14,9 @@ export const PLAYER_ORIGIN = process.env.PLAYER_ORIGIN ?? 'http://localhost:4173
 export const SERVER_URL = process.env.SERVER_URL ?? 'ws://localhost:8080';
 export const EPISODE = (n: number) => `urn:hbo:episode:G000000${n}`;
 export const watchUrl = (contentId: string) => `${PLAYER_ORIGIN}/watch/${contentId}`;
+/** The Drive-shaped page: same content ids, but the media is in a cross-origin iframe. */
+export const driveWatchUrl = (contentId: string) => `${PLAYER_ORIGIN}/drivewatch/${contentId}`;
+export type PlayerShape = 'hbo' | 'drive';
 
 export type Sabotage = 'reattach' | 'drift' | 'offscreen' | 'echo-suppress' | null;
 
@@ -103,8 +106,8 @@ export async function launchPeer(index: number, opts: LaunchOptions = {}): Promi
 }
 
 /** Navigate a peer's player page and wait for the extension hook to be live. */
-export async function openPlayer(peer: Peer, contentId = EPISODE(1)) {
-  await peer.page.goto(watchUrl(contentId));
+export async function openPlayer(peer: Peer, contentId = EPISODE(1), shape: PlayerShape = 'hbo') {
+  await peer.page.goto(shape === 'drive' ? driveWatchUrl(contentId) : watchUrl(contentId));
   await waitForHook(peer);
 }
 
