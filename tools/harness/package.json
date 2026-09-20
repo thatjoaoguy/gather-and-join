@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:e2e": "playwright test",
     "test:sabotage": "node --experimental-strip-types src/sabotage-matrix.ts",
+    "check:deployment": "node --experimental-strip-types src/check-deployment.ts",
     "launch": "node --experimental-strip-types src/launch-peers.ts",
     "fixtures": "make -C . fixtures"
   },

@@ -15,6 +15,7 @@ src/party.ts           test-level composition: N peers in one room + the observe
 src/observer.ts        an `obs:` client; its frame log is the ground truth
 src/fixtures.ts        fake media; full fixtures via `make fixtures`, in-process fallback otherwise
 src/sabotage-matrix.ts which tests MUST fail under each flag
+src/check-deployment.ts smoke-checks a *deployed* server over the network, not localhost
 tests/*.spec.ts        the Playwright suite
 ```
 
@@ -59,6 +60,30 @@ test, so the suite always runs your current code. `GJ_SKIP_BUILD=1` reuses
 `.output-test` when you know it is fresh — it is the difference between a 20 s
 and a 2 s start on a tight loop, and the wrong answer when it isn't. Each
 sabotage row's full output is in `test-results/sabotage-logs/<flag>.log`.
+
+## Checking a deployed server
+
+The suite above runs against localhost, which cannot see what a network and a
+hosting platform do to the same code. `check-deployment` covers that:
+
+```sh
+pnpm --filter @gj/harness check:deployment https://your-server.example.com
+HOLD_MS=300000 pnpm --filter @gj/harness check:deployment https://…   # longer hold
+```
+
+It exits non-zero on the first failure, so it can gate a release or settle
+whether a hosting platform is usable at all. Two of its checks exist because
+nothing else catches them:
+
+- **A second client must reach the same process.** Platforms that run more than
+  one copy split a room silently — same code, no error, an empty room. This is
+  the check to run before recommending any new host.
+- **The plain-text page must arrive as utf-8.** An unlabelled `text/plain` body
+  is decoded as windows-1252, and a unit test asserting the response body cannot
+  see it, because the corruption happens in the client.
+
+Add a case here when a failure would only be visible over a real connection.
+Anything provable against localhost belongs in the Playwright suite instead.
 
 ## When a test is flaky
 
