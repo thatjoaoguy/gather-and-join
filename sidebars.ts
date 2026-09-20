@@ -4,6 +4,8 @@ const sidebars: SidebarsConfig = {
   docs: [
     'install',
     'host-a-server',
+    'host-on-your-machine',
+    'host-on-your-network',
     'watch-together',
     'how-it-stays-in-sync',
     'troubleshooting',
