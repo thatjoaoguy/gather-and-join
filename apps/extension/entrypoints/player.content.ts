@@ -71,7 +71,7 @@ export default defineContentScript({
     );
     const ducker = new Ducker(() => video.get());
     const upNext = new UpNextSuppressor(adapter.upNext);
-    const sidebar = new PartySidebar(port, adapter.findVideo);
+    const sidebar = new PartySidebar(port, adapter.findAnchor ?? adapter.findVideo);
 
     function onOffscreenMessage(m: OffscreenToPlayer) {
       switch (m.type) {

@@ -4,6 +4,8 @@
  * transitions; a stale reference stops emitting events silently. So: observe the
  * DOM, re-wire on every new element, never cache a handle anywhere else.
  */
+import { queryVideo } from './providers/player-adapter';
+
 export type VideoHandlers = Partial<Record<'play' | 'pause' | 'seeking' | 'seeked' | 'waiting' | 'playing' | 'ended', (v: HTMLVideoElement) => void>>;
 
 export class VideoBinding {
@@ -18,7 +20,7 @@ export class VideoBinding {
     private readonly handlers: VideoHandlers,
     private readonly onAttach: (v: HTMLVideoElement, isReattach: boolean) => void,
     /** How to find the player's element; the provider adapter supplies this. */
-    private readonly findVideo: (root: ParentNode) => HTMLVideoElement | null = (root) => root.querySelector('video'),
+    private readonly findVideo: (root: ParentNode) => HTMLVideoElement | null = queryVideo,
     /** Sabotage: never re-scan after the first attach, so a recreated element is missed. */
     private readonly sabotaged = false,
   ) {}

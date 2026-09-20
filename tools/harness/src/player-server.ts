@@ -47,6 +47,7 @@ function serveMedia(req: http.IncomingMessage, res: http.ServerResponse, media: 
   const range = req.headers.range;
   const headers: Record<string, string | number> = {
     'Content-Type': media.mime, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store',
+    'Access-Control-Allow-Origin': '*',
   };
   if (range) {
     const m = /bytes=(\d*)-(\d*)/.exec(range);
@@ -75,6 +76,10 @@ export function startPlayerServer(port = PLAYER_PORT): Promise<http.Server> {
     if (p === '/media/main') return serveMedia(req, res, loadMedia().main);
     if (p === '/media/ad') return serveMedia(req, res, loadMedia().ad);
     if (p.startsWith('/watch/urn:hbo:')) return serveFile(res, path.join(PLAYER_DIR, 'index.html'));
+    // Drive-shaped variant: no <video> in the top document, playback in a
+    // cross-origin iframe driven by the YouTube widget postMessage protocol.
+    if (p.startsWith('/drivewatch/')) return serveFile(res, path.join(PLAYER_DIR, 'drive-top.html'));
+    if (p === '/ytembed') return serveFile(res, path.join(PLAYER_DIR, 'yt-embed.html'));
     if (p.startsWith('/static/')) return serveFile(res, path.join(PLAYER_DIR, p.slice('/static/'.length)));
     res.writeHead(404); res.end('not found');
   });

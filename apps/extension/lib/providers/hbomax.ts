@@ -1,4 +1,4 @@
-import type { PlayerAdapter } from './player-adapter';
+import { queryVideo, type PlayerAdapter } from './player-adapter';
 
 /**
  * HBO Max (inspected 2026-09-16): a single <video>, recreated on quality
@@ -12,6 +12,6 @@ import type { PlayerAdapter } from './player-adapter';
  */
 export const hbomaxAdapter: PlayerAdapter = {
   providerId: 'hbomax',
-  findVideo: (root) => root.querySelector('video'),
+  findVideo: queryVideo,
   upNext: { panel: ['[data-testid="up_next"]'], dismiss: ['[data-testid="player-ux-up-next-dismiss"]'] },
 };

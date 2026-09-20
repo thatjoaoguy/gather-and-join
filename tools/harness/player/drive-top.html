@@ -1,0 +1,56 @@
+<!doctype html>
+<!--
+  Fake Google Drive file-view page. The hazard it reproduces is structural, not
+  cosmetic: there is no <video> in this document at all. Playback lives in a
+  cross-origin iframe, reachable only over the YouTube widget postMessage
+  protocol (see yt-embed.html).
+
+  The #play / #pause buttons exist so the harness's pressPlay/pressPause helpers
+  work unchanged; on the real page these are the player's own controls, which
+  the extension never touches either way.
+-->
+<meta charset="utf-8">
+<title>Fake Drive</title>
+<style>
+  html, body { margin: 0; background: #202124; color: #e8eaed; font: 14px system-ui, sans-serif; height: 100%; }
+  header { display: flex; gap: 8px; align-items: center; padding: 8px 12px; }
+  /* Like Drive: the player sits in a fixed, inset layer that ignores the <html> width. */
+  #stage { position: fixed; inset: 48px 0 0 0; display: grid; place-items: center; }
+  iframe { width: 80%; height: 80%; border: 0; background: #000; }
+</style>
+<header>
+  <strong id="title">file</strong>
+  <button id="play" type="button">Play</button>
+  <button id="pause" type="button">Pause</button>
+  <span id="status"></span>
+</header>
+<div id="stage"><iframe id="embed" allow="autoplay"></iframe></div>
+<script>
+(() => {
+  const fileId = (decodeURIComponent(location.pathname).match(/\/drivewatch\/(.+)$/) || [])[1] || 'urn:hbo:episode:G0000001';
+  document.getElementById('title').textContent = fileId;
+  document.title = 'Fake Drive — ' + fileId;
+
+  // Cross-origin on purpose: the page is served from localhost, the embed from
+  // 127.0.0.1. Same server, different origin, so the extension is locked out of
+  // the iframe's DOM exactly as it is on youtube.googleapis.com.
+  const embedOrigin = location.hostname === 'localhost'
+    ? location.origin.replace('localhost', '127.0.0.1')
+    : location.origin.replace('127.0.0.1', 'localhost');
+  const frame = document.getElementById('embed');
+  frame.src = embedOrigin + '/ytembed';
+
+  // The page's own controls speak the same widget protocol the extension uses.
+  const cmd = (func, args = []) =>
+    frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args, id: 1, channel: 'widget' }), '*');
+  document.getElementById('play').addEventListener('click', () => cmd('playVideo'));
+  document.getElementById('pause').addEventListener('click', () => cmd('pauseVideo'));
+
+  addEventListener('message', (e) => {
+    let d = e.data;
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch { return; } }
+    if (d && d.event === 'infoDelivery' && d.info)
+      document.getElementById('status').textContent = 't=' + d.info.currentTime.toFixed(2) + ' state=' + d.info.playerState;
+  });
+})();
+</script>

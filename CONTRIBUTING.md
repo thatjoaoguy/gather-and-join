@@ -34,7 +34,7 @@ pnpm verify
 That runs lint, typecheck, unit tests, the build, the end-to-end suite against
 the fake player, and the sabotage matrix (each row disables one mechanism and
 checks that exactly its guarding test fails). Everything runs headless without
-an HBO Max subscription. If a change touches sync behaviour, add or adjust a
+an HBO Max subscription or a Google account. If a change touches sync behaviour, add or adjust a
 test in `tools/harness/tests`; the suite asserts numbers (drift, seeks,
 re-attaches), not screenshots.
 

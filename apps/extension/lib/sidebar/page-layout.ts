@@ -31,7 +31,7 @@ export class PageLayout {
   private shrunk: HTMLElement[] = [];
 
   constructor(
-    private readonly findVideo: (root: ParentNode) => HTMLVideoElement | null,
+    private readonly findAnchor: (root: ParentNode) => HTMLElement | null,
     private readonly doc: Document = document,
   ) {}
 
@@ -62,9 +62,9 @@ export class PageLayout {
     if (layer && !this.shrunk.includes(layer) && narrow(layer, '1')) this.shrunk.push(layer);
   }
 
-  /** The nearest position:fixed ancestor of the player's video, if any. */
+  /** The nearest position:fixed ancestor of the player's element (<video>, or an embed iframe), if any. */
   private fixedLayer(): HTMLElement | null {
-    let el: HTMLElement | null = this.findVideo(this.doc);
+    let el: HTMLElement | null = this.findAnchor(this.doc);
     while (el && el !== this.doc.documentElement) {
       if (getComputedStyle(el).position === 'fixed') return el;
       el = el.parentElement;
