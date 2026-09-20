@@ -1,0 +1,85 @@
+# Dependabot reads this file from the default branch only, so the website's
+# entries live here too and carry `target-branch: docs`.
+#
+# `chore(deps):` keeps bumps out of semantic-release's angular preset: merging
+# one never cuts a release on its own. Cooldown matches pnpm's minimum release
+# age policy, so a bump is old enough for `pnpm install --frozen-lockfile`.
+version: 2
+
+updates:
+  # ---- main: the pnpm workspace (extension, server, shared, harness) --------
+  - package-ecosystem: npm
+    directories:
+      - /
+      - /apps/*
+      - /packages/*
+      - /tools/*
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+      prefix-development: 'chore(deps-dev)'
+    cooldown:
+      default-days: 7
+    groups:
+      # One PR a week for the safe bumps; majors stay on their own.
+      minor-and-patch:
+        applies-to: version-updates
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: 'chore(deps)'
+    groups:
+      actions:
+        patterns:
+          - '*'
+
+  # ---- docs: the Docusaurus website on the orphan `docs` branch -------------
+  - package-ecosystem: npm
+    directory: /
+    target-branch: docs
+    schedule:
+      interval: weekly
+      day: tuesday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+      prefix-development: 'chore(deps-dev)'
+    cooldown:
+      default-days: 7
+    groups:
+      # The @docusaurus/* packages are version-locked to each other: one PR.
+      docusaurus:
+        patterns:
+          - '@docusaurus/*'
+      minor-and-patch:
+        applies-to: version-updates
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: docs
+    schedule:
+      interval: weekly
+      day: tuesday
+    commit-message:
+      prefix: 'chore(deps)'
+    groups:
+      actions:
+        patterns:
+          - '*'
