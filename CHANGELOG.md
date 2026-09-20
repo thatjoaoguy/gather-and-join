@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/thatjoaoguy/gather-and-join/compare/v0.3.0...v0.3.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **server:** label the plain-text pages as utf-8 ([#27](https://github.com/thatjoaoguy/gather-and-join/issues/27)) ([1a4cab9](https://github.com/thatjoaoguy/gather-and-join/commit/1a4cab9de2bce0417d0b7930e4d612b0915ff0bc))
+
 # [0.3.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.2.0...v0.3.0) (2026-09-20)
 
 
