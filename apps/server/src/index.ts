@@ -4,13 +4,19 @@
  * Sees room metadata and signaling frames only — never media. Rooms are
  * ephemeral: they expire ROOM_TTL_MS after the last participant leaves.
  *
+ * Speaks WebSocket on every path, plus two plain GETs on the same port: `/`
+ * so a host who opens the address in a browser gets an answer rather than a
+ * 426, and `/health` for the uptime check every hosting platform wants.
+ *
  * Env:
  *   PORT               listen port (default 8080)
  *   ROOM_TTL_MS        override room expiry (tests)
  *   WATCH_URL_TEMPLATE fallback for building `watchUrl` from a contentId when neither the
  *                      client nor the shared `watchUrlFor` knows it, e.g. "http://localhost:4173/watch/{contentId}"
  *   GJ_LOG=0          silence the event log (one line per room event on stdout)
+ *   GJ_VERSION         version reported by `/` and `/health` (the packaged builds bake it in)
  */
+import { createServer, type IncomingMessage, type Server as HttpServer, type ServerResponse } from 'node:http';
 import { WebSocketServer, WebSocket, type RawData } from 'ws';
 import {
   parseC2S, applyPlayback, applyNavigate, createRoomState, isValidRoomCode, watchUrlFor as canonicalWatchUrl,
@@ -218,8 +224,52 @@ function handleMessage(socket: WebSocket, raw: RawData) {
 
 const HEARTBEAT_MS = Number(process.env.HEARTBEAT_MS ?? 30_000);
 
-export function startServer(port = PORT): WebSocketServer {
-  const wss = new WebSocketServer({ port });
+/** Baked in by the bundler for the packaged builds; `dev` when running from source. */
+declare const __GJ_VERSION__: string | undefined;
+const VERSION = typeof __GJ_VERSION__ === 'string' ? __GJ_VERSION__ : (process.env.GJ_VERSION ?? 'dev');
+
+const startedAt = now();
+
+function respond(res: ServerResponse, status: number, type: string, body: string) {
+  res.writeHead(status, { 'content-type': type, 'content-length': Buffer.byteLength(body), 'cache-control': 'no-store' });
+  res.end(body); // Node drops the body itself on HEAD.
+}
+
+/**
+ * The whole HTTP surface. `ws` on its own answers every plain request with 426, which reads
+ * like a broken server to a host checking their address in a browser and fails the default
+ * health check on Fly, Render and Railway alike. Two routes fix both.
+ */
+function handleHttp(req: IncomingMessage, res: ServerResponse) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return respond(res, 405, 'text/plain', 'method not allowed\n');
+  const path = (req.url ?? '/').split('?')[0];
+  if (path === '/health') {
+    let peers = 0;
+    for (const room of rooms.values()) peers += room.peers.size;
+    return respond(res, 200, 'application/json', JSON.stringify({
+      status: 'ok', version: VERSION, uptimeSec: Math.floor((now() - startedAt) / 1000),
+      rooms: rooms.size, peers,
+    }) + '\n');
+  }
+  if (path === '/') {
+    return respond(res, 200, 'text/plain',
+      `Gather & Join signaling server ${VERSION} — running.\n\n` +
+      `This address is correct. Put it in the extension's setup page with a ws:// or wss:// scheme\n` +
+      `instead of http(s)://. Nothing else is served here; the video never passes through.\n`);
+  }
+  respond(res, 404, 'text/plain', 'not found\n');
+}
+
+export type GjServer = {
+  wss: WebSocketServer;
+  http: HttpServer;
+  /** Drops every connection and frees the port. Resolves once the port is closed. */
+  close(): Promise<void>;
+};
+
+export function startServer(port = PORT): GjServer {
+  const http = createServer(handleHttp);
+  const wss = new WebSocketServer({ server: http });
   const alive = new WeakMap<WebSocket, boolean>();
   wss.on('connection', (socket) => {
     alive.set(socket, true);
@@ -238,16 +288,25 @@ export function startServer(port = PORT): WebSocketServer {
     }
   }, HEARTBEAT_MS);
   beat.unref?.();
-  wss.on('close', () => clearInterval(beat));
-  wss.on('listening', () => logEvent('listening', { url: `ws://localhost:${port}`, roomTtlMs: ROOM_TTL_MS, leaderGraceMs: LEADER_GRACE_MS }));
-  return wss;
+  http.listen(port, () => logEvent('listening', {
+    url: `ws://localhost:${port}`, health: `http://localhost:${port}/health`,
+    version: VERSION, roomTtlMs: ROOM_TTL_MS, leaderGraceMs: LEADER_GRACE_MS,
+  }));
+
+  return {
+    wss, http,
+    close() {
+      clearInterval(beat);
+      // With an external HTTP server `wss.close()` waits for the last client, and a
+      // `docker stop` or a Ctrl-C should not. Hang up on everyone, then free the port.
+      for (const socket of wss.clients) socket.terminate();
+      wss.close();
+      return new Promise((resolve) => http.close(() => resolve()));
+    },
+  };
 }
 
 /** Test-only introspection. */
 export function _rooms() { return rooms; }
 /** Test-only: capture event-log lines instead of writing them to stdout. */
 export function _setLogSink(sink: LogSink) { logSink = sink; }
-
-if (process.argv[1] && /index\.ts$/.test(process.argv[1]) && process.env.GJ_NO_AUTOSTART !== '1') {
-  startServer();
-}

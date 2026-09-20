@@ -50,3 +50,51 @@ jobs:
 
       - name: 🏗️ Build
         run: pnpm build
+
+  server-image:
+    name: Server Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 📂 Checkout
+        uses: actions/checkout@v7
+
+      - name: 🧰 Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build only, and only for the runner's own architecture. The point is to fail a PR
+      # on a broken Dockerfile: the real multi-arch push happens after semantic-release has
+      # already tagged, so a break discovered there leaves a release with no image.
+      # Cache is read-only on purpose — a write from every PR branch would evict main's.
+      - name: 🐳 Build Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/server/Dockerfile
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: gather-and-join-server:ci
+          cache-from: type=gha
+
+      # An image that builds is not an image that runs: start it and ask it the same
+      # question the hosting platforms will.
+      - name: ✅ Smoke Test Image
+        run: |
+          # High host port: nothing on a runner should hold it, unlike 8080.
+          docker run -d --name gj-ci -p 18099:8080 gather-and-join-server:ci
+          trap 'docker rm -f gj-ci >/dev/null 2>&1 || true' EXIT
+          for _ in $(seq 1 40); do
+            health=$(curl -fsS http://127.0.0.1:18099/health 2>/dev/null) && break
+            sleep 0.5
+          done
+          if [[ -z "${health:-}" ]]; then
+            echo "::error::Container never answered /health"
+            docker logs gj-ci
+            exit 1
+          fi
+          if [[ "$(jq -r '.status' <<<"$health")" != "ok" ]]; then
+            echo "::error::Unhealthy: $health"
+            exit 1
+          fi
+          echo "✅ Image starts and reports \`$health\`" | tee -a "$GITHUB_STEP_SUMMARY"

@@ -14,7 +14,7 @@ if [ -z "$CF" ]; then
   exit 1
 fi
 cd "$(dirname "$0")/.."
-PORT="$PORT" node --experimental-strip-types apps/server/src/index.ts &
+PORT="$PORT" node --experimental-strip-types apps/server/src/main.ts &
 SERVER=$!
 LOG="$(mktemp)"
 # http2 rather than QUIC: on flaky networks (hotspots) QUIC sits in minutes-long retry loops.

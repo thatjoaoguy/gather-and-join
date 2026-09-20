@@ -2,6 +2,8 @@ packages:
   - apps/*
   - packages/*
   - tools/*
+allowBuilds:
+  esbuild: true
 minimumReleaseAgeExclude:
   - '@vitest/mocker@5.0.1'
   - '@vitest/spy@5.0.1'
