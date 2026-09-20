@@ -12,7 +12,8 @@ the play/pause position — never any video or audio.
 
 This page sets one up on **Render**, which runs it for free at an address that
 never changes. It takes about five minutes and needs no credit card. You do not
-need a copy of the source code.
+need a copy of the source code. Render is a separate company, unconnected to
+this project — see [about Render](#about-render) before you commit to it.
 
 There are two other ways, if this one does not suit you:
 
@@ -136,6 +137,25 @@ memory, so **two copies means two separate parties**: people who type the same
 room code land on different ones and never see each other. Nothing reports this
 — it simply looks as though your friends never arrived. Turn off anything that
 adds copies automatically.
+
+## About Render
+
+Render is an unaffiliated third-party company. Gather & Join is not associated
+with, endorsed by, or sponsored by them; they are suggested here because their
+free tier happens to suit this server, and nothing is received for saying so.
+Their prices, free-tier limits and terms are theirs to change, and the
+screenshots above show their product as it looked when this page was written —
+expect it to drift.
+
+Choosing any hosting provider has one consequence worth weighing. The encrypted
+connection from each participant ends at their infrastructure rather than at a
+machine you control, so the room's display names and room code pass through it,
+and the server's event log sits in their dashboard. That is not specific to
+Render; it is true of hosting anything anywhere.
+
+If you would rather nothing outside your group carried it, run the server on
+[your own machine](./host-on-your-machine.md), or on
+[your local network](./host-on-your-network.md) where it never leaves the house.
 
 ## Privacy notes for hosts
 
