@@ -4,6 +4,11 @@ Thanks for helping. Gather & Join is a small household tool, so the bar is
 "keeps working for five people on a Friday night", not "handles a million
 users". Small, verified changes are welcome; sweeping rewrites are not.
 
+Working with a coding agent? `AGENTS.md` at the root is written for one, with a
+per-workspace `AGENTS.md` under `apps/extension`, `apps/server`,
+`packages/shared` and `tools/harness`. Keep them true when you change how
+something works.
+
 ## Setting up
 
 Requirements: Node ≥ 22.6 (CI uses 26), pnpm 12, and Chromium for the
