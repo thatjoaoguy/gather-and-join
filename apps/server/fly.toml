@@ -6,6 +6,10 @@
 #
 # You do not need this repository: download this one file and run the same commands.
 #
+# Fly is not free. The trial is 2 hours of machine runtime or 7 days, whichever comes
+# first, after which the app stops until a card is added; the machine below then costs
+# roughly $2/month. Render's free tier runs the same image at no cost — see the README.
+#
 # `--ha=false` is not optional. `fly deploy` creates two machines by default, and rooms
 # live in the memory of one process: a second machine silently splits the party in two —
 # same room code, different room, and nobody can tell why. There is no fly.toml key that

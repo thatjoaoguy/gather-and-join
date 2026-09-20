@@ -112,7 +112,20 @@ sleeps.
 ### Always-on, at a stable address
 
 Worth it if you do this regularly: participants enter the URL **once, ever**, and
-nobody has to keep a terminal open. Any host that runs a container works —
+nobody has to keep a terminal open. Any host that runs a container works.
+
+**Render's free tier fits this, genuinely free.** Deploy the image
+`ghcr.io/thatjoaoguy/gather-and-join-server:latest` as a web service. 750
+instance hours a month covers one service running continuously, and while it
+does spin down after 15 minutes without traffic, that only happens when nobody
+is connected — clients re-sync their clock every 60 seconds
+(`OFFSET_REFRESH_MS`), so a party in progress keeps it awake. The cost is a cold
+start of up to a minute for whoever connects first; opening `/health` in a
+browser a few minutes beforehand warms it up.
+
+**Fly.io is not free.** The trial is 2 hours of machine runtime or 7 days,
+whichever comes first, and then the app stops until a card is added. After that
+`shared-cpu-1x`/256MB is about **$2/month**. If that is worth it to you,
 [`apps/server/fly.toml`](./apps/server/fly.toml) is a ready config:
 
 ```bash
@@ -121,23 +134,25 @@ fly deploy --config apps/server/fly.toml --ha=false                  # one machi
 ```
 
 `--ha=false` is not optional: `fly deploy` creates two machines by default, which
-is the split-party failure described below. `fly scale count 1` fixes an app that
-was already deployed without it.
+is the split-party failure described below — and burns the 2-hour trial in one.
+`fly scale count 1` fixes an app that was already deployed without it.
 
-On Render, Railway, or anything similar, deploy the image
-`ghcr.io/thatjoaoguy/gather-and-join-server:latest` and set three things:
+Railway's free plan gives $1 of credit a month, and 0.5 GB running continuously
+costs $5 in memory alone, so it does not stretch to an always-on server; its
+cheapest plan that does is $5/month.
+
+Whatever you use, set three things:
 
 | Setting | Value | Why |
 | --- | --- | --- |
 | Port | `8080` | or set `PORT` to match what the platform expects |
 | Health check | `/health` | the WebSocket paths answer `426` to a plain GET |
-| Instances | exactly **1**, no idle sleep | see below |
+| Instances | exactly **1** | see below |
 
 Rooms live in the memory of a single process. **A second instance silently splits
 the party** — two people with the same code land on different machines and never
-see each other — and an instance that sleeps when idle drops every open
-WebSocket. Turn off autoscaling and idle suspension; free tiers that spin down
-after a few minutes are not suitable.
+see each other. Turn off autoscaling. Idle suspension is only safe if, like
+Render's, it counts WebSocket traffic and so cannot trigger mid-party.
 
 ### What hosting commits you to
 
