@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_label: On your local network
 title: Host on your local network
 ---
 

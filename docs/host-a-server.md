@@ -1,9 +1,9 @@
 ---
-sidebar_position: 2
-title: Host a server
+sidebar_label: On Render (recommended)
+title: Host a server on Render
 ---
 
-# Host a server
+# Host a server on Render
 
 One person in the group runs the signaling server and shares its address.
 Everyone else pastes that address into the extension's setup page once. The

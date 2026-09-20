@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_label: From your own machine
 title: Host from your own machine
 ---
 
