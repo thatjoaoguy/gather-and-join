@@ -19,10 +19,22 @@ export type SidebarConnection = 'connected' | 'reconnecting';
 /** The room is on another episode; the sidebar offers the way there. */
 export type OffEpisode = { watchUrl: string } | null;
 
+/**
+ * Every declaration on :host is !important, and that is load-bearing rather than
+ * shouting. A shadow root protects its *contents* from page CSS but not its host
+ * element: a document rule that matches the host beats the shadow tree's :host
+ * rule for normal declarations. YouTube ships an Eric Meyer style reset whose
+ * selector list includes `div`, setting `background: transparent` and
+ * `font: inherit` — which silently stripped the sidebar's background and font,
+ * `all: initial` included, since that is a normal declaration too. For important
+ * declarations the cascade reverses and the shadow tree wins, so this is the one
+ * spelling a page reset cannot undo. :host(.overlay) has to be important as well,
+ * or it would lose to the important `position` above it.
+ */
 const STYLE = `
-  :host { all: initial; --bg:#101014; --surface:#1c1922; --raised:#272130; --line:#44394e; --text:#f4f0fa; --muted:#c3bacf; --purple:#b9a0ff; --red:#fa8294; --warning:#f2c66d; --warning-bg:#2b2419; --r-tile:14px;
-    position: fixed; top: 0; bottom: 0; right: 0; width: ${SIDEBAR_WIDTH}px; background: #100e15; box-shadow: inset 1px 0 0 #302837; z-index: 2147483647; font: 500 12px/1.5 Quicksand, system-ui, sans-serif; color: var(--text); }
-  :host(.overlay) { position: absolute; left: auto; right: 0; }
+  :host { all: initial !important; --bg:#101014; --surface:#1c1922; --raised:#272130; --line:#44394e; --text:#f4f0fa; --muted:#c3bacf; --purple:#b9a0ff; --red:#fa8294; --warning:#f2c66d; --warning-bg:#2b2419; --r-tile:14px;
+    position: fixed !important; top: 0 !important; bottom: 0 !important; right: 0 !important; width: ${SIDEBAR_WIDTH}px !important; background: #100e15 !important; box-shadow: inset 1px 0 0 #302837 !important; z-index: 2147483647 !important; font: 500 12px/1.5 Quicksand, system-ui, sans-serif !important; color: var(--text) !important; }
+  :host(.overlay) { position: absolute !important; left: auto !important; right: 0 !important; }
   .column { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; padding: 16px; box-sizing: border-box; overflow-y: auto; }
   .column.has-status { justify-content: flex-start; padding-top: 16px; }
   .tile { position: relative; width: ${SIDEBAR_WIDTH - 32}px; aspect-ratio: 4/3; box-sizing: border-box; border: 1px solid #51445e; border-radius: var(--r-tile); background: #211b2a; overflow: hidden; flex: none; display: flex; flex-direction: column; gap: 6px; align-items: center; justify-content: center; transition: opacity 120ms ease, border-color 120ms ease; }
@@ -96,9 +108,12 @@ export class SidebarView {
     const parent = fs ?? this.doc.body;
     this.host.classList.toggle('overlay', !!fs);
     if (parent && this.host.parentElement !== parent) parent.appendChild(this.host);
-    // Leave the previous mode first: an element still tagged for fullscreen would be skipped by page mode.
-    this.layout.shrinkFullscreenChildren(fs, this.host);
-    this.layout.shrinkPage(!fs);
+    // Leave the old mode before entering the new one, in both directions: the two
+    // modes can want the same element (a viewport-anchored app layer is narrowed
+    // by either), and an element still tagged by the mode being left is skipped by
+    // the one being entered — and then restored by the tag it still carries.
+    if (fs) { this.layout.shrinkPage(false); this.layout.shrinkFullscreenChildren(fs, this.host); }
+    else { this.layout.shrinkFullscreenChildren(null, null); this.layout.shrinkPage(true); }
     this.render();
   }
 

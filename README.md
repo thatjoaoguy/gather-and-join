@@ -27,6 +27,16 @@ people simply get different ones, and the room waits for nobody. A `youtu.be` or
 not supported: the feed scrolls itself to the next video, which would walk a
 viewer off the room's content.
 
+An accepted limitation on YouTube: the sidebar takes its width out of the page,
+and the masthead, the player and the video's own column all move over, but the
+related-videos column does not and is clipped by about 60px. YouTube sizes that
+column from `100vh` and `window.innerWidth` rather than from its container —
+`--ytd-watch-flexy-sidebar-width` is a pixel value its own script computes for
+the full window — and an extension cannot change the window's width or make the
+site recompute against a narrower one (a synthetic `resize` does not do it).
+Fixing it would mean writing YouTube's private layout variables, which its next
+relayout overwrites. Deliberately left alone.
+
 Drive is not a subscription service, so two things work differently. The file
 must be shared with **every** participant's Google account, and Drive rate-limits
 a single file streamed by several people at once ("Sorry, you can't view or

@@ -14,12 +14,25 @@
 
   The break is 6s rather than the ad clip's full length: what is being measured
   is what the room does while one peer is away, not how long it can wait.
+
+  Two layout hazards come with it, both taken from the real page:
+   - a CSS reset whose selector list includes `div`, which reaches the sidebar's
+     shadow *host* and strips anything :host sets without !important;
+   - an absolutely positioned app layer whose containing block is the initial
+     containing block, so it stays viewport-wide while <html> shrinks under it;
+   - and fullscreen is requested on <html>, not on the player, so "narrow the
+     fullscreen element's children" only ever reaches <body>.
 -->
 <meta charset="utf-8">
 <title>Fake YouTube</title>
 <style>
+  /* The reset, in the shape YouTube ships it. `div` is the entry that matters. */
+  div, span, p, video, iframe { margin: 0; padding: 0; border: 0; font: inherit; vertical-align: baseline; background: transparent; }
   html, body { margin: 0; background: #0f0f0f; color: #f1f1f1; font: 14px system-ui, sans-serif; }
-  header { display: flex; gap: 8px; align-items: center; padding: 8px 12px; }
+  /* Laid out against the viewport, not against <html>: no positioned ancestor. */
+  #app-layer { position: absolute; top: 46px; left: 0; width: 100%; }
+  /* Above the app layer, which is absolutely positioned over the top of the page. */
+  header { position: relative; z-index: 2; display: flex; gap: 8px; align-items: center; padding: 8px 12px; height: 28px; }
   #movie_player { position: relative; width: 640px; height: 360px; background: #000; margin: 0 12px; }
   #movie_player video { width: 100%; height: 100%; }
   /* Like YouTube: the ad badge only exists while the marker class is on the player. */
@@ -31,13 +44,16 @@
   <button id="play" type="button">Play</button>
   <button id="pause" type="button">Pause</button>
   <button id="ad" type="button">Ad break (same element)</button>
+  <button id="fullscreen" type="button">Fullscreen</button>
 </header>
-<ytd-watch-flexy>
-  <div id="movie_player" class="html5-video-player">
-    <video class="video-stream html5-main-video" preload="auto" src="/media/main"></video>
-  </div>
-</ytd-watch-flexy>
-<div id="status"></div>
+<div id="app-layer">
+  <ytd-watch-flexy>
+    <div id="movie_player" class="html5-video-player">
+      <video class="video-stream html5-main-video" preload="auto" src="/media/main"></video>
+    </div>
+  </ytd-watch-flexy>
+  <div id="status"></div>
+</div>
 <script>
 (() => {
   const AD_MS = 6000;
@@ -48,6 +64,8 @@
   const player = document.getElementById('movie_player');
   const video = player.querySelector('video');
   document.getElementById('play').addEventListener('click', () => video.play());
+  // On <html>, the way YouTube does it — not on the player.
+  document.getElementById('fullscreen').addEventListener('click', () => document.documentElement.requestFullscreen());
   document.getElementById('pause').addEventListener('click', () => video.pause());
 
   document.getElementById('ad').addEventListener('click', () => {
