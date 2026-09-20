@@ -31,7 +31,7 @@ paste this into **Image URL**:
 ghcr.io/thatjoaoguy/gather-and-join-server:latest
 ```
 
-![The New Web Service page with the Existing Image tab selected and the image URL pasted in](/img/hosting/render-image-url.jpg)
+![The New Web Service page with the Existing Image tab selected and the image URL pasted in](/img/hosting/render-image-url.png)
 
 Leave **Credential** as "No credential" — the image is public. Press
 **Connect**.
@@ -47,7 +47,7 @@ so distance to it costs everyone a little accuracy.
 
 Then scroll to **Compute** — and read this part carefully:
 
-![The Compute section with the $0/month Free plan selected](/img/hosting/render-free-plan.jpg)
+![The Compute section with the $0/month Free plan selected](/img/hosting/render-free-plan.png)
 
 **Render pre-selects the $7/month plan.** Free is the first row but is not
 chosen for you. Click it, and check the bar at the bottom of the page reads
@@ -60,7 +60,7 @@ here — see [what sleeping means](#what-sleeping-means) below.
 
 Open the **Advanced** section and set **Health Check Path** to `/health`:
 
-![The Advanced section with Health Check Path set to /health](/img/hosting/render-health-check.jpg)
+![The Advanced section with Health Check Path set to /health](/img/hosting/render-health-check.png)
 
 The box suggests `/healthz` with a z. That is not this server's address and will
 fail. Type `/health`.
@@ -107,7 +107,7 @@ someone connects. In practice:
 - **The first person to arrive waits about 12 seconds** while it wakes. They see
   a Render holding page rather than the server, which is normal:
 
-![Render's "service waking up" holding page](/img/hosting/render-waking-up.jpg)
+![Render's holding page, showing its own logo and a line reading "incoming HTTP request detected"](/img/hosting/render-waking-up.png)
 
 - If you would rather nobody waits, open the `/health` address yourself a minute
   before the party starts.
