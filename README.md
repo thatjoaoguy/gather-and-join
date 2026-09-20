@@ -112,15 +112,8 @@ sleeps.
 ### Always-on, at a stable address
 
 Worth it if you do this regularly: participants enter the URL **once, ever**, and
-nobody has to keep a terminal open. Any host that runs a container works —
-[`apps/server/fly.toml`](./apps/server/fly.toml) is a ready config:
-
-```bash
-fly launch --config apps/server/fly.toml --copy-config --no-deploy   # choose an app name
-fly deploy --config apps/server/fly.toml
-```
-
-On Render, Railway, or anything similar, deploy the image
+nobody has to keep a terminal open. Any host that runs a container works — on
+Render, Railway, or anything similar, deploy the image
 `ghcr.io/thatjoaoguy/gather-and-join-server:latest` and set three things:
 
 | Setting | Value | Why |
