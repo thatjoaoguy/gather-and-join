@@ -3,10 +3,10 @@ on:
   pull_request:
     branches:
       - main
-    # Docs-only pull requests change nothing lint, typecheck, unit tests or the
-    # build can see, so they skip this. `docs/design-system` is not ignored: the
-    # extension build copies fonts and brand marks out of it. Mirrors the same
-    # filter on release.yml.
+    # Docs-only pull requests change nothing lint, typecheck, unit tests, the
+    # build or the image can see, so they skip this. `docs/design-system` is not
+    # ignored: the extension build copies fonts and brand marks out of it.
+    # Mirrors the same filter on release.yml.
     paths-ignore:
       - '**.md'
   # Pushes to main run this through release.yml, so a failure there stops the release.
