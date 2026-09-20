@@ -27,4 +27,9 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+      # Permissions cap the whole nested chain, not just the next workflow down:
+      # this one reaches release.yml → versioning-semver.yml → packaging.yml, and
+      # the GHCR push at the bottom needs it. Without it GitHub rejects the run
+      # before any job starts (startup_failure), so the release never happens.
+      packages: write
     secrets: inherit
