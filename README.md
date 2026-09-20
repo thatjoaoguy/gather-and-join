@@ -90,9 +90,10 @@ takes about 12 seconds.
 ### The other two ways
 
 - **[From your own machine](https://thatjoaoguy.github.io/gather-and-join/docs/host-on-your-machine)**
-  — `pnpm host` runs the server behind a Cloudflare quick tunnel and prints the
-  `wss://` URL. Good for one evening; the address changes every run and the room
-  ends when the laptop sleeps.
+  — run the server, then `cloudflared tunnel --url http://localhost:8080` in
+  front of it, and share the printed address with `wss://`. Good for one
+  evening; the address changes every run and the room ends when the laptop
+  sleeps. (From a checkout, `pnpm host` does both at once.)
 - **[On your local network](https://thatjoaoguy.github.io/gather-and-join/docs/host-on-your-network)**
   — everyone on the same Wi-Fi, sharing `ws://<your-ip>:8080`. Nothing is exposed
   to the internet.
