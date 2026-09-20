@@ -8,12 +8,17 @@ version: 2
 
 updates:
   # ---- main: the pnpm workspace (extension, server, shared, harness) --------
+  # `/` alone covers every workspace member. Dependabot reads pnpm-workspace.yaml
+  # from here, so one entry rewrites each member's package.json *and* the single
+  # root pnpm-lock.yaml, and resolves against the whole peer graph.
+  #
+  # Listing the members (`/apps/*`, …) as well made Dependabot treat each as a
+  # standalone project: it edited one package.json, left the root lockfile alone
+  # — `pnpm install --frozen-lockfile` then fails ERR_PNPM_OUTDATED_LOCKFILE —
+  # and resolved without the workspace's peers, proposing typescript 7 that
+  # typescript-eslint (`typescript >=4.8.4 <6.1.0`) cannot accept.
   - package-ecosystem: npm
-    directories:
-      - /
-      - /apps/*
-      - /packages/*
-      - /tools/*
+    directory: /
     schedule:
       interval: weekly
       day: monday
