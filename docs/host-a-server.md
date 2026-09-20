@@ -1,175 +1,165 @@
 ---
-sidebar_position: 2
-title: Host a server
+sidebar_label: On Render (recommended)
+title: Host a server on Render
 ---
 
-# Host a server
+# Host a server on Render
 
-One person in the group runs the signaling server. It is a single file with no
-database and no accounts, and it never sees any video or audio: it carries
-display names, the room code, which episode the room is on, and play/pause
-position. The room lives on that machine, so it has to stay on for the whole
-party.
+One person in the group runs the signaling server and shares its address.
+Everyone else pastes that address into the extension's setup page once. The
+server carries display names, the room code, which episode the room is on, and
+the play/pause position — never any video or audio.
 
-The recommended setup is a `wss://` address reachable from the internet, so
-everyone can join from wherever they are. The quickest way to get one is a
-[tunnel from your laptop](#quick-start-a-tunnel-from-your-laptop).
+This page sets one up on **Render**, which runs it for free at an address that
+never changes. It takes about five minutes and needs no credit card. You do not
+need a copy of the source code. Render is a separate company, unconnected to
+this project — see [about Render](#about-render) before you commit to it.
 
-You do not need a copy of the source code. Pick one of the two ways below to
-run the server, then pick how people reach it.
+There are two other ways, if this one does not suit you:
 
-## Run it
+- [Host from your own machine](./host-on-your-machine.md) — a tunnel from your
+  laptop for one evening.
+- [Host on your local network](./host-on-your-network.md) — everyone on the same
+  Wi-Fi, nothing exposed to the internet.
 
-### With Docker
+## 1. Create the service
 
-Nothing to install but Docker itself:
-
-```sh
-docker run -d --name gather-and-join --restart unless-stopped \
-  -p 8080:8080 ghcr.io/thatjoaoguy/gather-and-join-server:latest
-```
-
-It restarts by itself if the machine reboots. `docker stop gather-and-join`
-ends it.
-
-### With Node
-
-Download `gather-and-join-server-<version>.mjs` from the
-[latest release](https://github.com/thatjoaoguy/gather-and-join/releases/latest)
-and run it. Node 22.6 or newer, and nothing to install:
-
-```sh
-node gather-and-join-server-0.3.0.mjs
-```
-
-It listens on port 8080. `PORT=9000 node gather-and-join-server-0.3.0.mjs` moves
-it somewhere else.
-
-## Check it is running
-
-Open `http://localhost:8080/` in a browser. A server that is up answers in
-plain words:
-
-```text
-Gather & Join signaling server 0.3.0 — running.
-```
-
-`http://localhost:8080/health` gives the same answer for a script, plus how long
-it has been up and how many rooms and people are on it right now:
-
-```json
-{"status":"ok","version":"0.3.0","uptimeSec":412,"rooms":1,"peers":3}
-```
-
-Those two addresses are the only things the server serves over plain web. The
-extension itself connects with `ws://` or `wss://`, which is why pasting the
-`http://` address into the setup page will not work.
-
-## Quick start: a tunnel from your laptop
-
-Recommended for most groups. No account, no domain, no router changes. It needs
-[`cloudflared`](https://github.com/cloudflare/cloudflared/releases)
-(`brew install cloudflared` on macOS).
-
-Start the server as above, then point a tunnel at it:
-
-```sh
-cloudflared tunnel --protocol http2 --url http://localhost:8080
-```
-
-It prints an address like `https://some-random-words.trycloudflare.com`. Swap
-the `https://` for `wss://` and share that:
-
-```text
-wss://some-random-words.trycloudflare.com
-```
-
-Keep both running and the laptop awake for the whole party; Ctrl-C stops the
-tunnel. The address changes every run, so everyone pastes the new one each time.
-If that gets old, set up an always-on server.
-
-If you have the source code checked out, `pnpm host` does both steps at once and
-prints the finished `wss://` address for you.
-
-## An always-on server
-
-For a group that watches regularly and wants one address that never changes.
-Everyone pastes it once and never thinks about it again, and nobody has to keep
-a laptop open.
-
-### On a machine you keep on
-
-A home server, a Raspberry Pi, or a small cloud instance, with a domain name
-pointing at it.
-
-1. Run the server with Docker as above, so it comes back after a reboot.
-2. Put a reverse proxy in front of port 8080 that handles HTTPS and WebSocket
-   upgrades. With [Caddy](https://caddyserver.com), which gets the certificate
-   for you:
-
-   ```sh
-   caddy reverse-proxy --from party.example.com --to localhost:8080
-   ```
-
-3. If the machine is at home, forward ports 80 and 443 on your router to it.
-4. Share `wss://party.example.com`.
-
-### On a hosting service
-
-Services that run a container — [Render](https://render.com),
-[Railway](https://railway.com) and others — give you an `https://` address with
-a certificate already set up, so there is no reverse proxy and no router to
-configure. Point them at the image:
+Sign in at [dashboard.render.com](https://dashboard.render.com), then choose
+**New → Web Service**. On the source step, pick the **Existing Image** tab and
+paste this into **Image URL**:
 
 ```text
 ghcr.io/thatjoaoguy/gather-and-join-server:latest
 ```
 
-Then check three settings, whatever the service calls them:
+![The New Web Service page with the Existing Image tab selected and the image URL pasted in](/img/hosting/render-image-url.png)
+
+Leave **Credential** as "No credential" — the image is public. Press
+**Connect**.
+
+## 2. Choose the free plan
+
+Give the service a name. The name becomes its web address, so pick something
+only your group would guess — `movie-night-8f21` rather than `gather-and-join`.
+Anyone who finds the address can create rooms on your server.
+
+Pick a **region** close to the people watching. The server is the room's clock,
+so distance to it costs everyone a little accuracy.
+
+Then scroll to **Compute** — and read this part carefully:
+
+![The Compute section with the $0/month Free plan selected](/img/hosting/render-free-plan.png)
+
+**Render pre-selects the $7/month plan.** Free is the first row but is not
+chosen for you. Click it, and check the bar at the bottom of the page reads
+**$0 / month** before you go on.
+
+The warning Render shows about free instances sleeping is real, and harmless
+here — see [what sleeping means](#what-sleeping-means) below.
+
+Now press **Deploy web service**. The first deploy takes a minute or two.
+
+You can ignore everything under **Advanced**. Render watches the port the server
+listens on, which for a single program with no database is the same thing as
+watching the server.
+
+## 3. Check it works
+
+Render gives the service an address like `https://movie-night-8f21.onrender.com`.
+Open it in a browser. A server that is running says so in plain words:
+
+![The server's page in a browser, reading "Gather and Join signaling server 0.3.1, running."](/img/hosting/server-running.png)
+
+Add `/health` to the address for the same answer with detail — the version, how
+long it has been up, and how many rooms and people are on it right now:
+
+```json
+{"status":"ok","version":"0.3.1","uptimeSec":412,"rooms":1,"peers":3}
+```
+
+Those two are the only things served over the normal web. The extension itself
+connects with `wss://`, which is why the address you share is not the `https://`
+one.
+
+## 4. Share the address
+
+Take the address Render gave you, swap `https://` for `wss://`, and send that to
+everyone:
+
+```text
+wss://movie-night-8f21.onrender.com
+```
+
+Each person pastes it once on the extension's setup page, and never again — it
+does not change between parties. See [Install](./install.md) for their side.
+
+## What sleeping means
+
+A free service goes to sleep after 15 minutes with no traffic, and wakes up when
+someone connects. In practice:
+
+- **It cannot fall asleep during a party.** Every connected extension checks the
+  clock once a minute, which counts as traffic.
+- **The first person to arrive waits about 12 seconds** while it wakes. They see
+  a Render holding page rather than the server, which is normal:
+
+![Render's holding page, showing its own logo and a line reading "incoming HTTP request detected"](/img/hosting/render-waking-up.png)
+
+- If you would rather nobody waits, open the `/health` address yourself a minute
+  before the party starts.
+
+Sleeping is also what keeps it free: a free workspace gets 750 hours of running
+time a month, and the clock only ticks while the service is awake.
+
+## Updating the server
+
+Render does not pick up new versions on its own for this kind of service. When a
+new release comes out, open the service in the dashboard and choose **Manual
+Deploy → Deploy latest reference**. Check the version afterwards at `/health`.
+
+## Other places it can run
+
+Nothing here is specific to Render. The server is a small Node program with no
+database and nothing stored on disk, published both as a container image and as
+a single file, so it runs anywhere that can run **Docker** or **Node 22.6 or
+newer** — a spare machine, a home server, another hosting provider.
+
+Three things matter wherever you put it:
 
 | Setting | Value |
 | --- | --- |
-| Port | `8080` |
-| Health check path | `/health` |
-| Number of instances | exactly **1**, and never sleeping |
+| Port | `8080`, or set `PORT` to match what the host expects |
+| Health check path | `/health`, if that host insists on one |
+| Number of copies | exactly **one** |
 
 The last one matters more than it looks. The server keeps rooms in its own
-memory, so **two instances means two separate parties**: people who type the
-same room code land on different copies and never see each other. Services that
-add instances under load, or that put an app to sleep when it is idle, will
-break a party in the middle. Turn both off — free plans that sleep after a few
-minutes are not suitable.
+memory, so **two copies means two separate parties**: people who type the same
+room code land on different ones and never see each other. Nothing reports this
+— it simply looks as though your friends never arrived. Turn off anything that
+adds copies automatically.
 
-Always use `wss://` for an address on the internet: the connection carries
-display names and room codes, and only TLS keeps them private in transit.
+## About Render
 
-## Share the address
+Render is an unaffiliated third-party company. Gather & Join is not associated
+with, endorsed by, or sponsored by them; they are suggested here because their
+free tier happens to suit this server, and nothing is received for saying so.
+Their prices, free-tier limits and terms are theirs to change, and the
+screenshots above show their product as it looked when this page was written —
+expect it to drift.
 
-Send the address to everyone in the group. Each of them pastes it once on the
-extension's setup page. The host of the server and the leader of a room are
-separate roles: whoever creates a room leads it, regardless of who runs the server.
+Choosing any hosting provider has one consequence worth weighing. The encrypted
+connection from each participant ends at their infrastructure rather than at a
+machine you control, so the room's display names and room code pass through it,
+and the server's event log sits in their dashboard. That is not specific to
+Render; it is true of hosting anything anywhere.
 
-The server only sets up the call. Voice and video go directly between
-participants, so a remote server does not add any delay to the call.
-
-## Everyone on the same network
-
-Only for a group that is all on one network, such as a household watching in
-different rooms, and that does not want a tunnel. The address does not work
-for anyone outside that network.
-
-1. Start the server as above.
-2. Find the machine's local IP address: `ipconfig getifaddr en0` on macOS,
-   `hostname -I` on Linux, `ipconfig` on Windows (the IPv4 address).
-3. Share `ws://<that IP>:8080`, for example `ws://192.168.1.20:8080`.
-
-Allow incoming connections if your firewall asks, and use the main network
-rather than a guest one, which usually keeps devices from seeing each other.
-Plain `ws://` is fine here because the traffic never leaves your network.
+If you would rather nothing outside your group carried it, run the server on
+[your own machine](./host-on-your-machine.md), or on
+[your local network](./host-on-your-network.md) where it never leaves the house.
 
 ## Privacy notes for hosts
 
-The server prints one line per room event (created, joined, left) to its
-terminal, with display names. With Docker, `docker logs gather-and-join` shows
-them. It writes nothing to disk. Set `GJ_LOG=0` to silence the log. See the
+The server prints one line per room event (created, joined, left) to its log,
+with display names — on Render, under the **Logs** tab. It writes nothing to
+disk. Set a `GJ_LOG` environment variable to `0` to silence the log. See the
 [privacy policy](/privacy) for the full picture.

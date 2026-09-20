@@ -20,6 +20,13 @@ choose and share with you. The developer of this extension does not operate any
 server, does not receive any of the data described below, and has no access to
 it. The person hosting the server is responsible for it.
 
+That person may run it on their own computer or on a hosting company's
+infrastructure. If they use a hosting company, the encrypted connection ends
+there rather than on a machine they own, so the data below passes through it and
+the server's event log is visible in that company's dashboard. Which company, if
+any, is the host's choice — ask them if it matters to you. This project is not
+affiliated with any hosting provider it names.
+
 ## Data sent to the signaling server
 
 When you create or join a room, the extension sends the server:
