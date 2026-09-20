@@ -1,4 +1,4 @@
-name: 🧪 Tests
+name: ✅ Checks
 on:
   pull_request:
     branches:
@@ -18,7 +18,7 @@ permissions:
 
 concurrency:
   # A new push to a PR supersedes the run in progress; main and release runs are never cancelled.
-  group: tests-${{ github.event.pull_request.number || github.run_id }}
+  group: checks-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 # The end-to-end suite and the sabotage matrix stay out of CI. Peers intermittently fail
