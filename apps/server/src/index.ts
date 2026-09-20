@@ -238,7 +238,7 @@ function respond(res: ServerResponse, status: number, type: string, body: string
 /**
  * The whole HTTP surface. `ws` on its own answers every plain request with 426, which reads
  * like a broken server to a host checking their address in a browser and fails the default
- * health check on Fly, Render and Railway alike. Two routes fix both.
+ * health check on Render and Railway alike. Two routes fix both.
  */
 function handleHttp(req: IncomingMessage, res: ServerResponse) {
   if (req.method !== 'GET' && req.method !== 'HEAD') return respond(res, 405, 'text/plain', 'method not allowed\n');

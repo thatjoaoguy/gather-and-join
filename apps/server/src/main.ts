@@ -7,7 +7,7 @@ import { startServer } from './index.ts';
 
 const server = startServer();
 
-// Docker, Fly and systemd all stop a process with SIGTERM and lose patience after
+// Docker, Render and systemd all stop a process with SIGTERM and lose patience after
 // ~10s. Closing on the first signal exits immediately instead of being killed.
 let stopping = false;
 for (const signal of ['SIGTERM', 'SIGINT'] as const) {
