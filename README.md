@@ -117,8 +117,12 @@ nobody has to keep a terminal open. Any host that runs a container works —
 
 ```bash
 fly launch --config apps/server/fly.toml --copy-config --no-deploy   # choose an app name
-fly deploy --config apps/server/fly.toml
+fly deploy --config apps/server/fly.toml --ha=false                  # one machine, not two
 ```
+
+`--ha=false` is not optional: `fly deploy` creates two machines by default, which
+is the split-party failure described below. `fly scale count 1` fixes an app that
+was already deployed without it.
 
 On Render, Railway, or anything similar, deploy the image
 `ghcr.io/thatjoaoguy/gather-and-join-server:latest` and set three things:
