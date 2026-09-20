@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/thatjoaoguy/gather-and-join/compare/v0.1.1...v0.1.2) (2026-09-20)
+
+
+### Bug Fixes
+
+* **rtc:** keep early ICE candidates, and make the e2e suite deterministic ([#3](https://github.com/thatjoaoguy/gather-and-join/issues/3)) ([a146088](https://github.com/thatjoaoguy/gather-and-join/commit/a1460887287a7d9b6b1ecc9a717c628225029f3f))
+
 ## [0.1.1](https://github.com/thatjoaoguy/gather-and-join/compare/v0.1.0...v0.1.1) (2026-09-19)
 
 
