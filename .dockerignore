@@ -1,0 +1,14 @@
+# The image is built from the manifests and two source directories; everything else is
+# noise that would bust the build cache on every commit.
+**/node_modules
+**/dist
+**/.output
+**/.output-test
+**/.wxt
+**/coverage
+.git
+.github
+tools
+apps/extension
+docs
+*.md

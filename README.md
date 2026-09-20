@@ -62,25 +62,88 @@ press — there is no auto-resume, on purpose (it thrashes).
 
 ## Hosting the server
 
-The project ships the signaling server; running it is up to you. Any machine that
-can be reached by every participant works: a computer on the shared Wi-Fi, an
-always-on box at home, a tunnel from your laptop (`pnpm host` wraps the server in
-a Cloudflare quick tunnel and prints the URL), or a small cloud instance. The
-extension does not care which.
+One person in the group runs the server and shares its address; everyone else
+pastes that address into the extension's setup page once. It holds room state in
+memory, stores nothing on disk, and never sees any video.
 
-1. Start it: `pnpm --filter @gj/server start` (or
-   `node --experimental-strip-types apps/server/src/index.ts`, Node ≥ 22.6).
-   `PORT` overrides the default 8080. It keeps room state in memory only.
-2. Make it reachable at a URL every participant can open. Use `wss://` for
-   anything beyond the local network: signaling carries display names and room
-   codes, and only TLS keeps them private in transit. Plain `ws://` to a LAN
-   address works (Chrome does not apply mixed-content blocking to extension
-   pages).
-3. Share that URL with the participants. Each of them enters it once on the
-   extension's setup page.
+You do **not** need this repository to host it. Pick whichever line below matches
+the machine you have.
 
-The room lives on that machine: if it sleeps or disconnects, the room is gone.
-The person hosting is responsible for keeping it up for the length of the party.
+### A machine you already have
+
+**Docker** — nothing to install but Docker itself:
+
+```bash
+docker run -d --name gather-and-join --restart unless-stopped \
+  -p 8080:8080 ghcr.io/thatjoaoguy/gather-and-join-server:latest
+```
+
+**One file and Node ≥ 22.6** — download `gather-and-join-server-<version>.mjs`
+from the [latest release](https://github.com/thatjoaoguy/gather-and-join/releases/latest)
+and run it:
+
+```bash
+node gather-and-join-server-1.2.3.mjs      # PORT=9000 to move it off 8080
+```
+
+Either way, open `http://localhost:8080/` in a browser: the server answers in
+plain text if it is up. `/health` returns JSON with the version, uptime, and the
+number of live rooms and participants.
+
+Then make it reachable by everyone. On a shared Wi-Fi, a `ws://` LAN address is
+enough (Chrome does not apply mixed-content blocking to extension pages). For
+anything beyond the local network, use `wss://`: signaling carries display names
+and room codes, and only TLS keeps them private in transit.
+
+### A laptop, for one evening
+
+`pnpm host` (from a clone) wraps the server in a Cloudflare quick tunnel and
+prints the `wss://` URL. Without a clone, run the server as above and put a
+tunnel in front of it yourself:
+
+```bash
+cloudflared tunnel --protocol http2 --url http://localhost:8080
+```
+
+Swap the printed `https://` for `wss://` and share that. The URL is new every
+time, so everyone re-enters it for each party — and the room dies when the laptop
+sleeps.
+
+### Always-on, at a stable address
+
+Worth it if you do this regularly: participants enter the URL **once, ever**, and
+nobody has to keep a terminal open. Any host that runs a container works —
+[`apps/server/fly.toml`](./apps/server/fly.toml) is a ready config:
+
+```bash
+fly launch --config apps/server/fly.toml --copy-config --no-deploy   # choose an app name
+fly deploy --config apps/server/fly.toml
+```
+
+On Render, Railway, or anything similar, deploy the image
+`ghcr.io/thatjoaoguy/gather-and-join-server:latest` and set three things:
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| Port | `8080` | or set `PORT` to match what the platform expects |
+| Health check | `/health` | the WebSocket paths answer `426` to a plain GET |
+| Instances | exactly **1**, no idle sleep | see below |
+
+Rooms live in the memory of a single process. **A second instance silently splits
+the party** — two people with the same code land on different machines and never
+see each other — and an instance that sleeps when idle drops every open
+WebSocket. Turn off autoscaling and idle suspension; free tiers that spin down
+after a few minutes are not suitable.
+
+### What hosting commits you to
+
+The room lives on that machine: if it stops, the room is gone. The person hosting
+is responsible for keeping it up for the length of the party.
+
+Environment variables: `PORT` (default 8080), `ROOM_TTL_MS` (how long an empty
+room is kept), `LEADER_GRACE_MS`, `HEARTBEAT_MS`, `GJ_LOG=0` to silence the event
+log. The server prints one `key=value` line per room event to stdout and keeps no
+other record.
 
 ## Known unsolvable
 
@@ -130,7 +193,7 @@ Everything below is for people working on the code.
 | Path | What |
 |---|---|
 | `apps/extension` | WXT + TypeScript extension: content script, service worker, offscreen document, popup, options |
-| `apps/server` | Node + `ws` signaling/sync server. One file. No database, no auth |
+| `apps/server` | Node + `ws` signaling/sync server. One file. No database, no auth. Ships as a bundled `.mjs` and a container image — see [`Dockerfile`](./apps/server/Dockerfile) |
 | `packages/shared` | Wire protocol types, room reducer, clock/drift policy — imported by both sides |
 | `tools/harness` | Fake player page, self-identifying fake media, observer client, multi-peer launcher, Playwright suite, sabotage matrix |
 

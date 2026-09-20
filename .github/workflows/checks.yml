@@ -1,0 +1,100 @@
+name: ✅ Checks
+on:
+  pull_request:
+    branches:
+      - main
+    # Docs-only pull requests change nothing lint, typecheck, unit tests, the
+    # build or the image can see, so they skip this. `docs/design-system` is not
+    # ignored: the extension build copies fonts and brand marks out of it.
+    # Mirrors the same filter on release.yml.
+    paths-ignore:
+      - '**.md'
+  # Pushes to main run this through release.yml, so a failure there stops the release.
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # A new push to a PR supersedes the run in progress; main and release runs are never cancelled.
+  group: checks-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+# The end-to-end suite and the sabotage matrix stay out of CI. Peers intermittently fail
+# to connect on a runner ("timed out after 30000ms waiting for full mesh connected"),
+# which made most runs red for reasons unrelated to the change under test. The harness and
+# the ICE candidate handling have since been made deterministic, and one full run on a
+# runner was clean — but one run is not a success rate, so they do not gate anything here.
+# Run them locally: `pnpm test:e2e`, `pnpm test:sabotage [row]`.
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 📂 Checkout
+        uses: actions/checkout@v7
+
+      - name: 🧰 Setup
+        uses: ./.github/actions/setup
+
+      - name: 🔎 Lint
+        run: pnpm lint
+
+      - name: 🔎 Typecheck
+        run: pnpm typecheck
+
+      - name: 🧪 Unit tests
+        run: pnpm test:unit
+
+      - name: 🏗️ Build
+        run: pnpm build
+
+  server-image:
+    name: Server Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 📂 Checkout
+        uses: actions/checkout@v7
+
+      - name: 🧰 Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build only, and only for the runner's own architecture. The point is to fail a PR
+      # on a broken Dockerfile: the real multi-arch push happens after semantic-release has
+      # already tagged, so a break discovered there leaves a release with no image.
+      # Cache is read-only on purpose — a write from every PR branch would evict main's.
+      - name: 🐳 Build Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/server/Dockerfile
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: gather-and-join-server:ci
+          cache-from: type=gha
+
+      # An image that builds is not an image that runs: start it and ask it the same
+      # question the hosting platforms will.
+      - name: ✅ Smoke Test Image
+        run: |
+          # High host port: nothing on a runner should hold it, unlike 8080.
+          docker run -d --name gj-ci -p 18099:8080 gather-and-join-server:ci
+          trap 'docker rm -f gj-ci >/dev/null 2>&1 || true' EXIT
+          for _ in $(seq 1 40); do
+            health=$(curl -fsS http://127.0.0.1:18099/health 2>/dev/null) && break
+            sleep 0.5
+          done
+          if [[ -z "${health:-}" ]]; then
+            echo "::error::Container never answered /health"
+            docker logs gj-ci
+            exit 1
+          fi
+          if [[ "$(jq -r '.status' <<<"$health")" != "ok" ]]; then
+            echo "::error::Unhealthy: $health"
+            exit 1
+          fi
+          echo "✅ Image starts and reports \`$health\`" | tee -a "$GITHUB_STEP_SUMMARY"

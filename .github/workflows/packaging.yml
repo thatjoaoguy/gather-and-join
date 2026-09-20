@@ -65,3 +65,111 @@ jobs:
       run: gh release upload "$releaseTag" "$PACKAGE_ARCHIVE" --clobber
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  package-server:
+    name: Package Server
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      releaseVersion: ${{ inputs.version }}
+      releaseTag: v${{ inputs.version }}
+    steps:
+    - name: 📂 Checkout
+      uses: actions/checkout@v7
+      with:
+        ref: ${{ env.releaseTag }}
+
+    - name: 🧰 Setup
+      uses: ./.github/actions/setup
+
+    # One file with no dependencies: hosting the server should not require cloning this repo.
+    - name: 📦 Bundle Server
+      run: pnpm --filter @gj/server build
+
+    - name: ✅ Verify Bundle
+      run: |
+        bundle="apps/server/dist/gj-server.mjs"
+        # It has to start on a bare Node and answer the same health check the hosting
+        # platforms use — a bundle that only imports cleanly is not a bundle that runs.
+        PORT=18099 node "$bundle" &
+        server=$!
+        trap 'kill $server 2>/dev/null' EXIT
+        for _ in $(seq 1 40); do
+          health=$(curl -fsS http://127.0.0.1:18099/health 2>/dev/null) && break
+          sleep 0.25
+        done
+        if [[ -z "${health:-}" ]]; then
+          echo "::error::Bundled server never answered /health"
+          exit 1
+        fi
+        packedVersion=$(jq -r '.version' <<<"$health")
+        if [[ "$packedVersion" != "$releaseVersion" ]]; then
+          echo "::error::Bundle reports version $packedVersion, expected $releaseVersion"
+          exit 1
+        fi
+
+        expected="gather-and-join-server-$releaseVersion.mjs"
+        mv "$bundle" "$expected"
+        echo "SERVER_BUNDLE=$expected" >> "$GITHUB_ENV"
+        echo "✅ Bundled \`$expected\` ($(du -h "$expected" | cut -f1))" | tee -a "$GITHUB_STEP_SUMMARY"
+
+    - name: 🗂️ Upload Bundle Artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: gather-and-join-server-${{ env.releaseVersion }}
+        path: ${{ env.SERVER_BUNDLE }}
+
+    - name: 📎 Attach Bundle to Release
+      run: gh release upload "$releaseTag" "$SERVER_BUNDLE" --clobber
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-server-image:
+    name: Publish Server Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: 📂 Checkout
+      uses: actions/checkout@v7
+      with:
+        ref: v${{ inputs.version }}
+
+    # arm64 covers Apple silicon and the cheap ARM instances most always-on hosts end up on.
+    - name: 🧰 Setup Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: 🔑 Log in to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 🏷️ Image Tags
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository }}-server
+        tags: |
+          type=raw,value=${{ inputs.version }}
+          type=raw,value=latest
+          type=semver,pattern={{major}}.{{minor}},value=${{ inputs.version }}
+
+    - name: 🐳 Build and Push
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: apps/server/Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: 📄 Summary
+      run: |
+        echo "🐳 Pushed \`ghcr.io/${{ github.repository }}-server:${{ inputs.version }}\`" | tee -a "$GITHUB_STEP_SUMMARY"

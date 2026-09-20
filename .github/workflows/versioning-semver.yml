@@ -55,5 +55,7 @@ jobs:
     uses: ./.github/workflows/packaging.yml
     permissions:
       contents: write
+      # A caller's permissions cap the reusable workflow's: without this the GHCR push 403s.
+      packages: write
     with:
       version: ${{ needs.semantic-release.outputs.new_release_version }}

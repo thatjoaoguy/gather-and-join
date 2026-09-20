@@ -2,16 +2,15 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import WebSocket from 'ws';
 import type { C2S, S2C } from '@gj/shared';
 
-process.env.GJ_NO_AUTOSTART = '1';
 process.env.ROOM_TTL_MS = '200';
 process.env.LEADER_GRACE_MS = '300';
 process.env.GJ_LOG = '0';
 const { startServer, _rooms, _setLogSink } = await import('../src/index.ts');
 
 const PORT = 18_081;
-let wss: ReturnType<typeof startServer>;
-beforeAll(() => { wss = startServer(PORT); });
-afterAll(() => wss.close());
+let server: ReturnType<typeof startServer>;
+beforeAll(() => { server = startServer(PORT); });
+afterAll(() => server.close());
 
 class Client {
   ws: WebSocket;
@@ -206,5 +205,40 @@ describe('server', () => {
     } finally {
       _setLogSink(() => {});
     }
+  });
+});
+
+describe('http surface', () => {
+  const get = async (path: string, init?: RequestInit) => {
+    const res = await fetch(`http://localhost:${PORT}${path}`, init);
+    return { status: res.status, type: res.headers.get('content-type'), body: await res.text() };
+  };
+
+  it('answers / with plain text instead of the 426 ws sends, so a host checking the address sees it working', async () => {
+    const res = await get('/');
+    expect(res.status).toBe(200);
+    expect(res.type).toMatch(/text\/plain/);
+    expect(res.body).toContain('running');
+  });
+
+  it('reports health as JSON, counting live rooms and peers', async () => {
+    const before = JSON.parse((await get('/health')).body);
+    expect(before).toMatchObject({ status: 'ok' });
+    expect(typeof before.version).toBe('string');
+    expect(before.uptimeSec).toBeGreaterThanOrEqual(0);
+
+    const a = await client();
+    a.send({ type: 'join', code: 'HTH001', peerId: 'a', name: 'A', create: true });
+    await a.next('room');
+    const during = JSON.parse((await get('/health')).body);
+    expect(during.rooms).toBe(before.rooms + 1);
+    expect(during.peers).toBe(before.peers + 1);
+    a.close();
+    await new Promise((r) => setTimeout(r, 400));
+  });
+
+  it('404s anything else and refuses non-GET', async () => {
+    expect((await get('/admin')).status).toBe(404);
+    expect((await get('/health', { method: 'POST' })).status).toBe(405);
   });
 });

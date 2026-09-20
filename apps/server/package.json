@@ -5,8 +5,9 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "node --watch --experimental-strip-types src/index.ts",
-    "start": "node --experimental-strip-types src/index.ts",
+    "dev": "node --watch --experimental-strip-types src/main.ts",
+    "start": "node --experimental-strip-types src/main.ts",
+    "build": "node scripts/bundle.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:unit": "vitest run"
   },
@@ -17,6 +18,7 @@
   "devDependencies": {
     "@types/node": "^26.5.1",
     "@types/ws": "^8.18.0",
+    "esbuild": "^0.28.2",
     "typescript": "^6.0.3",
     "vitest": "^5.0.1"
   }

@@ -23,7 +23,7 @@ export default defineConfig({
   use: { trace: 'off' },
   webServer: [
     {
-      command: 'node --experimental-strip-types src/index.ts',
+      command: 'node --experimental-strip-types src/main.ts',
       cwd: path.join(ROOT, 'apps', 'server'),
       port: TEST_SERVER_PORT,
       reuseExistingServer: REUSE,
