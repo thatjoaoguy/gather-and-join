@@ -9,11 +9,14 @@ title: Troubleshooting
 
 - Ask the host whether the server is still running and, for a laptop tunnel,
   whether the address changed. A tunnel address is new every run.
+- The host can check in a browser: the same address with `https://` instead of
+  `wss://` answers "running" and shows how many people are connected. Nothing
+  there means the server itself is down, not the extension.
 - The address should start with `wss://`. A `ws://` address with a local IP
   only works for people on the host's own network; anyone else needs a
   [tunnel or always-on server](/docs/host-a-server#quick-start-a-tunnel-from-your-laptop).
-- For a same-network setup, check that the host allowed `node` through their
-  firewall and that nobody is on a guest network.
+- For a same-network setup, check that the host allowed the server through
+  their firewall and that nobody is on a guest network.
 
 ## Nobody can hear me
 
