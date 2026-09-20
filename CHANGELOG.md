@@ -1,5 +1,17 @@
 # Changelog
 
+# [0.3.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.2.0...v0.3.0) (2026-09-20)
+
+
+### Bug Fixes
+
+* **ci:** grant packages:write through the whole release chain ([#21](https://github.com/thatjoaoguy/gather-and-join/issues/21)) ([17f87c6](https://github.com/thatjoaoguy/gather-and-join/commit/17f87c6885ba86a449b9363ff30212901da10d06))
+
+
+### Features
+
+* **server:** ship the server as a container image and a single file ([#20](https://github.com/thatjoaoguy/gather-and-join/issues/20)) ([8cec21f](https://github.com/thatjoaoguy/gather-and-join/commit/8cec21f600da457dfc5fe3451f45b2082183cb6f))
+
 # [0.2.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.1.2...v0.2.0) (2026-09-20)
 
 
