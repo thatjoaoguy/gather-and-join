@@ -7,8 +7,9 @@
  *   pnpm test:sabotage reattach   # one flag
  *   GJ_SABOTAGE_PARALLEL=1 pnpm test:sabotage   # rows one after another (small machines)
  */
-import { spawn } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 const HERE = import.meta.dirname;
@@ -40,11 +41,27 @@ type Result = { title: string; status: string };
 
 const BASE_SERVER_PORT = Number(process.env.TEST_SERVER_PORT ?? 18080);
 const BASE_PLAYER_PORT = Number(process.env.TEST_PLAYER_PORT ?? 14173);
-/** Rows run concurrently, each on its own ports; drop to 1 on a small machine. */
-const PARALLEL = Math.max(1, Number(process.env.GJ_SABOTAGE_PARALLEL ?? 4));
+/**
+ * Rows run concurrently, each on its own ports. Every row drives 2-3 Chrome instances
+ * doing WebRTC, so on a small machine 4 rows at once turn the timing assertions into
+ * coin flips — and a row scores load-induced slowness as "mechanism not demonstrated".
+ * Budget ~4 cores per row.
+ */
+const PARALLEL = Math.max(1, Number(process.env.GJ_SABOTAGE_PARALLEL ?? Math.min(4, Math.floor(os.cpus().length / 4))));
 const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** One suite run, isolated from the others: own ports, own Playwright output dir, own log file. */
+/** Every `playwright test` this process spawned, so an early exit does not orphan them. */
+const children = new Set<ChildProcess>();
+let killerInstalled = false;
+function installKiller() {
+  if (killerInstalled) return;
+  killerInstalled = true;
+  const killAll = () => { for (const c of children) { try { c.kill('SIGTERM'); } catch { /* already gone */ } } };
+  process.on('exit', killAll);
+  for (const sig of ['SIGINT', 'SIGTERM'] as const) process.on(sig, () => { killAll(); process.exit(1); });
+}
+
 function runSuite(sabotage: string, slot: number): Promise<{ results: Result[]; log: string; seconds: number }> {
   const root = path.join(HERE, '..');
   const logDir = path.join(root, 'test-results', 'sabotage-logs');
@@ -55,6 +72,7 @@ function runSuite(sabotage: string, slot: number): Promise<{ results: Result[]; 
   const t0 = Date.now();
   return new Promise((resolve, reject) => {
     const out = fs.openSync(logFile, 'w');
+    installKiller();
     const child = spawn('pnpm', ['exec', 'playwright', 'test', '--grep-invert', grepInvert, '--reporter=list,json', '--output', `test-results/sabotage-${sabotage}`], {
       cwd: root,
       env: {
@@ -67,8 +85,10 @@ function runSuite(sabotage: string, slot: number): Promise<{ results: Result[]; 
       },
       stdio: ['ignore', out, out],
     });
-    child.on('error', reject);
+    children.add(child);
+    child.on('error', (err) => { children.delete(child); reject(err); });
     child.on('exit', (code) => {
+      children.delete(child);
       fs.closeSync(out);
       if (!fs.existsSync(resultsFile)) { reject(new Error(`no results file for ${sabotage} (exit ${code}); see ${logFile}`)); return; }
       const json = JSON.parse(fs.readFileSync(resultsFile, 'utf8'));
@@ -110,7 +130,11 @@ const runNext = (): Promise<void> | null => {
   }).finally(() => { slotsFree.push(slot); const next = runNext(); if (next) done.push(next); });
 };
 for (let i = 0; i < slotsFree.length; i++) { const p = runNext(); if (p) done.push(p); }
-// `done` grows as slots free up; drain until it stops growing.
-for (let i = 0; i < done.length; i++) await done[i];
+// `done` grows as slots free up; drain until it stops growing. Settled, not raced: a row
+// that dies (port in use, crashed driver) must not leave the others running unattended.
+for (let i = 0; i < done.length; i++) {
+  const outcome = await Promise.allSettled([done[i]]);
+  if (outcome[0]!.status === 'rejected') { ok = false; console.log(`  BAD row failed to run: ${String(outcome[0]!.reason)}`); }
+}
 console.log(`\n${ok ? 'sabotage matrix: all mechanisms demonstrated' : 'sabotage matrix: FAILED'} · ${Math.round((Date.now() - t0) / 1000)}s`);
 process.exit(ok ? 0 : 1);

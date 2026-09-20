@@ -1,7 +1,6 @@
 /** Ramp video.volume down while someone is talking and back up after silence. */
-export const DUCK_LEVEL = 0.3;
-export const DUCK_DOWN_MS = 200;
-export const DUCK_UP_MS = 400;
+import { DUCK_LEVEL, DUCK_DOWN_MS, DUCK_UP_MS } from '@gj/shared';
+export { DUCK_LEVEL, DUCK_DOWN_MS, DUCK_UP_MS };
 
 export class Ducker {
   /** The user's own volume, sampled only when we are not touching it — never mid-ramp. */

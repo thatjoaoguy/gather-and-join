@@ -36,13 +36,28 @@ export type LaunchOptions = { headless?: boolean; sabotage?: Sabotage; profileRo
 /** Sabotage flag from the environment (`GJ_SABOTAGE=reattach pnpm test:e2e`), unless a caller overrides it. */
 const ENV_SABOTAGE = ((process.env.GJ_SABOTAGE || null) as Sabotage);
 
+export const PROFILE_ROOT = path.join(import.meta.dirname, '..', '.profiles');
+
+/** Profiles of peers this process launched, so an abrupt exit still cleans up after itself. */
+const ownedProfiles = new Set<string>();
+let sweeperInstalled = false;
+function installSweeper() {
+  if (sweeperInstalled) return;
+  sweeperInstalled = true;
+  const sweep = () => { for (const dir of ownedProfiles) fs.rmSync(dir, { recursive: true, force: true }); };
+  process.on('exit', sweep);
+  for (const sig of ['SIGINT', 'SIGTERM'] as const) process.on(sig, () => { sweep(); process.exit(1); });
+}
+
 export async function launchPeer(index: number, opts: LaunchOptions = {}): Promise<Peer> {
   const { wav, y4m } = ensurePeerFixtures(index, opts.continuousTone ?? false);
   const sabotage = opts.sabotage === undefined ? ENV_SABOTAGE : opts.sabotage;
   const peerId = `peer${index + 1}`;
-  const profileRoot = opts.profileRoot ?? path.join(import.meta.dirname, '..', '.profiles');
+  const profileRoot = opts.profileRoot ?? PROFILE_ROOT;
   const userDataDir = path.join(profileRoot, `${peerId}-${process.pid}-${Date.now()}`);
   fs.mkdirSync(userDataDir, { recursive: true });
+  installSweeper();
+  ownedProfiles.add(userDataDir);
 
   const context = await chromium.launchPersistentContext(userDataDir, {
     channel: 'chromium',
@@ -75,6 +90,9 @@ export async function launchPeer(index: number, opts: LaunchOptions = {}): Promi
     ({ peerId, sabotage, serverUrl }) => chrome.storage.local.set({ testPeerId: peerId, sabotage, serverUrl, name: peerId, ducking: true }),
     { peerId, sabotage, serverUrl: SERVER_URL },
   );
+  // Host candidates only. Two peers on one machine need no STUN, and reaching for a
+  // public one puts a network round-trip (and its failure modes) in every connection.
+  await extPage.evaluate(() => chrome.storage.local.set({ iceServers: [] }));
 
   const page = await context.newPage();
   const peer: Peer = {
@@ -97,8 +115,9 @@ export async function waitForHook(peer: Peer, timeout = 15_000) {
 
 export async function closePeers(peers: Peer[]) {
   await Promise.all(peers.map(async (p) => {
-    await p.context.close().catch(() => {});
+    await p.context.close().catch((e) => console.warn(`[peers] context close failed: ${String(e)}`));
     fs.rmSync(p.userDataDir, { recursive: true, force: true });
+    ownedProfiles.delete(p.userDataDir);
   }));
 }
 
@@ -109,11 +128,22 @@ export async function waitForCondition(
 ): Promise<void> {
   const t0 = Date.now();
   let lastErr: unknown = null;
+  let polls = 0;
+  const errorCounts = new Map<string, number>();
   while (Date.now() - t0 < timeout) {
-    try { if (await fn()) return; } catch (e) { lastErr = e; }
+    polls++;
+    try { if (await fn()) return; } catch (e) {
+      lastErr = e;
+      const key = String(e);
+      errorCounts.set(key, (errorCounts.get(key) ?? 0) + 1);
+    }
     await new Promise((r) => setTimeout(r, interval));
   }
-  throw new Error(`timed out after ${timeout}ms waiting for ${label}${lastErr ? ` (last error: ${String(lastErr)})` : ''}`);
+  // Which error dominated matters more than which came last, and a low poll count means the
+  // predicate was barely sampled (a slow bridge), not that the condition stayed false.
+  const worst = [...errorCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+  const detail = worst ? ` (${worst[1]}/${polls} polls: ${worst[0]})` : lastErr ? ` (last error: ${String(lastErr)})` : '';
+  throw new Error(`timed out after ${timeout}ms waiting for ${label} after ${polls} polls${detail}`);
 }
 
 export const sleepMs = (ms: number) => new Promise((r) => setTimeout(r, ms));

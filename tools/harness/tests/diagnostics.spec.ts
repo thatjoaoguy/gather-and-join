@@ -8,13 +8,13 @@ const logs = (p: Peer) => p.extPage.evaluate(() =>
 ) as Promise<Record<string, string[]>>;
 
 test('diagnostics: every realm reaches session storage, pages forward through the offscreen document, the setup page assembles one report', async () => {
-  const party = await startParty({ n: 2, code: 'D1AG01' });
+  const party = await startParty({ n: 2 });
   try {
     const [a, b] = party.peers as [Peer, Peer];
     await waitForMesh(party.peers);
     await pressPlay(a);
     await waitForCondition(async () => (await state(b)).paused === false, { label: 'follower playing' });
-    expect((await snapshot(a))!.room!.code).toBe('D1AG01');
+    expect((await snapshot(a))!.room!.code).toBe(party.code);
 
     // A user seek on the follower's page is a page-realm decision; it must land in the offscreen buffer.
     await b.page.evaluate(() => { const v = document.querySelector('video')!; v.currentTime += 30; });
@@ -23,8 +23,8 @@ test('diagnostics: every realm reaches session storage, pages forward through th
     const [la, lb] = await Promise.all([logs(a), logs(b)]);
     const has = (buf: string[], re: RegExp) => expect(buf.some((x) => re.test(x)), `buffer has ${re}; buffer:\n${buf.join('\n')}`).toBe(true);
     const offA = la['gjLog:offscreen'] ?? [];
-    has(offA, /\[room\] → join \(create\) D1AG01 as peer1$/);
-    has(offA, /\[room\] ← room D1AG01 peers=1 leader=peer1 \(me\)/);
+    has(offA, new RegExp(`\\[room\\] → join \\(create\\) ${party.code} as peer1$`));
+    has(offA, new RegExp(`\\[room\\] ← room ${party.code} peers=1 leader=peer1 \\(me\\)`));
     has(offA, /\[room\] ← peerJoined peer2 peer2$/);
     has(offA, /\[rtc\] peer2 connected\/(connected|completed)\/stable$/);
     const offB = lb['gjLog:offscreen'] ?? [];
@@ -43,10 +43,10 @@ test('diagnostics: every realm reaches session storage, pages forward through th
     expect(report).toMatch(/^Gather & Join diagnostics\ngenerated: \d{4}-/);
     expect(report).toContain('extension: Gather & Join (test build)');
     expect(report).toMatch(/socket: connected +reconnects: 0/);
-    expect(report).toContain('room: D1AG01   leader: you');
+    expect(report).toContain(`room: ${party.code}   leader: you`);
     expect(report).toMatch(/peer2 +peer2 +connected\/(connected|completed)\/stable +audio=yes video=no +rx=\d+KB tx=\d+KB/);
     expect(report).toContain('--- log: background');
-    expect(await options.locator('#diag-summary').textContent()).toContain('In room D1AG01 with 2 others');
+    expect(await options.locator('#diag-summary').textContent()).toContain(`In room ${party.code} with 2 others`);
     await options.close();
   } finally {
     await party.close();

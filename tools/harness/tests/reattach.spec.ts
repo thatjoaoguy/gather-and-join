@@ -3,7 +3,7 @@ import { startParty, spreadMs, pressPlay, state, counters, dumpParty } from '../
 import { waitForCondition } from '../src/peers.ts';
 
 test('element re-attach: recreate <video> mid-playback → rewired, spread recovers, no socket reconnect', async () => {
-  const party = await startParty({ n: 2, code: 'RATT01' });
+  const party = await startParty({ n: 2 });
   try {
     const follower = party.peers[1]!;
     await pressPlay(party.leader);
@@ -28,7 +28,7 @@ test('element re-attach: recreate <video> mid-playback → rewired, spread recov
 });
 
 test('quality switch and ad break: element swaps do not desync or reconnect', async () => {
-  const party = await startParty({ n: 2, code: 'RATT02' });
+  const party = await startParty({ n: 2 });
   try {
     const follower = party.peers[1]!;
     await pressPlay(party.leader);

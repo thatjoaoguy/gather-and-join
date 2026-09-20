@@ -3,7 +3,7 @@ import { startParty, snapshot, state, counters, waitForMesh, pressPlay, spreadMs
 import { waitForCondition, type Peer } from '../src/peers.ts';
 
 test('socket drop: the client rejoins with the same identity, sync and mesh carry on', async () => {
-  const party = await startParty({ n: 2, code: 'RCNN01' });
+  const party = await startParty({ n: 2 });
   try {
     const [leader, follower] = party.peers as [Peer, Peer];
     await waitForMesh(party.peers);

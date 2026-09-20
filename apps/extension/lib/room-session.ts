@@ -62,7 +62,7 @@ export type SessionKv = {
   get(area: 'local' | 'session', keys: string[] | null): Promise<Record<string, unknown>>;
   set(area: 'local' | 'session', data: Record<string, unknown>): Promise<void>;
 };
-export type TestConfig = { sabotage: Sabotage; testPeerId: string | null; serverUrl: string | null };
+export type TestConfig = { sabotage: Sabotage; testPeerId: string | null; serverUrl: string | null; iceServers: RTCIceServer[] | null };
 
 /** Reachability probe: open a socket to `url`, exchange one ping, close. Rejects or resolves ok:false when unreachable. */
 export type ServerProbe = (url: string) => Promise<{ ok: boolean; rttMs: number | null }>;
@@ -70,7 +70,7 @@ export type ServerProbe = (url: string) => Promise<{ ok: boolean; rttMs: number 
 export type SessionDeps = {
   createClient(url: string, handlers: ClientHandlers): SessionClient;
   probe: ServerProbe;
-  createMesh(myId: PeerId, handlers: MeshHandlers): SessionMesh;
+  createMesh(myId: PeerId, handlers: MeshHandlers, opts?: { iceServers?: RTCIceServer[] }): SessionMesh;
   local: SessionLocalMedia;
   remote: SessionRemoteMedia;
   kv: SessionKv;
@@ -229,11 +229,11 @@ export class RoomSession {
     if (this.snapshot.server.url !== this.client.url) this.snapshot.server = serverStatus(this.client.url);
     this.patch({ serverUrl: this.client.url, yourPeerId: peerId, lastError: null, joining: true });
     this.client.join({ code, peerId, name, create });
-    await this.startMesh(peerId); // mic acquisition may be slow or denied; the join must not wait on it
+    await this.startMesh(peerId, cfg.iceServers ?? undefined); // mic acquisition may be slow or denied; the join must not wait on it
     this.broadcast();
   }
 
-  private async startMesh(peerId: PeerId) {
+  private async startMesh(peerId: PeerId, iceServers?: RTCIceServer[]) {
     if (this.mesh) return;
     const mesh = this.mesh = this.deps.createMesh(peerId, {
       sendSignal: (to, payload) => this.client.send({ type: 'signal', to, payload }),
@@ -247,7 +247,7 @@ export class RoomSession {
         this.refreshPeerMedia();
         this.broadcast();
       },
-    });
+    }, iceServers ? { iceServers } : undefined);
     for (const p of this.snapshot.peers) if (p.peerId !== peerId) mesh.add(p.peerId);
     // A camera that is already open (camera on, then a new mesh) must be sent too, not only the mic.
     const cam = this.snapshot.camOn ? this.deps.local.camStream?.getVideoTracks()[0] : undefined;
