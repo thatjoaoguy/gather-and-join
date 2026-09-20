@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.2.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.1.2...v0.2.0) (2026-09-20)
+
+
+### Features
+
+* add Google Drive as a streaming provider ([#17](https://github.com/thatjoaoguy/gather-and-join/issues/17)) ([f98a226](https://github.com/thatjoaoguy/gather-and-join/commit/f98a22644b4906a288ca11ed2779246bdb7f685d))
+
 ## [0.1.2](https://github.com/thatjoaoguy/gather-and-join/compare/v0.1.1...v0.1.2) (2026-09-20)
 
 
