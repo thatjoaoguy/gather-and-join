@@ -56,18 +56,13 @@ chosen for you. Click it, and check the bar at the bottom of the page reads
 The warning Render shows about free instances sleeping is real, and harmless
 here — see [what sleeping means](#what-sleeping-means) below.
 
-## 3. Set the health check
-
-Open the **Advanced** section and set **Health Check Path** to `/health`:
-
-![The Advanced section with Health Check Path set to /health](/img/hosting/render-health-check.png)
-
-The box suggests `/healthz` with a z. That is not this server's address and will
-fail. Type `/health`.
-
 Now press **Deploy web service**. The first deploy takes a minute or two.
 
-## 4. Check it works
+You can ignore everything under **Advanced**. Render watches the port the server
+listens on, which for a single program with no database is the same thing as
+watching the server.
+
+## 3. Check it works
 
 Render gives the service an address like `https://movie-night-8f21.onrender.com`.
 Open it in a browser. A server that is running says so in plain words:
@@ -85,7 +80,7 @@ Those two are the only things served over the normal web. The extension itself
 connects with `wss://`, which is why the address you share is not the `https://`
 one.
 
-## 5. Share the address
+## 4. Share the address
 
 Take the address Render gave you, swap `https://` for `wss://`, and send that to
 everyone:
@@ -133,7 +128,7 @@ Three things matter wherever you put it:
 | Setting | Value |
 | --- | --- |
 | Port | `8080`, or set `PORT` to match what the host expects |
-| Health check path | `/health` |
+| Health check path | `/health`, if that host insists on one |
 | Number of copies | exactly **one** |
 
 The last one matters more than it looks. The server keeps rooms in its own
