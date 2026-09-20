@@ -1,7 +1,10 @@
 /**
- * Fake HBO-shaped player, served on localhost. Reproduces the hazards the
- * extension must survive (element recreation, ad-break source swap, SPA and
- * hard navigation, autoplay-next countdown). See player/player.js for the page.
+ * Fake player, served on localhost, in three shapes: HBO (a <video> in the top
+ * document), Drive (`/drivewatch/`, a cross-origin embed) and YouTube
+ * (`/ytwatch/`, a <video> whose ad break reuses the same element). Between them
+ * they reproduce the hazards the extension must survive: element recreation,
+ * ad breaks of both kinds, SPA and hard navigation, autoplay-next countdown.
+ * See player/player.js for the HBO page.
  *
  * Media: prefers `fixtures/player.webm` (from `make fixtures`); otherwise serves
  * a generated 5-minute WAV — <video> plays audio-only sources with full
@@ -80,6 +83,9 @@ export function startPlayerServer(port = PLAYER_PORT): Promise<http.Server> {
     // cross-origin iframe driven by the YouTube widget postMessage protocol.
     if (p.startsWith('/drivewatch/')) return serveFile(res, path.join(PLAYER_DIR, 'drive-top.html'));
     if (p === '/ytembed') return serveFile(res, path.join(PLAYER_DIR, 'yt-embed.html'));
+    // YouTube-shaped variant: an ordinary <video>, but its ad break plays through
+    // that same element and is announced only by a class on the player.
+    if (p.startsWith('/ytwatch/')) return serveFile(res, path.join(PLAYER_DIR, 'yt-top.html'));
     if (p.startsWith('/static/')) return serveFile(res, path.join(PLAYER_DIR, p.slice('/static/'.length)));
     res.writeHead(404); res.end('not found');
   });

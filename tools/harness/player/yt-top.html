@@ -1,0 +1,86 @@
+<!doctype html>
+<!--
+  Fake YouTube watch page. The hazard it reproduces is the one the HBO-shaped
+  page cannot: an ad that plays through the *same* <video> element. Nothing is
+  recreated, so nothing looks like a transition — only a class appears on the
+  player. Unguarded, the extension would read the ad's timeline and broadcast
+  it, and one viewer's pre-roll would seek the whole room into it.
+
+  Deliberately not sharing markup or selectors with the real adapter: the
+  fixture's job is to imitate YouTube, and if both read one constant then the
+  day YouTube changes its markup the fixture changes with it and the suite keeps
+  passing while production breaks. Same reasoning as the up-next selectors in
+  apps/extension/lib/providers/harness.ts.
+
+  The break is 6s rather than the ad clip's full length: what is being measured
+  is what the room does while one peer is away, not how long it can wait.
+-->
+<meta charset="utf-8">
+<title>Fake YouTube</title>
+<style>
+  html, body { margin: 0; background: #0f0f0f; color: #f1f1f1; font: 14px system-ui, sans-serif; }
+  header { display: flex; gap: 8px; align-items: center; padding: 8px 12px; }
+  #movie_player { position: relative; width: 640px; height: 360px; background: #000; margin: 0 12px; }
+  #movie_player video { width: 100%; height: 100%; }
+  /* Like YouTube: the ad badge only exists while the marker class is on the player. */
+  #movie_player.ad-showing::after { content: 'Ad'; position: absolute; left: 8px; bottom: 8px; background: #ffd400; color: #000; padding: 2px 6px; }
+  #status { padding: 8px 12px; font: 13px ui-monospace, monospace; }
+</style>
+<header>
+  <strong id="title">video</strong>
+  <button id="play" type="button">Play</button>
+  <button id="pause" type="button">Pause</button>
+  <button id="ad" type="button">Ad break (same element)</button>
+</header>
+<ytd-watch-flexy>
+  <div id="movie_player" class="html5-video-player">
+    <video class="video-stream html5-main-video" preload="auto" src="/media/main"></video>
+  </div>
+</ytd-watch-flexy>
+<div id="status"></div>
+<script>
+(() => {
+  const AD_MS = 6000;
+  const contentId = (decodeURIComponent(location.pathname).match(/\/ytwatch\/(.+)$/) || [])[1] || 'urn:hbo:episode:G0000001';
+  document.getElementById('title').textContent = contentId;
+  document.title = 'Fake YouTube — ' + contentId;
+
+  const player = document.getElementById('movie_player');
+  const video = player.querySelector('video');
+  document.getElementById('play').addEventListener('click', () => video.play());
+  document.getElementById('pause').addEventListener('click', () => video.pause());
+
+  document.getElementById('ad').addEventListener('click', () => {
+    if (player.classList.contains('ad-showing')) return;
+    const resumeAt = video.currentTime;
+    // Marker first, source second: the extension must have let go of the element
+    // before the ad's own play/seeking events start firing.
+    player.classList.add('ad-showing');
+    video.src = '/media/ad';
+    video.play();
+    setTimeout(() => {
+      // Content back first, marker cleared last — "ad-showing" means the ad is on
+      // screen, so by the time it goes the element is content again. ASSUMPTION,
+      // not an observation: no ad was served while YouTube was being inspected, so
+      // the reverse ordering (marker cleared while the player is still restoring
+      // the content position) has not been ruled out. If it happens, the restore
+      // seek lands after the extension has picked the element back up and gets
+      // announced as if the viewer had scrubbed, dragging the room back by the
+      // length of the break.
+      video.src = '/media/main';
+      video.addEventListener('loadedmetadata', () => {
+        // Back where the viewer left off, *not* where the room has got to. Catching
+        // up from here is the extension's job, and is what the spec measures.
+        video.currentTime = resumeAt;
+        video.play();
+        player.classList.remove('ad-showing');
+      }, { once: true });
+    }, AD_MS);
+  });
+
+  setInterval(() => {
+    document.getElementById('status').textContent =
+      `t=${video.currentTime.toFixed(2)} paused=${video.paused} rate=${video.playbackRate} ad=${player.classList.contains('ad-showing') ? 1 : 0}`;
+  }, 250);
+})();
+</script>
