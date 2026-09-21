@@ -33,8 +33,8 @@ export type ContentProvider = {
  * drifting apart. Deriving the prefix from the provider id once makes them
  * agree by construction.
  *
- * Where the id sits in the URL is the provider's business, not this helper's:
- * HBO Max and Drive read a path, YouTube reads a query parameter.
+ * Where the id sits in the URL is each provider's business: HBO Max and Drive
+ * read a path, YouTube a query parameter.
  *
  * Not every provider fits (the harness's content id *is* the matched URN, with
  * no prefix to add and no derivable watch URL); those stay hand-written.
@@ -120,29 +120,20 @@ export const gdrive: ContentProvider = prefixedProvider({
 });
 
 /**
- * YouTube (inspected 2026-09-19): watch pages are `/watch?v=<id>`, so the id
- * lives in the query string rather than the path. `/live/<id>` is the same
- * video once the stream is over and `youtu.be/<id>` is the share link, so all
- * three parse to `youtube:<id>` and `watchUrl` always emits the canonical
- * `/watch?v=` form — whichever link a viewer was handed, the room agrees on
- * one content id and everyone lands on the same page.
+ * YouTube: the id sits in the query string of `/watch?v=<id>`. `/live/<id>` and
+ * `youtu.be/<id>` are the same video, so all three parse to `youtube:<id>` and
+ * `watchUrl` emits the canonical `/watch?v=` form.
  *
- * `youtu.be` is deliberately *not* one of `hosts`. It only ever redirects to
- * www.youtube.com, so a content script there would have no player to attach to,
- * and a host permission for a domain the extension never actually works on is
- * one a store reviewer cannot be given a reason for. It is still parsed,
- * because `parseContentId` falls back to trying every provider on an unknown
- * host — which is how a pasted share link resolves. That fallback is also why
- * the `youtu.be` branch is gated on the hostname: a bare `/<id>` path would
- * otherwise match half the web.
+ * `youtu.be` is not one of `hosts`: it only redirects, so no content script would
+ * run there and the permission could not be justified. It is still parsed, since
+ * `parseContentId` tries every provider on an unknown host — which is also why
+ * its bare `/<id>` path is gated on the hostname.
  *
- * Shorts are out of scope: the feed scrolls itself to the next video, which
- * walks a follower off the room's content with no panel to suppress.
+ * Shorts are out of scope: the feed scrolls itself to the next video, walking a
+ * follower off the room's content with no panel to suppress.
  *
- * The match pattern is the whole host, not `/watch*`, because YouTube routes
- * client-side: Chrome injects a content script on the URL the tab *loaded*, so
- * a script scoped to watch pages would simply not exist for anyone who reached
- * the video from the home feed.
+ * The match pattern is the whole host because YouTube routes client-side: a
+ * script scoped to `/watch` is never injected for a viewer arriving from the feed.
  */
 const YOUTUBE_ORIGIN = 'https://www.youtube.com';
 /** Video ids are 11 chars of base64url. Narrow enough to tell an id from a page name. */

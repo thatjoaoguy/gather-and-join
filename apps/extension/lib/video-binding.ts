@@ -29,13 +29,9 @@ export class VideoBinding {
     this.scan();
     if (this.sabotaged) return;
     this.observer = new MutationObserver(() => this.scan());
-    // Attributes as well as the tree: an adapter's answer can turn on an attribute
-    // rather than on what exists (YouTube marks an ad break with a class on the
-    // player, and leaves the watch page in the DOM behind `hidden`), and those
-    // arrive as attribute records only — a childList-only observer would not
-    // re-scan until something unrelated happened to move. Filtered to the two
-    // attributes that carry that meaning, so a player's constant style and aria
-    // churn does not put `scan` on the hot path.
+    // Attributes as well as the tree: an adapter's answer can turn on one (YouTube's
+    // ad marker is a class, its watch page hides behind `hidden`), and those arrive
+    // as attribute records only. Filtered to the two, to keep `scan` off the hot path.
     this.observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'hidden'] });
   }
 

@@ -8,10 +8,9 @@
  *    children can; narrow every child except the sidebar host. Players
  *    re-render these, so callers re-apply it and it is idempotent.
  *
- * Both modes then look for a viewport-anchored layer, because a site can put
- * one either side of the fullscreen element: YouTube calls requestFullscreen on
- * <html> itself, so narrowing "the fullscreen element's children" only reaches
- * <body>, which its app layer does not sit in the flow of.
+ * Both modes also look for a viewport-anchored layer, which a site can put either
+ * side of the fullscreen element: fullscreen taken on <html> leaves <body> as the
+ * only child to narrow, and an app layer need not sit in its flow.
  */
 export const SIDEBAR_WIDTH = 240;
 
@@ -68,33 +67,23 @@ export class PageLayout {
   }
 
   /**
-   * The width a layer has to fit into. `documentElement.clientWidth` is the
-   * *viewport*, not the root element's own box — the root is special-cased in
-   * CSSOM — which is exactly what is wanted here and in fullscreen alike: it is
-   * the width `calc(100% - SIDEBAR_WIDTH)` resolves against, scrollbar already
-   * excluded, and it does not change when <html> is narrowed.
+   * The width a layer has to fit into. `documentElement.clientWidth` is the viewport
+   * rather than the root's own box, which is what `calc(100% - SIDEBAR_WIDTH)`
+   * resolves against and does not change when <html> is narrowed.
    */
   private available(): number {
     return this.doc.documentElement.clientWidth - SIDEBAR_WIDTH;
   }
 
   /**
-   * The outermost ancestor of the player that is still too wide to fit beside
-   * the sidebar, or null when everything already fits.
+   * The outermost ancestor of the player still too wide to fit beside the sidebar.
    *
-   * Narrowing <html> is enough for a layout that is in flow. It is not when the
-   * player sits in a layer laid out against the viewport instead: HBO Max wraps
-   * its player in a position:fixed, inset:0 layer, and YouTube's whole app is a
-   * position:absolute <ytd-app> whose containing block is the initial containing
-   * block. Both stay viewport-wide while <html> shrinks underneath them.
-   *
-   * Chosen by measuring rather than by testing `position`, because those are two
-   * different ways of producing one problem and there will be a third. Outermost,
-   * and one only: narrowing it is what lets everything inside it reflow, and a
-   * site that recomputes its inner widths asynchronously reports stale ones to a
-   * walk that keeps going — YouTube's watch columns measure as full width for a
-   * frame after their container shrinks, and narrowing those too leaves the page
-   * 60px wider than it started.
+   * Narrowing <html> is enough for a layout in flow, but not for a player inside a
+   * layer laid out against the viewport: a position:fixed inset:0 wrapper, or an
+   * absolutely positioned app root whose containing block is the initial one. Found
+   * by measuring rather than by testing `position`, since both produce it. Outermost
+   * and one only — a site that recomputes inner widths asynchronously reports stale
+   * ones to a walk that keeps going.
    */
   private wideLayer(limit: HTMLElement): HTMLElement | null {
     const chain: HTMLElement[] = [];
@@ -114,9 +103,8 @@ export class PageLayout {
       if (child === except || !(child instanceof HTMLElement) || child.dataset.gjShrunk) continue;
       narrow(child, 'fs');
     }
-    // Narrowing the children is not enough when one of them is only an ancestor
-    // of the player on paper — YouTube fullscreens <html>, so the child reached
-    // above is <body>, which its absolutely positioned app layer ignores.
+    // Not enough when a child is only an ancestor of the player on paper: <body> is,
+    // and an absolutely positioned app layer inside it ignores its width.
     const layer = this.wideLayer(fs);
     if (layer && layer !== except) narrow(layer, 'fs');
   }

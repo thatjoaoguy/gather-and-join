@@ -24,10 +24,8 @@ const loaded = (v: HTMLVideoElement | null) => (v && v.readyState > 0 ? v : null
 
 export const harnessAdapter: PlayerAdapter = {
   providerId: 'harness',
-  // Same gate as YouTube's, and scoped to the same shape: the marker for the ad
-  // itself, and "has metadata" for the gap the real player leaves after clearing
-  // it. The HBO and Drive shapes must keep answering exactly as they did, so the
-  // gate cannot be hoisted out of this branch.
+  // The YouTube shape's gate, scoped to that shape so HBO and Drive answer unchanged:
+  // the marker while an ad runs, and metadata for the gap after it clears.
   findVideo: (root) => {
     const v = queryVideo(root);
     if (ytShaped(root)) return adShowing(root) ? null : loaded(v);

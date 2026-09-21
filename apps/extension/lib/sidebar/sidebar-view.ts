@@ -20,16 +20,12 @@ export type SidebarConnection = 'connected' | 'reconnecting';
 export type OffEpisode = { watchUrl: string } | null;
 
 /**
- * Every declaration on :host is !important, and that is load-bearing rather than
- * shouting. A shadow root protects its *contents* from page CSS but not its host
- * element: a document rule that matches the host beats the shadow tree's :host
- * rule for normal declarations. YouTube ships an Eric Meyer style reset whose
- * selector list includes `div`, setting `background: transparent` and
- * `font: inherit` — which silently stripped the sidebar's background and font,
- * `all: initial` included, since that is a normal declaration too. For important
- * declarations the cascade reverses and the shadow tree wins, so this is the one
- * spelling a page reset cannot undo. :host(.overlay) has to be important as well,
- * or it would lose to the important `position` above it.
+ * Every :host declaration is !important, which is load-bearing rather than
+ * shouting. A shadow root protects its contents from page CSS but not its host
+ * element, and a document rule matching the host beats :host for normal
+ * declarations — a reset listing `div` takes the background, the font and
+ * `all: initial` with it. Important declarations cascade the other way round.
+ * :host(.overlay) is important for the same reason, against the `position` above.
  */
 const STYLE = `
   :host { all: initial !important; --bg:#101014; --surface:#1c1922; --raised:#272130; --line:#44394e; --text:#f4f0fa; --muted:#c3bacf; --purple:#b9a0ff; --red:#fa8294; --warning:#f2c66d; --warning-bg:#2b2419; --r-tile:14px;
@@ -108,10 +104,8 @@ export class SidebarView {
     const parent = fs ?? this.doc.body;
     this.host.classList.toggle('overlay', !!fs);
     if (parent && this.host.parentElement !== parent) parent.appendChild(this.host);
-    // Leave the old mode before entering the new one, in both directions: the two
-    // modes can want the same element (a viewport-anchored app layer is narrowed
-    // by either), and an element still tagged by the mode being left is skipped by
-    // the one being entered — and then restored by the tag it still carries.
+    // Leave the old mode before entering the new one: both can want the same element,
+    // and one still tagged by the mode being left is skipped by the one being entered.
     if (fs) { this.layout.shrinkPage(false); this.layout.shrinkFullscreenChildren(fs, this.host); }
     else { this.layout.shrinkFullscreenChildren(null, null); this.layout.shrinkPage(true); }
     this.render();

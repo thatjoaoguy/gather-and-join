@@ -1,17 +1,14 @@
 /**
- * Does the sidebar survive a hostile page, and actually make room on one?
+ * Does the sidebar survive a hostile page, and make room on one?
  *
- * Both halves of this were broken on the real YouTube and invisible to every
- * other test here, because the HBO-shaped fixture is a cooperative page: it has
- * no CSS reset and its player is in the flow, so narrowing <html> is enough.
+ * The HBO-shaped fixture is a cooperative page — no CSS reset, player in the
+ * flow — so narrowing <html> is enough there and neither half of this is
+ * exercised. Here:
  *
- *  - A shadow root protects its contents from page CSS but not its host element.
- *    A document rule matching the host beats the shadow tree's :host rule, so a
- *    reset listing `div` silently stripped the sidebar's background.
- *  - An app layer laid out against the viewport does not care that <html> got
- *    narrower, so the page kept running full width underneath the sidebar — in
- *    fullscreen too, because fullscreen is requested on <html> and its only
- *    child in the way is <body>, which that layer is not in the flow of.
+ *  - a document rule matching the shadow host beats :host, so a reset listing
+ *    `div` reaches the sidebar's own background;
+ *  - an app layer laid out against the viewport ignores a narrowed <html>, in
+ *    fullscreen too, where the only child to narrow is <body>.
  */
 import { test, expect } from '@playwright/test';
 import { startParty, dumpParty } from '../src/party.ts';

@@ -1,31 +1,21 @@
 <!doctype html>
 <!--
-  Fake YouTube watch page. The hazard it reproduces is the one the HBO-shaped
-  page cannot: an ad that plays through the *same* <video> element. Nothing is
-  recreated, so nothing looks like a transition — only a class appears on the
-  player. Unguarded, the extension would read the ad's timeline and broadcast
-  it, and one viewer's pre-roll would seek the whole room into it.
+  Fake YouTube watch page, reproducing the hazards the HBO-shaped page cannot:
 
-  Deliberately not sharing markup or selectors with the real adapter: the
-  fixture's job is to imitate YouTube, and if both read one constant then the
-  day YouTube changes its markup the fixture changes with it and the suite keeps
-  passing while production breaks. Same reasoning as the up-next selectors in
-  apps/extension/lib/providers/harness.ts.
-
-  The break is 6s rather than the ad clip's full length: what is being measured
-  is what the room does while one peer is away, not how long it can wait.
-
-  Two layout hazards come with it, both taken from the real page:
+   - an ad that plays through the *same* <video>, announced only by a class on
+     the player, and cleared while the element is empty so the content position
+     is restored afterwards;
    - a CSS reset whose selector list includes `div`, which reaches the sidebar's
-     shadow *host* and strips anything :host sets without !important;
-   - an absolutely positioned app layer whose containing block is the initial
-     containing block, so it stays viewport-wide while <html> shrinks under it;
-   - and fullscreen is requested on <html>, not on the player, so "narrow the
-     fullscreen element's children" only ever reaches <body>.
+     shadow host and strips anything :host sets without !important;
+   - an app layer laid out against the viewport, which stays full width while
+     <html> shrinks under it;
+   - fullscreen requested on <html>, so narrowing the fullscreen element's
+     children only ever reaches <body>.
 
-  The ad break reproduces the real ordering rather than a convenient one: the
-  marker is cleared while the element is empty, and the content comes back after
-  a gap, carrying the seek to the viewer's old position with it.
+  The break is 6s: what is measured is what the room does while a peer is away,
+  not how long it can wait. Markup and selectors are duplicated from the real
+  site rather than shared with the adapter, so a change there cannot quietly
+  change the fixture with it.
 -->
 <meta charset="utf-8">
 <title>Fake YouTube</title>
@@ -81,22 +71,16 @@
     video.src = '/media/ad';
     video.play();
     setTimeout(() => {
-      /*
-        Measured on a live mid-roll: YouTube clears `ad-showing` while the element
-        still holds nothing, and only puts the content back afterwards - 160ms in
-        one capture, ~800ms in another. The gap is what matters, so this uses the
-        long end of it, comfortably past the 500ms echo-suppression window. An
-        adapter that reopens on the marker alone attaches to an empty element here
-        and then broadcasts the restore seek below as if the viewer had scrubbed.
-      */
+      // The content is restored after the marker clears, not before: an adapter
+      // that reopens on the marker alone attaches to an empty element here and
+      // broadcasts the restore seek below as if the viewer had scrubbed.
       video.removeAttribute('src');
       video.load();
       player.classList.remove('ad-showing');
       setTimeout(() => {
         video.src = '/media/main';
         video.addEventListener('loadedmetadata', () => {
-          // Back where the viewer left off, not where the room has got to.
-          // Catching up from here is the extension's job, and is what the spec measures.
+          // Where the viewer left off, not where the room has got to; catching up is the extension's job.
           video.currentTime = resumeAt;
           video.play();
         }, { once: true });
