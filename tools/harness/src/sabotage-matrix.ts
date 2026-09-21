@@ -11,6 +11,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { TEST_SERVER_PORT, TEST_PLAYER_PORT } from './endpoints.ts';
 
 const HERE = import.meta.dirname;
 
@@ -39,8 +40,8 @@ const SKIP_UNDER_FLAG: Record<string, string[]> = { offscreen: ['service worker 
 
 type Result = { title: string; status: string };
 
-const BASE_SERVER_PORT = Number(process.env.TEST_SERVER_PORT ?? 18080);
-const BASE_PLAYER_PORT = Number(process.env.TEST_PLAYER_PORT ?? 14173);
+const BASE_SERVER_PORT = TEST_SERVER_PORT;
+const BASE_PLAYER_PORT = TEST_PLAYER_PORT;
 /**
  * Rows run concurrently, each on its own ports. Every row drives 2-3 Chrome instances
  * doing WebRTC, so on a small machine 4 rows at once turn the timing assertions into
@@ -62,6 +63,18 @@ function installKiller() {
   for (const sig of ['SIGINT', 'SIGTERM'] as const) process.on(sig, () => { killAll(); process.exit(1); });
 }
 
+/** The environment one sabotage row runs under. */
+function rowEnv(sabotage: string, slot: number, resultsFile: string) {
+  return {
+    GJ_SABOTAGE: sabotage, GJ_SKIP_BUILD: '1', PLAYWRIGHT_JSON_OUTPUT_NAME: resultsFile,
+    TEST_SERVER_PORT: String(BASE_SERVER_PORT + slot * 10), TEST_PLAYER_PORT: String(BASE_PLAYER_PORT + slot * 10),
+    // Expected failures skip the diagnostic dump (its calls crawl against a page the sabotage has jammed), and
+    // every test gets a shorter cap: the slowest passing test is ~40s, and an expected failure needs no more.
+    GJ_EXPECT_FAIL: MATRIX[sabotage]!.map(esc).join('|'),
+    GJ_TEST_TIMEOUT_MS: '100000',
+  };
+}
+
 function runSuite(sabotage: string, slot: number): Promise<{ results: Result[]; log: string; seconds: number }> {
   const root = path.join(HERE, '..');
   const logDir = path.join(root, 'test-results', 'sabotage-logs');
@@ -73,16 +86,13 @@ function runSuite(sabotage: string, slot: number): Promise<{ results: Result[]; 
   return new Promise((resolve, reject) => {
     const out = fs.openSync(logFile, 'w');
     installKiller();
+    // Each row runs on its own ports and so must derive its own URLs; inherited, they would pin every row to the parent's.
+    const env: NodeJS.ProcessEnv = { ...process.env, ...rowEnv(sabotage, slot, resultsFile) };
+    delete env.SERVER_URL;
+    delete env.PLAYER_ORIGIN;
     const child = spawn('pnpm', ['exec', 'playwright', 'test', '--grep-invert', grepInvert, '--reporter=list,json', '--output', `test-results/sabotage-${sabotage}`], {
       cwd: root,
-      env: {
-        ...process.env, GJ_SABOTAGE: sabotage, GJ_SKIP_BUILD: '1', PLAYWRIGHT_JSON_OUTPUT_NAME: resultsFile,
-        TEST_SERVER_PORT: String(BASE_SERVER_PORT + slot * 10), TEST_PLAYER_PORT: String(BASE_PLAYER_PORT + slot * 10),
-        // Expected failures skip the diagnostic dump (its calls crawl against a page the sabotage has jammed), and
-        // every test gets a shorter cap: the slowest passing test is ~40s, and an expected failure needs no more.
-        GJ_EXPECT_FAIL: MATRIX[sabotage]!.map(esc).join('|'),
-        GJ_TEST_TIMEOUT_MS: '100000',
-      },
+      env,
       stdio: ['ignore', out, out],
     });
     children.add(child);
