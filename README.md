@@ -39,8 +39,11 @@ More are planned. Adding one is a provider entry plus an adapter; see
 2. **Everyone installs the extension.** From the Chrome Web Store link the host
    shares (the listing is unlisted for now), or by building it yourself (see
    [Development](#development)).
-3. **Set it up once.** Click the extension, open **Connection & device setup**,
-   allow the microphone (camera optional), paste the server address, save.
+3. **Set it up once.** Installing opens the setup page by itself: allow the
+   microphone (camera optional) and paste the server address the host shared,
+   then save. It walks the three steps in order and says what is still missing,
+   so nobody lands in the popup with a server they were never asked about. Reach
+   it again any time from the extension, under **Connection & device setup**.
 
 ## Using it
 
@@ -292,6 +295,7 @@ media-track stand-ins):
 | `sidebar/party-sidebar.ts` | composes `SidebarView` (DOM), `PageLayout` (making room), `LoopbackReceiver` | the port, the provider's video locator |
 | `participants.ts` | the one derivation of "who is in the room", used by the popup and the sidebar | — |
 | `badge.ts` | the toolbar dot: which state the snapshot means, and the circle drawn onto the icon for it | a `chrome.action` slice, a canvas |
+| `setup-state.ts` | the one derivation of "what is still to set up" — microphone, camera, address — shared by the popup's first run and the setup page | — |
 | `sync-engine.ts`, `video-binding.ts`, `ducking.ts`, `up-next.ts` | per-page playback behaviour | a video locator, callbacks |
 
 #### Streaming providers

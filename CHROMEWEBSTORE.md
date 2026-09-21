@@ -127,17 +127,18 @@ the extension's core functionality, and not used for creditworthiness or lending
 
 > This extension needs a running companion server, and for the HBO Max flow a subscription. The Google Drive flow needs neither: any video file in the reviewer's own Drive works.
 > Test server: wss://[fill in before submitting; keep it up for the review window]
-> Steps: install → open the extension's setup page → paste the server address → Save. Open any episode on play.hbomax.com, or any video file at drive.google.com/file/d/<id>/view → click the extension → Create room. A second browser profile can Join with the six-character code; play/pause on one follows on the other. For the Drive flow the file must be shared with the second profile's Google account.
+> Steps: install (the setup page opens by itself; it is also reachable from the extension) → allow the microphone → paste the server address → Save. Open any episode on play.hbomax.com, or any video file at drive.google.com/file/d/<id>/view → click the extension → Create room. A second browser profile can Join with the six-character code; play/pause on one follows on the other. For the Drive flow the file must be shared with the second profile's Google account.
 > Without a subscription, the same flow can be seen on the demo video: [link]
 > Microphone and camera are requested only when the user clicks Allow on the setup page; they are never recorded and never touch a server.
 
-Known limitations to expect during review: a fresh install does nothing until a server
-address is configured, and ad-supported HBO Max tiers desync during ad breaks (the room
-re-converges afterwards). On Google Drive, a link opened without an account hint resolves
-to the viewer's first Google account, so on a profile signed into several accounts the
-"Go to episode" button may show "Unable to load video" — opening the file URL directly
-works. Drive also rate-limits a single file streamed by several viewers at once; that is
-a Drive quota, not an extension fault.
+Known limitations to expect during review: a fresh install cannot join anything until a
+server address is configured — the setup page opens on install and says which of the three
+steps are outstanding, and the popup offers the same until one is saved. Ad-supported HBO
+Max tiers desync during ad breaks (the room re-converges afterwards). On Google Drive, a
+link opened without an account hint resolves to the viewer's first Google account, so on
+a profile signed into several accounts the "Go to episode" button may show "Unable to
+load video" — opening the file URL directly works. Drive also rate-limits a single file
+streamed by several viewers at once; that is a Drive quota, not an extension fault.
 
 ## Repository steps
 

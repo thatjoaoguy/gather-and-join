@@ -6,6 +6,7 @@
 import { parseContentId, isValidRoomCode, normalizeRoomCode, ROOM_CODE_LENGTH } from '@gj/shared';
 import { PORT_POPUP, type OffscreenToPopup, type PopupToOffscreen, type Snapshot } from '../../lib/messages';
 import { participantsFrom, type Participant } from '../../lib/participants';
+import { firstRun, type SetupInput } from '../../lib/setup-state';
 import { ReconnectingPort } from '../../lib/port';
 import { ic, escapeHtml as esc } from '../../lib/ui/icons';
 import { ensureQuicksand } from '../../lib/ui/fonts';
@@ -18,6 +19,10 @@ let activeTabUrl: string | null = null;
 let tab: 'join' | 'create' = 'join';
 let showServer = true;
 let probed = false;
+/** Whether an address was ever saved. The built-in default is not one the user chose. */
+let serverConfigured = false;
+/** Storage has answered. Painting before it can flash the first-run lobby at a set-up profile. */
+let booted = false;
 let copiedTimer: ReturnType<typeof setTimeout> | null = null;
 /** Chrome's own permission state, so the lobby can show it before any room is joined. */
 const perms: { mic: PermissionState | 'unknown'; cam: PermissionState | 'unknown' } = { mic: 'unknown', cam: 'unknown' };
@@ -50,6 +55,8 @@ function setTab(t: 'join' | 'create') {
 
 function serverRow(s: Snapshot): string {
   const st = s.server;
+  // Nothing was ever saved: there is no address to report on, only a step to take.
+  if (!serverConfigured && st.state !== 'reachable') return `<li class="server warn">${ic('server')}<span>Server not set up</span><a href="#" id="change-server">Set up</a></li>`;
   const cls = st.state === 'reachable' ? 'ok' : st.state === 'checking' ? 'busy' : st.state === 'unreachable' ? 'err' : '';
   const word = st.state === 'reachable' ? 'Reachable' : st.state === 'checking' ? 'Connecting' : st.state === 'unreachable' ? 'Can’t reach it' : 'Not checked';
   const host = showServer ? esc(st.host) : `<span class="spoiler" tabindex="0" title="Hidden · hover or press to reveal">${esc(st.host)}</span>`;
@@ -57,10 +64,17 @@ function serverRow(s: Snapshot): string {
   return `<li class="server ${cls}">${ic('server')}<span>${host}<span class="sr"> · ${word}</span></span>${eye}<a href="#" id="change-server">Change</a></li>`;
 }
 
+/** What the popup knows about setup: storage for the address, Chrome for the devices. */
+function setupInput(s: Snapshot): SetupInput {
+  const state = (a: Snapshot['micPermission'], b: PermissionState | 'unknown') => (a === 'unknown' ? (b === 'prompt' ? 'unknown' : b) : a);
+  return { serverConfigured, serverState: s.server.state, mic: state(s.micPermission, perms.mic), cam: state(s.camPermission, perms.cam) };
+}
+
 function renderLobby(s: Snapshot) {
   const joining = s.joining;
   const err = s.lastError;
-  const unreachable = s.server.state === 'unreachable' || err?.code === 'SERVER_UNREACHABLE';
+  const fresh = firstRun(setupInput(s));
+  const unreachable = !fresh && (s.server.state === 'unreachable' || err?.code === 'SERVER_UNREACHABLE');
   $('tab-join').toggleAttribute('disabled', joining);
   $('tab-create').toggleAttribute('disabled', joining);
   nameInput.disabled = joining;
@@ -73,15 +87,24 @@ function renderLobby(s: Snapshot) {
   const submit = $<HTMLButtonElement>('submit');
   submit.className = `${tab === 'join' ? 'primary' : 'secondary'} full`;
   const ready = tab === 'create' || codeValid();
-  submit.disabled = joining || !ready || unreachable;
+  submit.disabled = joining || !ready || unreachable || fresh;
   submit.classList.toggle('not-ready', !joining && (!ready || unreachable));
   submit.setAttribute('aria-disabled', String(submit.disabled));
   submit.textContent = joining ? (tab === 'join' ? 'Joining…' : 'Creating…') : (tab === 'join' ? 'Join room' : 'Create a room');
 
+  // Before setup there is nowhere to join and nothing to be ready for: the lobby is
+  // only the invitation. The three states live on the setup page, which owns them.
+  for (const id of ['tabs', 'name-label', 'name', 'lobby-divider', 'readiness']) $(id).hidden = fresh;
+  if (fresh) { $('join-fields').hidden = true; $('create-helper').hidden = true; }
+
   // Notice and recovery
   let notice = ''; let recovery = '';
   codeInput.removeAttribute('aria-invalid');
-  if (err && !joining) {
+  if (fresh) {
+    // Never set up, so nothing is wrong yet: say what is missing, not that it broke.
+    notice = `<div class="notice info" role="status"><strong>${ic('info')} Let’s get you set up</strong><p>Your microphone, your camera if you want one, and the address of the server someone in your group is hosting. Once, and you’re done.</p></div>`;
+    recovery = `<button class="primary full" id="open-setup" type="button">Set up Gather &amp; Join</button>`;
+  } else if (err && !joining) {
     if (err.code === 'SERVER_UNREACHABLE') {
       const addr = showServer ? `<code>${esc(s.server.url)}</code>` : `<span class="spoiler" tabindex="0">${esc(s.server.url)}</span>`;
       notice = `<div class="notice error" role="alert"><strong>${ic('err')} Can’t reach your server</strong><p>Nothing answered at ${addr}. Check the address with the person hosting it, or make sure their machine is awake.</p></div>`;
@@ -104,9 +127,10 @@ function renderLobby(s: Snapshot) {
   }
   $('lobby-notice').innerHTML = notice;
   $('lobby-recovery').innerHTML = recovery;
-  if (unreachable) submit.hidden = true; else submit.hidden = false;
+  submit.hidden = unreachable || fresh;
 
-  // Readiness
+  // Readiness. Nothing to report before setup: the three states belong to the setup page.
+  if (fresh) { $('lobby-foot').textContent = 'Setup takes a minute and holds for every party after this one.'; return; }
   const micDenied = s.micPermission === 'denied' || perms.mic === 'denied';
   const micOk = s.micPermission === 'granted' || perms.mic === 'granted';
   const camDenied = s.camPermission === 'denied' || perms.cam === 'denied';
@@ -190,7 +214,7 @@ function renderRoom(s: Snapshot) {
 
 function render() {
   const s = snapshot;
-  if (!s) return;
+  if (!s || !booted) return;
   const inRoom = !!s.room;
   $('view-lobby').hidden = inRoom;
   $('view-room').hidden = !inRoom;
@@ -242,15 +266,18 @@ $('leave').onclick = () => send({ type: 'leaveRoom' });
 const initial = (name: string) => (name.trim()[0] ?? '?').toUpperCase();
 const hue = (id: string) => { let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) | 0; return (h & 1) === 1; };
 
-void chrome.storage.local.get(['name', 'showServerAddress']).then((v) => {
+void chrome.storage.local.get(['name', 'showServerAddress', 'serverUrl']).then((v) => {
   nameInput.value = (v.name as string) ?? '';
   showServer = v.showServerAddress !== false;
+  serverConfigured = typeof v.serverUrl === 'string';
+  booted = true;
   render();
 });
-// The setup page has the same eye; keep the two in step while both are open.
+// The setup page has the same eye and saves the address; keep up while both are open.
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== 'local' || !('showServerAddress' in changes)) return;
-  showServer = changes.showServerAddress!.newValue !== false;
+  if (area !== 'local' || !('showServerAddress' in changes || 'serverUrl' in changes)) return;
+  if ('showServerAddress' in changes) showServer = changes.showServerAddress!.newValue !== false;
+  if ('serverUrl' in changes) { serverConfigured = typeof changes.serverUrl!.newValue === 'string'; send({ type: 'probeServer' }); }
   render();
 });
 for (const [key, name] of [['mic', 'microphone'], ['cam', 'camera']] as const) {
