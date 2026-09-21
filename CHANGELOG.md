@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.6.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.5.0...v0.6.0) (2026-09-21)
+
+
+### Features
+
+* add YouTube as a streaming provider (adds a host permission) ([#34](https://github.com/thatjoaoguy/gather-and-join/issues/34)) ([0a5e652](https://github.com/thatjoaoguy/gather-and-join/commit/0a5e652ef3efc477db27b8e5478f921277f7980b))
+
 # [0.5.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.4.1...v0.5.0) (2026-09-21)
 
 
