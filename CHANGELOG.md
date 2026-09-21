@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.4.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.3.1...v0.4.0) (2026-09-21)
+
+
+### Features
+
+* **extension:** show the room connection on the toolbar icon ([#31](https://github.com/thatjoaoguy/gather-and-join/issues/31)) ([e7f467f](https://github.com/thatjoaoguy/gather-and-join/commit/e7f467f7974079be2ca7f984248f233b7dd90a68))
+
 ## [0.3.1](https://github.com/thatjoaoguy/gather-and-join/compare/v0.3.0...v0.3.1) (2026-09-20)
 
 
