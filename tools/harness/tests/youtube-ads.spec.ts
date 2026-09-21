@@ -14,7 +14,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { startParty, spreadMs, pressPlay, state, counters, dumpParty } from '../src/party.ts';
-import { waitForCondition } from '../src/peers.ts';
+import { waitForCondition, sleepMs } from '../src/peers.ts';
 
 /** The fixture's break, plus room for the content source to come back. */
 const AD_MS = 6000;
@@ -26,6 +26,9 @@ test('same-element ad break: the room advances by wall-clock alone, and the ad p
     await pressPlay(party.leader);
     await waitForCondition(async () => (await state(follower)).paused === false, { label: 'follower playing' });
     await waitForCondition(async () => (await spreadMs(party.peers)).spread < 150, { timeout: 10_000, label: 'initial convergence' });
+    // Far enough in that the position the player restores to is unmistakably content,
+    // not something a freshly emptied element could report by accident.
+    await waitForCondition(async () => (await state(follower)).positionMs! > 3000, { timeout: 15_000, interval: 250, label: 'past 3s' });
 
     const leaderBefore = await state(party.leader);
     const seeksBefore = (await counters(party.leader)).hardSeeks;
@@ -35,10 +38,17 @@ test('same-element ad break: the room advances by wall-clock alone, and the ad p
     // playing an ad, so as far as the room is concerned this peer has no player.
     await waitForCondition(async () => (await state(follower)).positionMs === null, { timeout: 3000, label: 'ad gate closed' });
 
-    await waitForCondition(async () => (await state(follower)).positionMs !== null, { timeout: AD_MS + 10_000, interval: 250, label: 'ad over, element back' });
+    // Content back, not merely the marker gone: the player empties the element,
+    // clears the marker, and only then restores the viewer's position.
+    await waitForCondition(async () => { const s = await state(follower); return s.positionMs !== null && s.positionMs > 1000; },
+      { timeout: AD_MS + 15_000, interval: 250, label: 'ad over, content back' });
+    // The restore seek lands a beat *after* the element does, and past the echo
+    // window. Measuring the leader at the moment the element returns is what let
+    // an earlier version of this spec pass with the gate taken out.
+    await sleepMs(2500);
 
-    // The leader moved exactly as far as time did. Without the gate it would have
-    // been seeked to the ad's position instead — a jump of tens of seconds.
+    // The leader moved exactly as far as time did. Without the gate it is seeked
+    // either into the ad's timeline or back to where the ad peer resumed.
     const leaderAfter = await state(party.leader);
     const advanced = leaderAfter.positionMs! - leaderBefore.positionMs!;
     const elapsed = leaderAfter.atUnixMs - leaderBefore.atUnixMs;

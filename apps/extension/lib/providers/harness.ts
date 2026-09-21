@@ -17,13 +17,22 @@ import { embedMedia } from './yt-embed-media';
  * keeps the fake honest about the real.
  */
 const embed = embedMedia((origin) => origin !== location.origin);
+/** `#movie_player` is what makes a page the YouTube-shaped one, as on the real site. */
+const ytShaped = (root: ParentNode) => !!root.querySelector('#movie_player');
 const adShowing = (root: ParentNode) => !!root.querySelector('#movie_player.ad-showing');
+const loaded = (v: HTMLVideoElement | null) => (v && v.readyState > 0 ? v : null);
 
 export const harnessAdapter: PlayerAdapter = {
   providerId: 'harness',
-  // Same gate as YouTube's: while the ad marker is up there is no media to report,
-  // so nothing is broadcast and nothing corrected until the break is over.
-  findVideo: (root) => (adShowing(root) ? null : queryVideo(root) ?? embed.findVideo(root)),
+  // Same gate as YouTube's, and scoped to the same shape: the marker for the ad
+  // itself, and "has metadata" for the gap the real player leaves after clearing
+  // it. The HBO and Drive shapes must keep answering exactly as they did, so the
+  // gate cannot be hoisted out of this branch.
+  findVideo: (root) => {
+    const v = queryVideo(root);
+    if (ytShaped(root)) return adShowing(root) ? null : loaded(v);
+    return v ?? embed.findVideo(root);
+  },
   findAnchor: (root) => queryVideo(root) ?? embed.findAnchor(root),
   upNext: { panel: ['[data-testid="up_next"]'], dismiss: ['[data-testid="player-ux-up-next-dismiss"]'] },
 };

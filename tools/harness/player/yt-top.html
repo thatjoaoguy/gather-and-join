@@ -22,6 +22,10 @@
      containing block, so it stays viewport-wide while <html> shrinks under it;
    - and fullscreen is requested on <html>, not on the player, so "narrow the
      fullscreen element's children" only ever reaches <body>.
+
+  The ad break reproduces the real ordering rather than a convenient one: the
+  marker is cleared while the element is empty, and the content comes back after
+  a gap, carrying the seek to the viewer's old position with it.
 -->
 <meta charset="utf-8">
 <title>Fake YouTube</title>
@@ -77,22 +81,26 @@
     video.src = '/media/ad';
     video.play();
     setTimeout(() => {
-      // Content back first, marker cleared last — "ad-showing" means the ad is on
-      // screen, so by the time it goes the element is content again. ASSUMPTION,
-      // not an observation: no ad was served while YouTube was being inspected, so
-      // the reverse ordering (marker cleared while the player is still restoring
-      // the content position) has not been ruled out. If it happens, the restore
-      // seek lands after the extension has picked the element back up and gets
-      // announced as if the viewer had scrubbed, dragging the room back by the
-      // length of the break.
-      video.src = '/media/main';
-      video.addEventListener('loadedmetadata', () => {
-        // Back where the viewer left off, *not* where the room has got to. Catching
-        // up from here is the extension's job, and is what the spec measures.
-        video.currentTime = resumeAt;
-        video.play();
-        player.classList.remove('ad-showing');
-      }, { once: true });
+      /*
+        Measured on a live mid-roll: YouTube clears `ad-showing` while the element
+        still holds nothing, and only puts the content back afterwards - 160ms in
+        one capture, ~800ms in another. The gap is what matters, so this uses the
+        long end of it, comfortably past the 500ms echo-suppression window. An
+        adapter that reopens on the marker alone attaches to an empty element here
+        and then broadcasts the restore seek below as if the viewer had scrubbed.
+      */
+      video.removeAttribute('src');
+      video.load();
+      player.classList.remove('ad-showing');
+      setTimeout(() => {
+        video.src = '/media/main';
+        video.addEventListener('loadedmetadata', () => {
+          // Back where the viewer left off, not where the room has got to.
+          // Catching up from here is the extension's job, and is what the spec measures.
+          video.currentTime = resumeAt;
+          video.play();
+        }, { once: true });
+      }, 700);
     }, AD_MS);
   });
 

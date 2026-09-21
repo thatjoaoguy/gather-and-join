@@ -14,24 +14,49 @@ import type { PlayerAdapter } from './player-adapter';
  *     `offsetParent`: this runs on every DOM mutation and YouTube mutates
  *     constantly, so it must not force layout.
  *
- * Ads play through that same element. Reported unguarded, the ad's timeline is
- * what the room hears: one viewer's pre-roll seeks everybody into it, and they
- * are yanked back when it ends. So while the player carries `ad-showing` this
- * adapter reports no video at all — VideoBinding unwires, nothing is broadcast
- * and no correction is applied, and the end of the ad arrives as a re-attach,
- * which is already the path that resyncs a fresh element to the room. Nothing
- * touches the ad itself; it is only ignored.
+ * Ads play through that same element, and the element is *not* replaced across
+ * the break, so nothing else marks the transition. Reported unguarded, the ad's
+ * timeline is what the room hears: one viewer's break seeks everybody into it.
+ * So this adapter reports no video for the whole break — VideoBinding unwires,
+ * nothing is broadcast and no correction is applied, and the return arrives as a
+ * re-attach, which is already the path that resyncs a fresh element to the room.
+ * Nothing touches the ad itself; it is only ignored.
  *
- * `ad-showing` is YouTube's own marker (`.html5-video-player.ad-showing` is a
- * live rule in its stylesheet, and `#movie_player` carries that class). If it
- * is ever renamed the gate stops firing and sync goes back to fighting over ad
- * breaks — degraded, not broken.
+ * "The whole break" is two conditions, and the second one is not obvious.
+ * Measured across a live mid-roll (2026-09-20, a 38-minute video paused at
+ * 25:53):
+ *
+ *   AD START  cur=0       dur=0         ad-showing
+ *   ...       cur=10.2    dur=107       ad-showing   <- the ad's own timeline
+ *   AD END    cur=0       dur=0         (marker gone, element empty)
+ *   +160ms    cur=1553.6  dur=2309.1    (content back, at the viewer's position)
+ *
+ * YouTube clears `ad-showing` while the element still holds nothing, and puts
+ * the content back a moment later — 160ms in that capture, ~800ms in another.
+ * On the marker alone the gate reopens into that gap, VideoBinding attaches to
+ * an empty element reading currentTime 0, and YouTube's own restore seek then
+ * lands as an untagged `seeking` that is broadcast as if the viewer had
+ * scrubbed. Echo suppression is a 500ms window, so whether the room gets
+ * dragged back by the length of the video is a race. Hence `loaded`: no
+ * metadata, no media, no opinion.
+ *
+ * The selector has to stay exactly `.ad-showing`. The player also carries
+ * `ad-created` long after the ad is over, so anything looser would latch the
+ * gate shut for the rest of the page's life. If YouTube renames it, the ad
+ * itself stops being gated and sync goes back to fighting over breaks —
+ * degraded, not broken.
  */
 const PLAYER = 'ytd-watch-flexy:not([hidden]) #movie_player';
 const MAIN_VIDEO = `${PLAYER} video.html5-main-video`;
 
 const findAnchor = (root: ParentNode) => root.querySelector<HTMLVideoElement>(MAIN_VIDEO);
 const adShowing = (root: ParentNode) => !!root.querySelector(`${PLAYER}.ad-showing`);
+/**
+ * Has media at all. `readyState === HAVE_NOTHING` means no metadata, so
+ * `currentTime` is 0 because there is nothing loaded — not because the viewer
+ * is at the start.
+ */
+const loaded = (v: HTMLVideoElement | null) => (v && v.readyState > 0 ? v : null);
 
 /**
  * Autoplay-next: `.ytp-autonav-endscreen-countdown-overlay` is an always-present
@@ -41,7 +66,7 @@ const adShowing = (root: ParentNode) => !!root.querySelector(`${PLAYER}.ad-showi
  */
 export const youtubeAdapter: PlayerAdapter = {
   providerId: 'youtube',
-  findVideo: (root) => (adShowing(root) ? null : findAnchor(root)),
+  findVideo: (root) => (adShowing(root) ? null : loaded(findAnchor(root))),
   // Not gated on the ad: the anchor is what the sidebar lays out around, and it
   // should stay put across an ad break rather than remount on either side of it.
   findAnchor,
