@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/thatjoaoguy/gather-and-join/compare/v0.4.0...v0.4.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* **harness:** derive the test server endpoints once ([#32](https://github.com/thatjoaoguy/gather-and-join/issues/32)) ([18c18b8](https://github.com/thatjoaoguy/gather-and-join/commit/18c18b808c177179182c843a16a1db66e06347bd))
+
 # [0.4.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.3.1...v0.4.0) (2026-09-21)
 
 
