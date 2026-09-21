@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.5.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.4.1...v0.5.0) (2026-09-21)
+
+
+### Features
+
+* **extension:** guide a first run through microphone, camera and server ([#33](https://github.com/thatjoaoguy/gather-and-join/issues/33)) ([960bea7](https://github.com/thatjoaoguy/gather-and-join/commit/960bea73261a494364f8c83ecf926b82ad1797ea))
+
 ## [0.4.1](https://github.com/thatjoaoguy/gather-and-join/compare/v0.4.0...v0.4.1) (2026-09-21)
 
 
