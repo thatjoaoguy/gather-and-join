@@ -1,10 +1,12 @@
 /**
- * Setup page: device permissions (granted here so the extension origin keeps
- * them), the ducking switch, and the connection address with reachability.
- * Opened with ?grant=1 or ?grant=camera it prompts at once and closes itself.
+ * Setup page: the three things a new install owes its user — microphone, camera
+ * (optional) and the connection address — plus the ducking switch and diagnostics.
+ * Opened with ?grant=1 or ?grant=camera it prompts at once, then stays open on
+ * whatever is still outstanding: granting one permission is not being set up.
  */
-import { DEFAULT_SERVER_URL } from '../../lib/constants';
+import { DEFAULT_SERVER_URL, HOST_GUIDE_URL } from '../../lib/constants';
 import type { PeerStats, ServerStatus, Snapshot } from '../../lib/messages';
+import { nextStep, setupComplete, setupSteps, setupSummary, type DevicePermission, type SetupStep } from '../../lib/setup-state';
 import { ic } from '../../lib/ui/icons';
 import { ensureQuicksand } from '../../lib/ui/fonts';
 
@@ -17,31 +19,63 @@ const eye = $<HTMLButtonElement>('eye');
 const serverStatus = $('server-status');
 const saveStatus = $('save-status');
 const saveBtn = $<HTMLButtonElement>('save');
+const retryBtn = $<HTMLButtonElement>('server-retry');
 let showServer = true;
 let lastSaved = '';
+let booted = false;
+/** Everything the three steps are computed from, kept here as each source answers. */
+const state = { serverConfigured: false, serverState: 'unknown' as ServerStatus['state'], mic: 'unknown' as DevicePermission, cam: 'unknown' as DevicePermission };
 
 const toOffscreen = async <T>(msg: Record<string, unknown>): Promise<T | undefined> => {
   await chrome.runtime.sendMessage({ target: 'background', type: 'ensureOffscreen' }).catch(() => {});
   return chrome.runtime.sendMessage({ target: 'offscreen', ...msg }).catch(() => undefined);
 };
 
+// ---- what is still outstanding ----------------------------------------------------------
+
+const steps = () => setupSteps(state);
+const blockId = { mic: 'mic-block', cam: 'cam-block', server: 'server-block' } as const;
+const titleId = { mic: 'mic-title', cam: 'cam-title', server: 'server-title' } as const;
+
+/** The block under the hero: what is left to do, or that nothing is. Quiet until
+ * storage has answered, so a configured profile is never told it is a fresh one. */
+function showProgress() {
+  if (!booted) return;
+  const list = steps();
+  for (const step of list) $(titleId[step.id]).classList.toggle('done', step.state === 'done');
+  $('setup-state').innerHTML = setupComplete(list)
+    ? `<div class="notice success"><strong>${ic('ok')} You’re all set.</strong><p>Open the Gather &amp; Join popup to create a room, or join one with a code.</p></div>`
+    : `<div class="notice info"><strong>${ic('info')} ${setupSummary(list)}</strong><p>Set these up once and the extension remembers. Nothing here leaves your browser.</p></div>`;
+}
+
+/** After a grant: on to whatever nobody has answered, so one visit is enough. */
+function goToNextStep() {
+  const next: SetupStep | null = nextStep(steps());
+  if (!next) return;
+  const block = $(blockId[next.id]);
+  block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  (next.id === 'server' ? urlInput : block.querySelector<HTMLButtonElement>('button'))?.focus({ preventScroll: true });
+}
+
 // ---- devices ---------------------------------------------------------------------------
 
 type Kind = 'audio' | 'video';
 const meta = { audio: { action: 'mic-action', notice: 'mic-notice', label: 'Microphone', grantId: 'grant', msg: 'micGranted', perm: 'microphone' }, video: { action: 'cam-action', notice: 'cam-notice', label: 'Camera', grantId: 'grant-cam', msg: 'cameraGranted', perm: 'camera' } } as const;
 
-function showDevice(kind: Kind, state: 'unknown' | 'granted' | 'denied', errName?: string) {
+function showDevice(kind: Kind, permission: DevicePermission, errName?: string) {
   const m = meta[kind];
   const action = $(m.action);
   const notice = $(m.notice);
-  if (state === 'granted') {
+  state[kind === 'audio' ? 'mic' : 'cam'] = permission;
+  showProgress();
+  if (permission === 'granted') {
     action.innerHTML = `<span class="allowed">${ic('ok')}Allowed</span>`;
     notice.innerHTML = '';
     return;
   }
-  action.innerHTML = `<button class="${kind === 'audio' ? 'primary' : ''}" id="${m.grantId}" type="button">${state === 'denied' ? 'Try again' : `Allow ${m.label.toLowerCase()}`}</button>`;
+  action.innerHTML = `<button class="${kind === 'audio' ? 'primary' : ''}" id="${m.grantId}" type="button">${permission === 'denied' ? 'Try again' : `Allow ${m.label.toLowerCase()}`}</button>`;
   $(m.grantId).onclick = () => grant(kind);
-  notice.innerHTML = state === 'denied'
+  notice.innerHTML = permission === 'denied'
     ? `<div class="notice error" role="alert"><strong>${ic('err')} ${m.label} not allowed</strong><p>Chrome or your system blocked it${errName ? ` (<code>${errName}</code>)` : ''}. Check Chrome’s site settings for this extension and your system’s privacy settings for the ${m.label.toLowerCase()}, then try again.</p></div>`
     : '';
 }
@@ -52,7 +86,9 @@ async function grant(kind: Kind) {
     s.getTracks().forEach((t) => t.stop());
     showDevice(kind, 'granted');
     await toOffscreen({ type: meta[kind].msg });
-    if (wanted) setTimeout(() => window.close(), 800);
+    // The popup's "Allow" links land here, and one grant is not a finished setup:
+    // move on to whatever is still unanswered rather than closing the page.
+    goToNextStep();
   } catch (e) {
     showDevice(kind, 'denied', (e as Error).name);
   }
@@ -86,11 +122,21 @@ function setFieldStatus(cls: '' | 'ok' | 'err' | 'busy', icon: 'ok' | 'err' | 'w
   serverStatus.innerHTML = `${icon ? ic(icon, 'sm') : ''}${text}`;
 }
 function showProbe(st: ServerStatus | undefined) {
-  if (!st || st.url !== urlInput.value.trim()) return;
+  if (!st) return;
+  if (st.url === lastSaved) { state.serverState = st.state; showProgress(); }
+  if (st.url !== urlInput.value.trim()) return;
+  // A host's machine can be slow to wake, so an address that saved fine may not answer
+  // the first time. Offer the retry here rather than making them save again to re-probe.
+  retryBtn.hidden = st.state !== 'unreachable';
   if (st.state === 'checking') setFieldStatus('busy', 'warn', 'Checking…');
   else if (st.state === 'reachable') setFieldStatus('ok', 'ok', `Reachable${st.rttMs != null ? ` · answered in ${st.rttMs} ms` : ' · you’re connected to it'}`);
   else if (st.state === 'unreachable') setFieldStatus('err', 'err', 'Can’t reach it. Check the address, or that the host machine is awake.');
   else setFieldStatus('', null, '');
+}
+
+async function probe() {
+  setFieldStatus('busy', 'warn', 'Checking…');
+  showProbe(await toOffscreen<ServerStatus>({ type: 'probeServer' }));
 }
 function validate() {
   const v = urlInput.value.trim();
@@ -109,12 +155,15 @@ function setVisibility(show: boolean) {
   eye.innerHTML = show ? ic('eye') : ic('eyeOff');
 }
 eye.onclick = () => { setVisibility(!showServer); void chrome.storage.local.set({ showServerAddress: showServer }); };
-urlInput.addEventListener('input', validate);
+retryBtn.onclick = () => { void probe(); };
+urlInput.addEventListener('input', () => { retryBtn.hidden = true; validate(); });
 $('server-form').onsubmit = async (e) => {
   e.preventDefault();
   const v = urlInput.value.trim();
   if (!validUrl(v)) { validate(); urlInput.focus(); return; }
   lastSaved = v;
+  state.serverConfigured = true;
+  showProgress();
   validate();
   setFieldStatus('busy', 'warn', 'Checking…');
   await toOffscreen({ type: 'setServerUrl', url: v });
@@ -124,17 +173,24 @@ $('server-form').onsubmit = async (e) => {
     : `<span class="mini ok">${ic('ok', 'sm')}</span> Address saved.`;
   saveStatus.style.color = 'var(--success)';
   setTimeout(() => { saveStatus.textContent = ''; }, 4000);
-  showProbe(await toOffscreen<ServerStatus>({ type: 'probeServer' }));
+  await probe();
 };
 
 // ---- boot --------------------------------------------------------------------------------
 
+$<HTMLAnchorElement>('host-guide').href = HOST_GUIDE_URL;
+
 void chrome.storage.local.get(['serverUrl', 'ducking', 'showServerAddress']).then(async (v) => {
-  lastSaved = (v.serverUrl as string) ?? DEFAULT_SERVER_URL;
+  // An address nobody saved is not an address: the field starts empty on a fresh
+  // profile, even though DEFAULT_SERVER_URL is what a join would fall back to.
+  state.serverConfigured = typeof v.serverUrl === 'string';
+  lastSaved = state.serverConfigured ? (v.serverUrl as string) : '';
   urlInput.value = lastSaved;
   ducking.setAttribute('aria-checked', String(v.ducking === true));
   setVisibility(v.showServerAddress !== false);
   validate();
+  booted = true;
+  showProgress();
   showProbe(await toOffscreen<ServerStatus>({ type: 'probeServer' }));
 });
 // The popup has the same eye; keep the two in step while both are open.

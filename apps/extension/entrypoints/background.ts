@@ -140,11 +140,15 @@ export default defineBackground(() => {
   chrome.runtime.onConnect.addListener(() => { void ensureOffscreen(); });
   // refreshBadge goes through the offscreen document, so these two still bring it up.
   chrome.runtime.onStartup.addListener(() => { void refreshBadge(); });
-  chrome.runtime.onInstalled.addListener(() => {
+  chrome.runtime.onInstalled.addListener(({ reason }) => {
     void refreshBadge();
     // Chrome does not re-inject content scripts into tabs that were open before an
     // install/update/reload; the copy in those pages is orphaned. Inject fresh ones.
     void reinjectPlayerScripts();
+    // A fresh profile has no microphone, no camera and no server address, so the popup
+    // has nothing to offer but setup. Test builds skip it: the harness loads unpacked,
+    // and an extra tab per peer is noise.
+    if (!__GJ_TEST__ && reason === 'install') void chrome.tabs.create({ url: chrome.runtime.getURL('options.html') });
   });
 
   async function reinjectPlayerScripts() {

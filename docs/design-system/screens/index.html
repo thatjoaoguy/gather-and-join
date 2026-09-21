@@ -41,6 +41,19 @@
 <div class="shelf">
 
 <div>
+<div class="surface-label"><span>Lobby / First run, nothing set up</span><span>360px</span></div>
+<div class="frame"><div class="card popup">
+<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<h3>A little closer.<br>Even from afar.</h3>
+<div class="notice info" role="status"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-info"/></svg></span> Let’s get you set up</strong>
+<p>Your microphone, your camera if you want one, and the address of the server someone in your group is hosting. Once, and you’re done.</p></div>
+<button class="primary full" type="button">Set up Gather &amp; Join</button>
+<p class="small muted footnote">Setup takes a minute and holds for every party after this one.</p>
+</div></div>
+<p class="drives">Drives: no <code>serverUrl</code> has ever been saved and the built-in default is not answering — <code>firstRun()</code> in <code>lib/setup-state.ts</code>. Nothing is wrong yet, so nothing is red: the join and create controls are hidden rather than disabled, because there is nowhere to join, and the unreachable-server callout is suppressed. The readiness list is gone too — before setup there is nothing to be ready for, and the three states belong to the page the button opens. The moment an address is saved, or the default answers, this becomes the ordinary lobby. A fresh install also opens the setup page by itself.</p>
+</div>
+
+<div>
 <div class="surface-label"><span>Lobby / Join, code not yet complete</span><span>360px</span></div>
 <div class="frame"><div class="card popup">
 <img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
@@ -207,7 +220,7 @@
 </ul>
 <p class="small muted footnote">You can still join without a microphone; nobody will hear you until it’s allowed.</p>
 </div></div>
-<p class="drives">Drives: <code>micPermission === 'denied'</code>. "Allow" sends <code>grantMic</code>, which opens setup in grant mode. Joining is still possible; the row stays red until the grant lands, because a blocked microphone is a real problem, not an option.</p>
+<p class="drives">Drives: <code>micPermission === 'denied'</code>. "Allow" sends <code>grantMic</code>, which opens setup in grant mode and leaves it open on whatever else is unanswered. Joining is still possible; the row stays red until the grant lands, because a blocked microphone is a real problem, not an option.</p>
 </div>
 
 </div>
@@ -361,57 +374,87 @@
 <section id="setup" class="section">
 <div class="eyebrow">03 / Setup page</div>
 <h2>Make yourself comfortable.</h2>
-<p class="screens-intro">The options page, opened from the popup or in grant mode by the "Allow" actions. Two device permissions, the optional ducking switch, and the connection address with its own save feedback.</p>
+<p class="screens-intro">The options page: the first run, and afterwards the place to change any of it. It opens by itself on install, from the popup, or in grant mode from an "Allow" action. Three numbered steps — microphone, camera (optional), connection address — with a block at the top saying what is still outstanding, then the ducking switch and diagnostics.</p>
 <div class="setup-stack">
 
 <div>
-<div class="surface-label"><span>Setup / Default</span><span>720px tab</span></div>
+<div class="surface-label"><span>Setup / Everything done</span><span>720px tab</span></div>
 <div class="setup-frame"><div class="card setup">
 <img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
 <h3>A few things before movie night.</h3>
 <p class="muted">Your camera is optional. Headphones help everyone hear the conversation clearly.</p>
-<div class="setting"><div><strong>Microphone</strong><p>Let your friends hear you. Chrome asks once; the room reuses your answer.</p></div><button class="primary" type="button">Allow microphone</button></div>
-<div class="setting"><div><strong>Camera</strong><p>Say hello face to face, if you like. Off until you turn it on in a room.</p></div><button type="button">Allow camera</button></div>
-<div class="setting switch-row"><div><strong>Lower the show’s volume while I speak</strong><p>Off by default. With speakers, the show’s own audio can trigger this too.</p></div><button class="switch" role="switch" aria-checked="false" type="button" aria-label="Lower the show’s volume while I speak"><span class="thumb"></span></button></div>
-<details open>
-<summary>Connection settings</summary>
-<p>Use the connection address shared by the person hosting your server. You only need to set this once unless their address changes.</p>
+<div class="notice success" role="status"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span> You’re all set.</strong>
+<p>Open the Gather &amp; Join popup to create a room, or join one with a code.</p></div>
+<div class="setting"><div><strong class="done"><span class="step">1</span>Microphone</strong><p>Let your friends hear you. Chrome asks once; the room reuses your answer.</p></div><span class="allowed"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span>Allowed</span></div>
+<div class="setting"><div><strong class="done"><span class="step">2</span>Camera</strong><p>Say hello face to face, if you like. Off until you turn it on in a room.</p></div><span class="allowed"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span>Allowed</span></div>
+<div class="setting-block">
+<div class="setting"><div><strong class="done"><span class="step">3</span>Connection address</strong><p>Use the address shared by the person hosting your server. You only need to set this once unless their address changes.</p></div></div>
+<p class="host-guide muted">No address yet? One person in the group hosts the server — <a href="https://thatjoaoguy.github.io/gather-and-join/docs/host-a-server">how to host one</a>.</p>
 <form novalidate>
 <label for="s1-url">Connection address</label>
 <div class="field-wrap"><input type="password" id="s1-url" value="wss://watch.example.com" spellcheck="false" autocomplete="off" aria-describedby="s1-status"><button class="iconbtn infield" type="button" aria-pressed="false" aria-label="Show address"><svg aria-hidden="true"><use href="#i-eye-off"/></svg></button></div>
 <p id="s1-status" class="field-status ok" role="status"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span>Reachable · answered just now</p>
-<button class="save" type="submit">Save address</button>
+<div class="form-actions"><button class="save" type="submit">Save address</button></div>
 </form>
-</details>
+</div>
+<div class="setting switch-row"><div><strong>Lower the show’s volume while I speak</strong><p>Off by default. With speakers, the show’s own audio can trigger this too.</p></div><button class="switch" role="switch" aria-checked="false" type="button" aria-label="Lower the show’s volume while I speak"><span class="thumb"></span></button></div>
 </div></div>
-<p class="drives">Drives: <code>navigator.permissions</code> state for each device, <code>ducking</code> and <code>serverUrl</code> from local storage. Save writes <code>serverUrl</code>; the switch sends <code>setDucking</code> live. The reachability line under the address comes from a probe (socket connect plus one <code>ping</code>, then close) run when the page opens and after each save; states are "Checking…", "Reachable", "Can’t reach it". That probe is new product work. The eye inside the field switches it between <code>type="password"</code> and <code>type="url"</code>; it follows the same <code>showServerAddress</code> preference as the popup, so hiding it in one place hides it everywhere. If you are in a room when you save, the line reads "Saved. Applies after you leave your current room."</p>
+<p class="drives">Drives: <code>navigator.permissions</code> state for each device, <code>ducking</code> and <code>serverUrl</code> from local storage, fed through <code>setupSteps()</code> in <code>lib/setup-state.ts</code> for the block at the top and the numbered badges (green once a step is answered). Save writes <code>serverUrl</code>; the switch sends <code>setDucking</code> live. The reachability line under the address comes from a probe (socket connect plus one <code>ping</code>, then close) run when the page opens and after each save; states are "Checking…", "Reachable", "Can’t reach it", the last of which reveals a "Try again" that re-probes. That probe is new product work. The eye inside the field switches it between <code>type="password"</code> and <code>type="url"</code>; it follows the same <code>showServerAddress</code> preference as the popup, so hiding it in one place hides it everywhere. If you are in a room when you save, the line reads "Saved. Applies after you leave your current room."</p>
 </div>
 
 <div>
-<div class="surface-label"><span>Setup / After grants, invalid address</span><span>?grant=1</span></div>
+<div class="surface-label"><span>Setup / Saved address, nothing answering</span><span>after Save</span></div>
 <div class="setup-frame"><div class="card setup">
 <img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
 <h3>A few things before movie night.</h3>
 <p class="muted">Your camera is optional. Headphones help everyone hear the conversation clearly.</p>
-<div class="setting"><div><strong>Microphone</strong><p>Let your friends hear you.</p></div><span class="allowed"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span>Allowed</span></div>
+<div class="notice info" role="status"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-info"/></svg></span> Still to sort out: the connection address.</strong>
+<p>Set these up once and the extension remembers. Nothing here leaves your browser.</p></div>
+<div class="setting"><div><strong class="done"><span class="step">1</span>Microphone</strong><p>Let your friends hear you.</p></div><span class="allowed"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span>Allowed</span></div>
+<div class="setting"><div><strong class="done"><span class="step">2</span>Camera</strong><p>Say hello face to face, if you like.</p></div><span class="allowed"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span>Allowed</span></div>
 <div class="setting-block">
-<div class="setting"><div><strong>Camera</strong><p>Say hello face to face, if you like.</p></div><button type="button">Try again</button></div>
+<div class="setting"><div><strong><span class="step">3</span>Connection address</strong><p>Use the address shared by the person hosting your server.</p></div></div>
+<p class="host-guide muted">No address yet? One person in the group hosts the server — <a href="https://thatjoaoguy.github.io/gather-and-join/docs/host-a-server">how to host one</a>.</p>
+<form novalidate>
+<label for="s3-url">Connection address</label>
+<div class="field-wrap"><input type="url" id="s3-url" value="wss://watch.example.com" spellcheck="false" autocomplete="off" aria-describedby="s3-status"><button class="iconbtn infield" type="button" aria-pressed="true" aria-label="Hide address"><svg aria-hidden="true"><use href="#i-eye"/></svg></button></div>
+<p id="s3-status" class="field-status err" role="alert"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-err"/></svg></span>Can’t reach it. Check the address, or that the host machine is awake.</p>
+<div class="form-actions"><button class="save not-ready" type="submit" disabled aria-disabled="true">Save address</button><button type="button">Try again</button></div>
+<p class="status" style="color:var(--success)"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span> Address saved.</p>
+</form>
+</div>
+<div class="setting switch-row"><div><strong>Lower the show’s volume while I speak</strong><p>Off by default. With speakers, the show’s own audio can trigger this too.</p></div><button class="switch" role="switch" aria-checked="false" type="button" aria-label="Lower the show’s volume while I speak"><span class="thumb"></span></button></div>
+</div></div>
+<p class="drives">Drives: the save succeeded — the address is stored and the step is answered — but the probe that follows it found nothing. The address is kept and the status says so; "Try again" re-probes without saving again, because a host's machine can simply be slow to wake (a free-tier server takes about twelve seconds). It is hidden in every other state, and hides again the moment the field is edited, since it belongs to the saved address rather than what is being typed.</p>
+</div>
+
+<div>
+<div class="surface-label"><span>Setup / Mid-setup, invalid address</span><span>?grant=1</span></div>
+<div class="setup-frame"><div class="card setup">
+<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<h3>A few things before movie night.</h3>
+<p class="muted">Your camera is optional. Headphones help everyone hear the conversation clearly.</p>
+<div class="notice info" role="status"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-info"/></svg></span> Still to sort out: the connection address.</strong>
+<p>Set these up once and the extension remembers. Nothing here leaves your browser.</p></div>
+<div class="setting"><div><strong class="done"><span class="step">1</span>Microphone</strong><p>Let your friends hear you.</p></div><span class="allowed"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span>Allowed</span></div>
+<div class="setting-block">
+<div class="setting"><div><strong><span class="step">2</span>Camera</strong><p>Say hello face to face, if you like.</p></div><button type="button">Try again</button></div>
 <div class="notice error" role="alert"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-err"/></svg></span> Camera not allowed</strong>
 <p>Chrome or macOS blocked it (<code>NotAllowedError</code>). Check Chrome’s site settings for this extension and System Settings → Privacy &amp; Security → Camera, then try again.</p></div>
 </div>
-<div class="setting switch-row"><div><strong>Lower the show’s volume while I speak</strong><p>Off by default. With speakers, the show’s own audio can trigger this too.</p></div><button class="switch" role="switch" aria-checked="true" type="button" aria-label="Lower the show’s volume while I speak"><span class="thumb"></span></button></div>
-<details open>
-<summary>Connection settings</summary>
-<p>Use the connection address shared by the person hosting your server.</p>
+<div class="setting-block">
+<div class="setting"><div><strong><span class="step">3</span>Connection address</strong><p>Use the address shared by the person hosting your server.</p></div></div>
+<p class="host-guide muted">No address yet? One person in the group hosts the server — <a href="https://thatjoaoguy.github.io/gather-and-join/docs/host-a-server">how to host one</a>.</p>
 <form novalidate>
 <label for="s2-url">Connection address</label>
 <div class="field-wrap"><input type="url" id="s2-url" value="watch.example.com" spellcheck="false" autocomplete="off" aria-invalid="true" aria-describedby="s2-status"><button class="iconbtn infield" type="button" aria-pressed="true" aria-label="Hide address"><svg aria-hidden="true"><use href="#i-eye"/></svg></button></div>
 <p id="s2-status" class="field-status err" role="alert"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-err"/></svg></span>Enter an address beginning with wss:// or ws://.</p>
-<button class="save not-ready" type="submit" disabled aria-disabled="true">Save address</button>
+<div class="form-actions"><button class="save not-ready" type="submit" disabled aria-disabled="true">Save address</button></div>
 </form>
-</details>
+</div>
+<div class="setting switch-row"><div><strong>Lower the show’s volume while I speak</strong><p>Off by default. With speakers, the show’s own audio can trigger this too.</p></div><button class="switch" role="switch" aria-checked="true" type="button" aria-label="Lower the show’s volume while I speak"><span class="thumb"></span></button></div>
 </div></div>
-<p class="drives">Drives: a granted device replaces its button with a labeled check; a <code>NotAllowedError</code> shows the error notice and a "Try again" action. Opened with <code>?grant=1</code> or <code>?grant=camera</code> the page prompts immediately and closes itself on success. Validation sits directly under the field and disables Save until the address parses.</p>
+<p class="drives">Drives: a granted device replaces its button with a labeled check; a <code>NotAllowedError</code> shows the error notice and a "Try again" action, and a declined camera is not counted as outstanding. Opened with <code>?grant=1</code> or <code>?grant=camera</code> the page prompts immediately and then stays open, scrolling to the next unanswered step — granting one permission is not being set up. On a profile that never saved an address the field starts empty: <code>ws://localhost:8080</code> is the fallback a join uses, not an address anyone chose. Validation sits directly under the field and disables Save until the address parses.</p>
 </div>
 
 </div>

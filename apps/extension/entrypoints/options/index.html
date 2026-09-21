@@ -11,8 +11,15 @@
     .lockup { display: block; width: 188px; height: auto; margin-bottom: 8px; }
     h3.hero { font-size: 26px; margin: 20px 0 8px; }
     .setting { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 0; border-bottom: 1px solid var(--line); }
-    .setting > div { min-width: 0; } .setting p { margin: 4px 0 0; font-size: 13px; color: var(--muted); } .setting button { flex: none; }
+    .setting > div { min-width: 0; } .setting p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+    /* flex:none alone still lets the label wrap word by word in a tight row */
+    .setting button { flex: none; white-space: nowrap; }
+    .form-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .setting-block { border-bottom: 1px solid var(--line); } .setting-block .setting { border-bottom: 0; padding-bottom: 12px; } .setting-block .notice { margin: 0 0 18px; }
+    .step { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 9px; border-radius: 11px; background: var(--field); border: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 700; flex: none; }
+    .setting strong { display: flex; align-items: center; }
+    .setting strong.done .step { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+    .host-guide { margin: -6px 0 16px; font-size: 13px; }
     .allowed { display: inline-flex; align-items: center; gap: 7px; color: var(--success); font-weight: 700; padding-right: 18px; }
     .allowed .ic { color: var(--success); }
     details { padding: 18px 0; } summary { cursor: pointer; font-weight: 700; padding: 10px 0; min-height: 44px; }
@@ -31,23 +38,19 @@
     <img class="lockup" src="/brand/lockup.svg" alt="Gather &amp; Join">
     <h3 class="hero">A few things before movie night.</h3>
     <p class="muted">Your camera is optional. Headphones help everyone hear the conversation clearly.</p>
+    <div id="setup-state" role="status"></div>
 
     <div class="setting-block" id="mic-block">
-      <div class="setting"><div><strong>Microphone</strong><p>Let your friends hear you. Chrome asks once; the room reuses your answer.</p></div><div id="mic-action"><button class="primary" id="grant" type="button">Allow microphone</button></div></div>
+      <div class="setting"><div><strong id="mic-title"><span class="step">1</span>Microphone</strong><p>Let your friends hear you. Chrome asks once; the room reuses your answer.</p></div><div id="mic-action"><button class="primary" id="grant" type="button">Allow microphone</button></div></div>
       <div id="mic-notice"></div>
     </div>
     <div class="setting-block" id="cam-block">
-      <div class="setting"><div><strong>Camera</strong><p>Say hello face to face, if you like. Off until you turn it on in a room.</p></div><div id="cam-action"><button id="grant-cam" type="button">Allow camera</button></div></div>
+      <div class="setting"><div><strong id="cam-title"><span class="step">2</span>Camera</strong><p>Say hello face to face, if you like. Off until you turn it on in a room.</p></div><div id="cam-action"><button id="grant-cam" type="button">Allow camera</button></div></div>
       <div id="cam-notice"></div>
     </div>
-    <div class="setting">
-      <div><strong id="ducking-label">Lower the show’s volume while I speak</strong><p>Off by default. With speakers, the show’s own audio can trigger this too.</p></div>
-      <button class="switch" id="ducking" role="switch" aria-checked="false" type="button" aria-labelledby="ducking-label"><span class="thumb"></span></button>
-    </div>
-
-    <details open>
-      <summary>Connection settings</summary>
-      <p>Use the connection address shared by the person hosting your server. You only need to set this once unless their address changes.</p>
+    <div class="setting-block" id="server-block">
+      <div class="setting"><div><strong id="server-title"><span class="step">3</span>Connection address</strong><p>Use the address shared by the person hosting your server. You only need to set this once unless their address changes.</p></div></div>
+      <p class="host-guide muted">No address yet? One person in the group hosts the server — <a id="host-guide" href="#" target="_blank" rel="noreferrer">how to host one</a>.</p>
       <form id="server-form" novalidate>
         <label for="server-url">Connection address</label>
         <div class="field-wrap">
@@ -55,10 +58,14 @@
           <button class="iconbtn infield" id="eye" type="button" aria-pressed="true" aria-label="Hide address"></button>
         </div>
         <p id="server-status" class="field-status" role="status"></p>
-        <button class="save" id="save" type="submit">Save address</button>
+        <div class="form-actions"><button class="save" id="save" type="submit">Save address</button><button id="server-retry" type="button" hidden>Try again</button></div>
         <p id="save-status" class="status" role="status"></p>
       </form>
-    </details>
+    </div>
+    <div class="setting">
+      <div><strong id="ducking-label">Lower the show’s volume while I speak</strong><p>Off by default. With speakers, the show’s own audio can trigger this too.</p></div>
+      <button class="switch" id="ducking" role="switch" aria-checked="false" type="button" aria-labelledby="ducking-label"><span class="thumb"></span></button>
+    </div>
     <details id="diag">
       <summary>Diagnostics</summary>
       <p>If a party went wrong, copy this and send it to whoever runs your server. It is the last few hundred things the extension did: room events, connection states, drift corrections. Nothing is sent anywhere by itself.</p>
