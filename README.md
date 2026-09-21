@@ -16,7 +16,26 @@ affiliated with, endorsed by, or sponsored by any streaming service (see
 ## Supported services
 
 - HBO Max
+- YouTube
 - Google Drive — for video files you own or that are shared with you
+
+On YouTube, an ad break is ignored rather than shared: while one is playing that
+viewer neither drives the room nor is corrected by it, and they rejoin the room's
+position when their ad ends. Ads are never skipped, hidden or counted — different
+people simply get different ones, and the room waits for nobody. A `youtu.be` or
+`/live/` link is understood as the same video as its `/watch?v=` form. Shorts are
+not supported: the feed scrolls itself to the next video, which would walk a
+viewer off the room's content.
+
+An accepted limitation on YouTube: the sidebar takes its width out of the page,
+and the masthead, the player and the video's own column all move over, but the
+related-videos column does not and is clipped by about 60px. YouTube sizes that
+column from `100vh` and `window.innerWidth` rather than from its container —
+`--ytd-watch-flexy-sidebar-width` is a pixel value its own script computes for
+the full window — and an extension cannot change the window's width or make the
+site recompute against a narrower one (a synthetic `resize` does not do it).
+Fixing it would mean writing YouTube's private layout variables, which its next
+relayout overwrites. Deliberately left alone.
 
 Drive is not a subscription service, so two things work differently. The file
 must be shared with **every** participant's Google account, and Drive rate-limits
@@ -258,6 +277,16 @@ Two facts discovered while building that shape the code:
   viewer presses its own "Cancel autoplay" button. On non-leaders the extension
   presses that same control on the viewer's behalf and hides the countdown
   panel, so the room stays on one episode until the leader moves it.
+- **The page can hold more than one player, and one of them can be an ad.** On
+  YouTube `querySelector('video')` is wrong twice over: the home feed's hover
+  preview is a second `.html5-main-video`, and routing away from a watch page
+  leaves the real player in the DOM, video still attached, inside a hidden
+  `ytd-watch-flexy`. Both are excluded by scoping the lookup to a *visible*
+  watch page. Ads are harder, because they play through the very same element:
+  the adapter reports no video at all while the player carries `ad-showing`, so
+  nothing is broadcast and nothing corrected, and the end of the break arrives
+  as an ordinary re-attach — the path that already resyncs a fresh element to
+  the room. No new machinery, and the ad itself is untouched.
 - **Not every player is a `<video>` you can reach.** Google Drive has no `<video>`
   in the page at all: playback runs in a cross-origin iframe on
   `youtube.googleapis.com`, reachable only through the YouTube widget

@@ -19,10 +19,18 @@ export type SidebarConnection = 'connected' | 'reconnecting';
 /** The room is on another episode; the sidebar offers the way there. */
 export type OffEpisode = { watchUrl: string } | null;
 
+/**
+ * Every :host declaration is !important, which is load-bearing rather than
+ * shouting. A shadow root protects its contents from page CSS but not its host
+ * element, and a document rule matching the host beats :host for normal
+ * declarations — a reset listing `div` takes the background, the font and
+ * `all: initial` with it. Important declarations cascade the other way round.
+ * :host(.overlay) is important for the same reason, against the `position` above.
+ */
 const STYLE = `
-  :host { all: initial; --bg:#101014; --surface:#1c1922; --raised:#272130; --line:#44394e; --text:#f4f0fa; --muted:#c3bacf; --purple:#b9a0ff; --red:#fa8294; --warning:#f2c66d; --warning-bg:#2b2419; --r-tile:14px;
-    position: fixed; top: 0; bottom: 0; right: 0; width: ${SIDEBAR_WIDTH}px; background: #100e15; box-shadow: inset 1px 0 0 #302837; z-index: 2147483647; font: 500 12px/1.5 Quicksand, system-ui, sans-serif; color: var(--text); }
-  :host(.overlay) { position: absolute; left: auto; right: 0; }
+  :host { all: initial !important; --bg:#101014; --surface:#1c1922; --raised:#272130; --line:#44394e; --text:#f4f0fa; --muted:#c3bacf; --purple:#b9a0ff; --red:#fa8294; --warning:#f2c66d; --warning-bg:#2b2419; --r-tile:14px;
+    position: fixed !important; top: 0 !important; bottom: 0 !important; right: 0 !important; width: ${SIDEBAR_WIDTH}px !important; background: #100e15 !important; box-shadow: inset 1px 0 0 #302837 !important; z-index: 2147483647 !important; font: 500 12px/1.5 Quicksand, system-ui, sans-serif !important; color: var(--text) !important; }
+  :host(.overlay) { position: absolute !important; left: auto !important; right: 0 !important; }
   .column { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; padding: 16px; box-sizing: border-box; overflow-y: auto; }
   .column.has-status { justify-content: flex-start; padding-top: 16px; }
   .tile { position: relative; width: ${SIDEBAR_WIDTH - 32}px; aspect-ratio: 4/3; box-sizing: border-box; border: 1px solid #51445e; border-radius: var(--r-tile); background: #211b2a; overflow: hidden; flex: none; display: flex; flex-direction: column; gap: 6px; align-items: center; justify-content: center; transition: opacity 120ms ease, border-color 120ms ease; }
@@ -96,9 +104,10 @@ export class SidebarView {
     const parent = fs ?? this.doc.body;
     this.host.classList.toggle('overlay', !!fs);
     if (parent && this.host.parentElement !== parent) parent.appendChild(this.host);
-    // Leave the previous mode first: an element still tagged for fullscreen would be skipped by page mode.
-    this.layout.shrinkFullscreenChildren(fs, this.host);
-    this.layout.shrinkPage(!fs);
+    // Leave the old mode before entering the new one: both can want the same element,
+    // and one still tagged by the mode being left is skipped by the one being entered.
+    if (fs) { this.layout.shrinkPage(false); this.layout.shrinkFullscreenChildren(fs, this.host); }
+    else { this.layout.shrinkFullscreenChildren(null, null); this.layout.shrinkPage(true); }
     this.render();
   }
 

@@ -16,7 +16,9 @@ export const EPISODE = (n: number) => `urn:hbo:episode:G000000${n}`;
 export const watchUrl = (contentId: string) => `${PLAYER_ORIGIN}/watch/${contentId}`;
 /** The Drive-shaped page: same content ids, but the media is in a cross-origin iframe. */
 export const driveWatchUrl = (contentId: string) => `${PLAYER_ORIGIN}/drivewatch/${contentId}`;
-export type PlayerShape = 'hbo' | 'drive';
+/** The YouTube-shaped page: same content ids, but an ad break reuses the one <video>. */
+export const youtubeWatchUrl = (contentId: string) => `${PLAYER_ORIGIN}/ytwatch/${contentId}`;
+export type PlayerShape = 'hbo' | 'drive' | 'youtube';
 
 export type Sabotage = 'reattach' | 'drift' | 'offscreen' | 'echo-suppress' | null;
 
@@ -107,7 +109,8 @@ export async function launchPeer(index: number, opts: LaunchOptions = {}): Promi
 
 /** Navigate a peer's player page and wait for the extension hook to be live. */
 export async function openPlayer(peer: Peer, contentId = EPISODE(1), shape: PlayerShape = 'hbo') {
-  await peer.page.goto(shape === 'drive' ? driveWatchUrl(contentId) : watchUrl(contentId));
+  const url = shape === 'drive' ? driveWatchUrl(contentId) : shape === 'youtube' ? youtubeWatchUrl(contentId) : watchUrl(contentId);
+  await peer.page.goto(url);
   await waitForHook(peer);
 }
 

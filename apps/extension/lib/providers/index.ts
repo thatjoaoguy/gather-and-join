@@ -2,11 +2,12 @@ import { providerForHost, harness } from '@gj/shared';
 import type { PlayerAdapter } from './player-adapter';
 import { hbomaxAdapter } from './hbomax';
 import { gdriveAdapter } from './gdrive';
+import { youtubeAdapter } from './youtube';
 import { harnessAdapter } from './harness';
 
 export type { PlayerAdapter } from './player-adapter';
 
-const ADAPTERS: readonly PlayerAdapter[] = [hbomaxAdapter, gdriveAdapter, harnessAdapter];
+const ADAPTERS: readonly PlayerAdapter[] = [hbomaxAdapter, gdriveAdapter, youtubeAdapter, harnessAdapter];
 
 /** The adapter for the page at `hostname`, or null if no provider runs there. */
 export function adapterForHost(hostname: string): PlayerAdapter | null {

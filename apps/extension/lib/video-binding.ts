@@ -29,7 +29,10 @@ export class VideoBinding {
     this.scan();
     if (this.sabotaged) return;
     this.observer = new MutationObserver(() => this.scan());
-    this.observer.observe(document.documentElement, { childList: true, subtree: true });
+    // Attributes as well as the tree: an adapter's answer can turn on one (YouTube's
+    // ad marker is a class, its watch page hides behind `hidden`), and those arrive
+    // as attribute records only. Filtered to the two, to keep `scan` off the hot path.
+    this.observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'hidden'] });
   }
 
   stop() {

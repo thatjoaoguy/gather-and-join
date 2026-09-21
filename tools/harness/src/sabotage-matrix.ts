@@ -26,8 +26,12 @@ const MATRIX: Record<string, string[]> = {
   'echo-suppress': ['echo suppression', 'large drift', 'small drift', 'quality switch'],
 };
 
-/** Tests excluded from the sabotage runs because they are slow and not affected by any flag. */
-const SKIP_UNDER_SABOTAGE = ['sync accuracy', 'late join', 'ducking', 'perfect negotiation', 'autoplay-next'];
+/**
+ * Tests excluded from the sabotage runs because they are slow and not affected by any flag.
+ * Fragments must be specific enough not to catch a test another row needs: 'ad break' alone
+ * would also swallow reattach.spec.ts's 'quality switch and ad break', which two rows expect.
+ */
+const SKIP_UNDER_SABOTAGE = ['sync accuracy', 'late join', 'ducking', 'perfect negotiation', 'autoplay-next', 'same-element ad break'];
 
 /**
  * Tests excluded under one flag only. The service-worker test kills the worker right
