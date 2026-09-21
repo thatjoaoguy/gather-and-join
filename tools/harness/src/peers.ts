@@ -7,11 +7,11 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { chromium, type BrowserContext, type Page } from '@playwright/test';
 import { ensurePeerFixtures } from './fixtures.ts';
+import { PLAYER_ORIGIN, SERVER_URL } from './endpoints.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..', '..');
 export const EXT_DIR = path.join(ROOT, 'apps', 'extension', '.output-test', 'chrome-mv3');
-export const PLAYER_ORIGIN = process.env.PLAYER_ORIGIN ?? 'http://localhost:4173';
-export const SERVER_URL = process.env.SERVER_URL ?? 'ws://localhost:8080';
+export { PLAYER_ORIGIN, SERVER_URL } from './endpoints.ts';
 export const EPISODE = (n: number) => `urn:hbo:episode:G000000${n}`;
 export const watchUrl = (contentId: string) => `${PLAYER_ORIGIN}/watch/${contentId}`;
 /** The Drive-shaped page: same content ids, but the media is in a cross-origin iframe. */

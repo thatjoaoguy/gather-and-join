@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { ensurePeerFixtures } from './fixtures.ts';
 import { PROFILE_ROOT } from './peers.ts';
+import { SERVER_URL, PLAYER_ORIGIN } from './endpoints.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..', '..');
 export const EXT_DIR = path.join(ROOT, 'apps', 'extension', '.output-test', 'chrome-mv3');
@@ -31,6 +32,8 @@ function pidAlive(pid: number): boolean {
 }
 
 export default async function globalSetup() {
+  // A suite pointed at the wrong port is otherwise only visible as unrelated tests timing out.
+  console.log(`[global-setup] server=${SERVER_URL} player=${PLAYER_ORIGIN}`);
   pruneProfiles();
   if (process.env.GJ_SKIP_BUILD !== '1' || !fs.existsSync(EXT_DIR)) {
     execSync('pnpm exec wxt build', {
