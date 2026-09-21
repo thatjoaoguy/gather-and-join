@@ -10,8 +10,9 @@ import type { C2S, PeerId, S2C } from '@gj/shared';
 import { DEFAULT_SERVER_URL } from '../../lib/constants';
 import {
   PORT_PLAYER, PORT_POPUP, readTestConfig,
-  type Diag, type OffscreenToPlayer, type OffscreenToPopup, type PeerStats, type PlayerToOffscreen, type PopupToOffscreen, type Snapshot, type ToOffscreen,
+  type Diag, type OffscreenToPlayer, type OffscreenToPopup, type PeerStats, type PlayerToOffscreen, type PopupToOffscreen, type Snapshot, type ToBackground, type ToOffscreen,
 } from '../../lib/messages';
+import { BadgeReporter, type BadgeState } from '../../lib/badge';
 import { RoomClient } from '../../lib/room-client';
 import { RoomSession } from '../../lib/room-session';
 import { Mesh } from '../../lib/mesh';
@@ -81,6 +82,17 @@ function toEveryone(m: { type: 'snapshot'; snapshot: Snapshot }) { for (const p 
 
 // ---- the session -----------------------------------------------------------------------
 
+/**
+ * The toolbar badge belongs to the service worker (`chrome.action` is out of reach
+ * here), so the connection state is posted to it. Only on a change: the snapshot
+ * fires far too often to wake the worker on each one.
+ */
+const badge = new BadgeReporter((state: BadgeState) => {
+  const msg: ToBackground = { target: 'background', type: 'badge', state };
+  try { void chrome.runtime.sendMessage(msg).catch(() => { /* cosmetic; the worker re-derives on its next cold start */ }); }
+  catch (e) { log('offscreen', 'badge report failed', state, String(e)); }
+});
+
 const local = new LocalMedia((speaking) => session.onSpeaking(speaking));
 const remote = new RemoteMedia((peerId, speaking) => session.onPeerSpeaking(peerId, speaking));
 
@@ -109,7 +121,7 @@ const session = new RoomSession(
     defaultServerUrl: DEFAULT_SERVER_URL,
   },
   {
-    snapshot: (snapshot) => toEveryone({ type: 'snapshot', snapshot }),
+    snapshot: (snapshot) => { badge.update(snapshot); toEveryone({ type: 'snapshot', snapshot }); },
     playback: (e) => toPlayers({ type: 'playback', ...e }),
     navigate: (e) => toPlayers({ type: 'navigate', ...e }),
     duck: (ducked) => toPlayers({ type: 'duck', ducked }),

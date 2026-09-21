@@ -88,6 +88,15 @@ export type Snap = {
 };
 export const snapshot = (p: Peer) => p.gj<Snap | null>('getSnapshot');
 
+/**
+ * What the toolbar icon is showing. Read from the peer's extension page, which is
+ * an extension context and so can call chrome.action, unlike a player page. There
+ * is no getter for the icon itself, so `text` only proves the absence of a badge.
+ */
+export type Badge = { text: string; title: string };
+export const badge = (p: Peer): Promise<Badge> =>
+  p.extPage.evaluate(async () => ({ text: await chrome.action.getBadgeText({}), title: await chrome.action.getTitle({}) }));
+
 export type State = { positionMs: number | null; paused: boolean | null; contentId: string | null; atUnixMs: number; playbackRate: number | null; generation: string | null };
 export const state = (p: Peer) => p.gj<State>('getState');
 export type Counters = { hardSeeks: number; rateAdjustments: number; reattaches: number; socketReconnects: number; portReconnects: number };

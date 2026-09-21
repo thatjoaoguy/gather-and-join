@@ -57,6 +57,12 @@ More are planned. Adding one is a provider entry plus an adapter; see
    (lowering the show while you talk) is **off by default** — it's a checkbox on the
    setup page, because with speakers the show itself keeps triggering it.
 
+The toolbar icon carries a dot while you are in a room — green once you are
+connected, amber while a join or a reconnect is in flight — and nothing at all
+when you are not in one. Its tooltip says which. The dot is drawn onto the icon
+rather than set as a badge: Chrome's badge is a rounded rectangle sized to its
+text, and at 16px that slab covers the mark.
+
 If someone buffers, the room pauses and the popup says who. Resume is a manual
 press — there is no auto-resume, on purpose (it thrashes).
 
@@ -236,7 +242,7 @@ context that dies on navigation:
 | Component | Lifetime | Owns |
 |---|---|---|
 | Content script | dies on every navigation | `<video>` binding, local player events, drift correction, the party sidebar |
-| Service worker | killed at will by Chrome | navigation detection, offscreen keep-alive, storage proxy |
+| Service worker | killed at will by Chrome | navigation detection, offscreen keep-alive, storage proxy, the toolbar badge |
 | Offscreen document | survives everything | the `RoomSession` (room state, rejoin logic), the WebSocket, every `RTCPeerConnection`, mic, remote audio playback |
 | Popup | open/close at will | create/join, mic/camera toggles, peer list |
 | Server | long-running | room registry, authoritative sync state, signaling relay |
@@ -261,7 +267,9 @@ Two facts discovered while building that shape the code:
   latency, not tick spacing.
 - **Offscreen documents have no `chrome.storage`** (only `chrome.runtime`). Anything
   the offscreen document persists or reads from storage goes through the service
-  worker (`lib/kv.ts`).
+  worker (`lib/kv.ts`). The toolbar badge goes the same way for the same
+  reason: `chrome.action` is out of reach there too, so the offscreen document
+  reports a state and the worker paints it (`lib/badge.ts`).
 - **Media cannot cross extension contexts.** Remote audio therefore plays inside the
   offscreen document (which is what lets the call survive navigation), and remote
   *video* is re-streamed to the page's tiles over a local loopback
@@ -283,6 +291,7 @@ media-track stand-ins):
 | `loopback-sender.ts` / `sidebar/loopback-receiver.ts` | the two ends of the page loopback | signal callbacks |
 | `sidebar/party-sidebar.ts` | composes `SidebarView` (DOM), `PageLayout` (making room), `LoopbackReceiver` | the port, the provider's video locator |
 | `participants.ts` | the one derivation of "who is in the room", used by the popup and the sidebar | — |
+| `badge.ts` | the toolbar dot: which state the snapshot means, and the circle drawn onto the icon for it | a `chrome.action` slice, a canvas |
 | `sync-engine.ts`, `video-binding.ts`, `ducking.ts`, `up-next.ts` | per-page playback behaviour | a video locator, callbacks |
 
 #### Streaming providers

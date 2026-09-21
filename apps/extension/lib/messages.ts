@@ -9,6 +9,7 @@
  *  - Background → offscreen: `chrome.runtime.sendMessage({target: 'offscreen', ...})`.
  */
 import type { PeerId, PeerInfo, RoomState } from '@gj/shared';
+import type { BadgeState } from './badge';
 import type { Sabotage } from './constants';
 import { kvGet } from './kv';
 
@@ -111,6 +112,8 @@ export type ToBackground =
   | { target: 'background'; type: 'grantMic' }
   | { target: 'background'; type: 'grantCamera' }
   | { target: 'background'; type: 'getActiveTabUrl' }
+  /** Only the worker may call chrome.action, so the offscreen document reports here. */
+  | { target: 'background'; type: 'badge'; state: BadgeState }
   | { target: 'background'; type: 'kv:get'; area: 'local' | 'session'; keys: string[] | null }
   | { target: 'background'; type: 'kv:set'; area: 'local' | 'session'; data: Record<string, unknown> };
 
