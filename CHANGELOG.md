@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.7.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.6.0...v0.7.0) (2026-09-25)
+
+
+### Features
+
+* **brand:** close the gap in the logo mark ([#38](https://github.com/thatjoaoguy/gather-and-join/issues/38)) ([15bcf95](https://github.com/thatjoaoguy/gather-and-join/commit/15bcf95ce377faf38d930ada700f12766b769c22))
+
 # [0.6.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.5.0...v0.6.0) (2026-09-21)
 
 
