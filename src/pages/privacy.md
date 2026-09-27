@@ -5,7 +5,7 @@ description: Every piece of data Gather & Join handles, and who sees it.
 
 # Privacy Policy for Gather & Join
 
-Last updated: 2026-09-20
+Last updated: 2026-09-26
 
 Gather & Join is a browser extension that keeps a group in sync while they
 watch a streaming service, or a video file on Google Drive, together, and adds
@@ -35,12 +35,17 @@ When you create or join a room, the extension sends the server:
 - the **room code**,
 - an **identifier of the episode or file** the room is watching (taken from the
   page address, never the video itself),
+- how long **your copy** of it runs, since some regions get a longer copy with
+  extras in front, and, when copies differ, **how much of the longer one to
+  skip**, as set by someone in the room,
 - **play, pause, and position** events, and stall notices,
 - the connection setup messages needed to reach the other participants.
 
 The server keeps this in memory only while the room exists and writes nothing
 to disk. It prints a one-line event log (room created, someone joined, someone
-left) to the terminal of whoever runs it; that log has no playback details.
+left) to the terminal of whoever runs it. That log has no play, pause or seek
+events; it does note the episode, where someone's playback stalled, and how much
+a longer copy skips.
 
 ## Voice and video
 
