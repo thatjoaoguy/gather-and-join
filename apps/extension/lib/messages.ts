@@ -8,7 +8,7 @@
  *  - Anyone → background: `chrome.runtime.sendMessage({target: 'background', ...})`.
  *  - Background → offscreen: `chrome.runtime.sendMessage({target: 'offscreen', ...})`.
  */
-import type { PeerId, PeerInfo, RoomState } from '@gj/shared';
+import type { EpisodeStart, PeerId, PeerInfo, RoomState } from '@gj/shared';
 import type { Sabotage } from './constants';
 import { kvGet } from './kv';
 
@@ -68,6 +68,12 @@ export type PlayerToOffscreen =
   | { type: 'playback'; paused: boolean; positionMs: number }
   | { type: 'stalled' }
   | { type: 'navigateRequest'; contentId: string; url: string }
+  /** The length of this page's copy of `contentId`, once the player knows it. */
+  | { type: 'duration'; contentId: string; durationMs: number }
+  | { type: 'episodeStart'; contentId: string; start: EpisodeStart | null }
+  /** From the sidebar's settings panel. */
+  | { type: 'setMic'; on: boolean }
+  | { type: 'setCamera'; on: boolean }
   | { type: 'loopback:signal'; payload: unknown }
   | { type: 'loopback:want'; want: boolean }
   /** A diagnostics line from the page's ring buffer (pages have no session storage of their own). */
@@ -76,8 +82,6 @@ export type PlayerToOffscreen =
   | { type: 'test:createRoom'; code: string; name: string }
   | { type: 'test:joinRoom'; code: string; name: string }
   | { type: 'test:leaveRoom' }
-  | { type: 'test:setCamera'; on: boolean }
-  | { type: 'test:setMic'; on: boolean }
   | { type: 'test:getDiag'; id: number }
   | { type: 'test:resetAudioGaps' }
   | { type: 'test:dropSocket' };

@@ -19,12 +19,12 @@
 import { createServer, type IncomingMessage, type Server as HttpServer, type ServerResponse } from 'node:http';
 import { WebSocketServer, WebSocket, type RawData } from 'ws';
 import {
-  parseC2S, applyPlayback, applyNavigate, createRoomState, isValidRoomCode, watchUrlFor as canonicalWatchUrl,
+  parseC2S, applyPlayback, applyNavigate, applyEpisodeStart, createRoomState, isValidRoomCode, watchUrlFor as canonicalWatchUrl,
   ROOM_TTL_MS as DEFAULT_ROOM_TTL_MS,
-  type C2S, type S2C, type RoomState, type PeerId, type PeerInfo, type ErrorCode, type MediaFlags,
+  type C2S, type S2C, type RoomState, type PeerId, type PeerInfo, type ErrorCode, type MediaFlags, type CopyInfo,
 } from '@gj/shared';
 
-type Peer = { peerId: PeerId; name: string; socket: WebSocket; joinedAt: number; seq: number; media?: MediaFlags };
+type Peer = { peerId: PeerId; name: string; socket: WebSocket; joinedAt: number; seq: number; media?: MediaFlags; copy?: CopyInfo };
 type Room = { state: RoomState; peers: Map<PeerId, Peer>; expiry: NodeJS.Timeout | null; leaderGrace: NodeJS.Timeout | null };
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -71,7 +71,7 @@ function broadcast(room: Room, msg: S2C, except?: PeerId) {
   }
 }
 function peerList(room: Room): PeerInfo[] {
-  return [...room.peers.values()].map(({ peerId, name, media }) => (media ? { peerId, name, media } : { peerId, name }));
+  return [...room.peers.values()].map(({ peerId, name, media, copy }) => ({ peerId, name, ...(media ? { media } : {}), ...(copy ? { copy } : {}) }));
 }
 function watchUrlFor(contentId: string, supplied: string | null | undefined): string | null {
   return supplied ?? canonicalWatchUrl(contentId) ?? WATCH_URL_TEMPLATE?.replace('{contentId}', encodeURIComponent(contentId)) ?? null;
@@ -212,6 +212,22 @@ function handleMessage(socket: WebSocket, raw: RawData) {
       // Self-reported mic/camera state, remembered for late joiners and relayed to everyone else.
       peer.media = { micOn: msg.micOn, camOn: msg.camOn };
       return broadcast(room, { type: 'media', from: peer.peerId, micOn: msg.micOn, camOn: msg.camOn }, peer.peerId);
+    }
+    case 'duration': {
+      // Self-reported length of this peer's copy, remembered and relayed like media. Tagged with
+      // its content, so a report from before an episode change is never compared with the new one.
+      peer.copy = { contentId: msg.contentId, durationMs: msg.durationMs };
+      return broadcast(room, { type: 'duration', from: peer.peerId, contentId: msg.contentId, durationMs: msg.durationMs }, peer.peerId);
+    }
+    case 'episodeStart': {
+      // Anyone may set it, as anyone may play. A frame for an episode the room has left is stale.
+      if (msg.contentId !== room.state.contentId) return;
+      room.state = applyEpisodeStart(room.state, msg.contentId, msg.start);
+      logEvent('episode_start', {
+        room: room.state.code, peer: peer.peerId, content: msg.contentId,
+        startMs: msg.start ? Math.round(msg.start.startMs) : 0, durationMs: msg.start ? Math.round(msg.start.durationMs) : undefined,
+      });
+      return broadcast(room, { type: 'episodeStart', start: msg.start, originPeerId: peer.peerId });
     }
     case 'signal': {
       const target = room.peers.get(msg.to);

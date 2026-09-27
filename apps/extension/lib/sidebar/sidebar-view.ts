@@ -13,18 +13,30 @@ import type { PeerId } from '@gj/shared';
 import { ICONS } from '../ui/icons';
 import { SIDEBAR_WIDTH, type PageLayout } from './page-layout';
 import { ensureQuicksand } from '../ui/fonts';
+import { clock, type CopiesModel } from './episode-start';
+import { SettingsPanel, SETTINGS_STYLE, type SettingsActions, type SettingsModel } from './settings-panel';
+import { StartField, START_FIELD_STYLE, keepKeysFromPlayer } from './start-field';
 
 export type TileModel = { peerId: PeerId; name: string; self: boolean; speaking: boolean; muted: boolean; lost: boolean };
 export type SidebarConnection = 'connected' | 'reconnecting';
 /** The room is on another episode; the sidebar offers the way there. */
 export type OffEpisode = { watchUrl: string } | null;
+export type SidebarActions = SettingsActions & { goToEpisode(watchUrl: string): void };
+export type SidebarViewModel = {
+  tiles: TileModel[];
+  streamFor: (peerId: PeerId) => MediaStream | null;
+  connection: SidebarConnection;
+  offEpisode: OffEpisode;
+  copies: CopiesModel | null;
+  settings: SettingsModel | null;
+};
 
 const STYLE = `
-  :host { all: initial; --bg:#101014; --surface:#1c1922; --raised:#272130; --line:#44394e; --text:#f4f0fa; --muted:#c3bacf; --purple:#b9a0ff; --red:#fa8294; --warning:#f2c66d; --warning-bg:#2b2419; --r-tile:14px;
+  :host { all: initial; --bg:#101014; --surface:#1c1922; --raised:#272130; --line:#44394e; --text:#f4f0fa; --muted:#c3bacf; --purple:#b9a0ff; --red:#fa8294; --warning:#f2c66d; --warning-bg:#2b2419; --success:#86d6b0; --r-tile:14px; --rail:${SIDEBAR_WIDTH}px;
     position: fixed; top: 0; bottom: 0; right: 0; width: ${SIDEBAR_WIDTH}px; background: #100e15; box-shadow: inset 1px 0 0 #302837; z-index: 2147483647; font: 500 12px/1.5 Quicksand, system-ui, sans-serif; color: var(--text); }
   :host(.overlay) { position: absolute; left: auto; right: 0; }
-  .column { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; padding: 16px; box-sizing: border-box; overflow-y: auto; }
-  .column.has-status { justify-content: flex-start; padding-top: 16px; }
+  .column { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; padding: 50px 16px 16px; box-sizing: border-box; overflow-y: auto; }
+  .column.has-status { justify-content: flex-start; }
   .tile { position: relative; width: ${SIDEBAR_WIDTH - 32}px; aspect-ratio: 4/3; box-sizing: border-box; border: 1px solid #51445e; border-radius: var(--r-tile); background: #211b2a; overflow: hidden; flex: none; display: flex; flex-direction: column; gap: 6px; align-items: center; justify-content: center; transition: opacity 120ms ease, border-color 120ms ease; }
   .tile::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1; box-shadow: inset 0 0 0 2px transparent; transition: box-shadow 120ms ease; }
   .tile.speaking::after { box-shadow: inset 0 0 0 2px var(--purple); }
@@ -50,10 +62,20 @@ const STYLE = `
   .rail-notice strong { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #94c5ff; }
   .rail-notice strong svg { width: 14px; height: 14px; flex: none; }
   .rail-notice button { min-height: 30px; border: 0; border-radius: 15px; padding: 6px 12px; background: var(--purple); color: #1c112e; font: inherit; font-weight: 700; cursor: pointer; }
-  .column.has-notice { justify-content: flex-start; }
-  .column.has-notice .rail-notice { display: flex; }
-  @media (prefers-reduced-motion: reduce) { .tile { transition: none; } }
-`;
+  .column.has-notice, .column.has-copies { justify-content: flex-start; }
+  .column.has-notice .rail-notice.episode, .column.has-copies .rail-notice.copies { display: flex; }
+  .rail-notice.copies { background: var(--warning-bg); border-color: var(--warning); }
+  .rail-notice.copies strong { color: var(--warning); }
+
+  .self-controls { position: absolute; right: 8px; bottom: 8px; z-index: 2; display: flex; gap: 6px; opacity: 0; transition: opacity 120ms ease; }
+  .tile.self:hover .self-controls, .tile.self:focus-within .self-controls { opacity: 1; }
+  .self-controls button { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid #51445e; border-radius: 50%; background: #08080cd9; color: var(--text); cursor: pointer; }
+  .self-controls button[aria-pressed="false"] { color: var(--red); border-color: var(--red); }
+  .self-controls button:focus-visible { outline: 2px solid var(--purple); outline-offset: 1px; }
+  .self-controls svg { width: 14px; height: 14px; }
+  @media (prefers-reduced-motion: reduce) { .tile, .self-controls { transition: none; } }
+${START_FIELD_STYLE}
+${SETTINGS_STYLE}`;
 
 
 export class SidebarView {
@@ -61,12 +83,17 @@ export class SidebarView {
   private column: HTMLDivElement | null = null;
   private status: HTMLParagraphElement | null = null;
   private notice: HTMLDivElement | null = null;
+  private copiesNotice: HTMLDivElement | null = null;
+  private copiesField: StartField | null = null;
   private offEpisode: OffEpisode = null;
+  private copies: CopiesModel | null = null;
+  private settings: SettingsModel | null = null;
+  private settingsPanel: SettingsPanel | null = null;
   private tiles: TileModel[] = [];
   private connection: SidebarConnection = 'connected';
   private streamFor: (peerId: PeerId) => MediaStream | null = () => null;
 
-  constructor(private readonly layout: PageLayout, private readonly onGoToEpisode: (watchUrl: string) => void, private readonly doc: Document = document) {}
+  constructor(private readonly layout: PageLayout, private readonly actions: SidebarActions, private readonly doc: Document = document) {}
 
   get isMounted() { return !!this.host?.isConnected; }
 
@@ -86,11 +113,31 @@ export class SidebarView {
       this.status.setAttribute('role', 'status');
       this.status.innerHTML = `${ICONS.warn}<span>Reconnecting…</span>`;
       this.notice = this.doc.createElement('div');
-      this.notice.className = 'rail-notice';
+      this.notice.className = 'rail-notice episode';
       this.notice.setAttribute('role', 'status');
       this.notice.innerHTML = `<strong>${ICONS.info}Watching another episode</strong><span>Your room is on a different episode.</span><button type="button">Go to episode</button>`;
-      this.notice.querySelector('button')!.onclick = () => { if (this.offEpisode) this.onGoToEpisode(this.offEpisode.watchUrl); };
+      this.notice.querySelector('button')!.onclick = () => { if (this.offEpisode) this.actions.goToEpisode(this.offEpisode.watchUrl); };
+      this.copiesNotice = this.doc.createElement('div');
+      this.copiesNotice.className = 'rail-notice copies';
+      this.copiesNotice.setAttribute('role', 'group');
+      this.copiesNotice.setAttribute('aria-label', 'Copies differ');
+      this.copiesNotice.innerHTML = `<strong>${ICONS.warn}<span class="title"></span></strong><span class="body"></span>`;
+      const field = this.copiesField = new StartField(this.doc, (ms) => this.actions.enterStart(ms));
+      const align = this.doc.createElement('button');
+      align.type = 'button';
+      align.className = 'align';
+      align.textContent = 'Align';
+      align.onclick = () => { if (field.commit() !== null) this.actions.alignStart(); };
+      this.copiesNotice.append(field.el, align);
+      keepKeysFromPlayer(this.column);
       shadow.append(style, this.column);
+      // Chrome before 114 has no popover: an unsupported panel would render permanently open, so leave it out.
+      if ('popover' in HTMLElement.prototype) {
+        this.settingsPanel = new SettingsPanel(this.doc, this.actions);
+        shadow.append(this.settingsPanel.gear, this.settingsPanel.panel);
+        keepKeysFromPlayer(this.settingsPanel.gear);
+        keepKeysFromPlayer(this.settingsPanel.panel);
+      }
     }
     const fs = this.doc.fullscreenElement as HTMLElement | null;
     const parent = fs ?? this.doc.body;
@@ -117,19 +164,58 @@ export class SidebarView {
     this.layout.restoreAll();
   }
 
-  update(tiles: TileModel[], streamFor: (peerId: PeerId) => MediaStream | null, connection: SidebarConnection = 'connected', offEpisode: OffEpisode = null) {
-    this.tiles = tiles;
-    this.streamFor = streamFor;
-    this.connection = connection;
-    this.offEpisode = offEpisode;
+  update(m: SidebarViewModel) {
+    this.tiles = m.tiles;
+    this.streamFor = m.streamFor;
+    this.connection = m.connection;
+    this.offEpisode = m.offEpisode;
+    this.copies = m.copies;
+    this.settings = m.settings;
     this.render();
+  }
+
+  /** Your own tile's mic and camera buttons, shown on hover or keyboard focus. */
+  private selfControls(): HTMLDivElement {
+    const box = this.doc.createElement('div');
+    box.className = 'self-controls';
+    box.innerHTML = '<button type="button" class="mic" aria-label="Microphone"></button><button type="button" class="cam" aria-label="Camera"></button>';
+    box.querySelector<HTMLButtonElement>('.mic')!.onclick = () => { if (this.settings) this.actions.setMic(!this.settings.micOn); };
+    box.querySelector<HTMLButtonElement>('.cam')!.onclick = () => { if (this.settings) this.actions.setCamera(!this.settings.camOn); };
+    return box;
+  }
+
+  private renderSelfControls(tile: HTMLElement) {
+    const box = tile.querySelector<HTMLElement>('.self-controls');
+    if (!box) return;
+    box.hidden = !this.settings;
+    if (!this.settings) return;
+    const { micOn, camOn } = this.settings;
+    const mic = box.querySelector<HTMLButtonElement>('.mic')!, cam = box.querySelector<HTMLButtonElement>('.cam')!;
+    mic.setAttribute('aria-pressed', String(micOn));
+    mic.title = micOn ? 'Mute' : 'Unmute';
+    mic.innerHTML = micOn ? ICONS.mic : ICONS.micOff;
+    cam.setAttribute('aria-pressed', String(camOn));
+    cam.title = camOn ? 'Turn camera off' : 'Turn camera on';
+    cam.innerHTML = camOn ? ICONS.cam : ICONS.camOff;
+  }
+
+  private renderCopies(el: HTMLDivElement, c: CopiesModel | null) {
+    if (!c || c.set) return;
+    el.querySelector('.title')!.textContent = `Copies differ by ${clock(c.longMs - c.shortMs)}`;
+    el.querySelector('.body')!.textContent = `One copy runs ${clock(c.longMs)}, another ${clock(c.shortMs)}. The longer one skips its extra start, filled in with the difference.`;
+    this.copiesField?.show(c.startMs);
   }
 
   /** Reconcile the column with the tile list: keyed by peer id, order preserved, stale tiles removed. */
   private render() {
     const column = this.column;
-    if (!column || !this.status || !this.notice) return;
+    if (!column || !this.status || !this.notice || !this.copiesNotice) return;
     column.classList.toggle('has-notice', !!this.offEpisode);
+    // The rail asks until the start is set; adjusting it afterwards lives in the settings panel.
+    column.classList.toggle('has-copies', !!this.copies && !this.copies.set);
+    this.renderCopies(this.copiesNotice, this.copies);
+    this.settingsPanel?.update(this.settings, this.copies);
+    column.insertBefore(this.copiesNotice, column.firstChild);
     column.insertBefore(this.notice, column.firstChild); // always first
     const existing = new Map<string, HTMLElement>();
     column.querySelectorAll<HTMLElement>('.tile').forEach((t) => existing.set(t.dataset.peerId!, t));
@@ -140,7 +226,9 @@ export class SidebarView {
         tile.className = 'tile';
         tile.dataset.peerId = p.peerId;
         tile.innerHTML = `<span class="badge muted" title="Muted">${ICONS.micOff}</span><span class="badge lost" title="Reconnecting">${ICONS.warn}</span><div class="placeholder"><span class="avatar" aria-hidden="true"></span></div><video autoplay muted playsinline></video><span class="name"></span>`;
+        if (p.self) tile.append(this.selfControls());
       }
+      if (p.self) this.renderSelfControls(tile);
       existing.delete(p.peerId);
       tile.classList.toggle('self', p.self);
       tile.classList.toggle('speaking', p.speaking && !p.lost);

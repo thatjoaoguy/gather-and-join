@@ -98,3 +98,72 @@ describe('SyncEngine', () => {
     expect(sent).toHaveLength(0);
   });
 });
+
+describe('SyncEngine episode start', () => {
+  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(1_000_000); });
+  afterEach(() => vi.useRealTimers());
+  const EXTRAS_MS = 60_000;
+
+  it('puts this copy on the room\'s timeline: skip added on the way in, taken off on the way out', () => {
+    const v = fakeVideo();
+    v.duration = 390;
+    const sent: Array<{ positionMs: number }> = [];
+    const e = new SyncEngine(bindingFor(v), (o) => sent.push(o), null);
+    e.setSkip(EXTRAS_MS);
+    e.applyRemote({ paused: false, positionMs: 10_000, updatedAt: Date.now() }, 0);
+    expect(v.currentTime).toBe(70);
+    vi.advanceTimersByTime(600); // leave the echo window
+    e.onLocalPause(v as never);
+    expect(sent.at(-1)?.positionMs).toBe(10_000);
+  });
+
+  it('never broadcasts a position inside the extras, and pulls this copy out of them', () => {
+    const v = fakeVideo();
+    v.paused = false;
+    const sent: Array<{ positionMs: number }> = [];
+    const e = new SyncEngine(bindingFor(v), (o) => sent.push(o), null);
+    e.applyRemote({ paused: false, positionMs: 0, updatedAt: Date.now() }, 0);
+    e.setSkip(EXTRAS_MS); // the start arrives while this copy plays its extras
+    expect(v.currentTime).toBe(60);
+    vi.advanceTimersByTime(600);
+    v.currentTime = 12; // the user scrubs back into them
+    e.onLocalSeeking(v as never);
+    expect(sent.at(-1)?.positionMs).toBe(0);
+    e.start();
+    vi.advanceTimersByTime(250);
+    expect(v.currentTime).toBe(60.25); // the room kept playing from the episode's first frame
+    e.stop();
+  });
+
+  it('a changed skip moves the copy at once; the same skip again does nothing', () => {
+    const v = fakeVideo();
+    const e = new SyncEngine(bindingFor(v), () => {}, null);
+    e.applyRemote({ paused: true, positionMs: 5_000, updatedAt: Date.now() }, 0);
+    e.setSkip(EXTRAS_MS);
+    expect(v.currentTime).toBe(65);
+    const seeks = e.counters.hardSeeks;
+    e.setSkip(EXTRAS_MS);
+    expect(e.counters.hardSeeks).toBe(seeks);
+    e.setSkip(0); // cleared
+    expect(v.currentTime).toBe(5);
+  });
+
+  it('a one-second nudge while playing jumps, rather than drifting there', () => {
+    const v = fakeVideo();
+    v.paused = false;
+    const e = new SyncEngine(bindingFor(v), () => {}, null);
+    e.setSkip(EXTRAS_MS);
+    e.applyRemote({ paused: false, positionMs: 5_000, updatedAt: Date.now() }, 0);
+    e.setSkip(EXTRAS_MS + 1000);
+    expect(v.currentTime).toBe(66);
+    expect(v.playbackRate).toBe(1);
+  });
+
+  it('the episode-start sabotage ignores the skip', () => {
+    const v = fakeVideo();
+    const e = new SyncEngine(bindingFor(v), () => {}, 'episode-start');
+    e.setSkip(EXTRAS_MS);
+    e.applyRemote({ paused: true, positionMs: 5_000, updatedAt: Date.now() }, 0);
+    expect(v.currentTime).toBe(5);
+  });
+});

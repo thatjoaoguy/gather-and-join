@@ -23,6 +23,8 @@ const MATRIX: Record<string, string[]> = {
   // Without tagging, the follower's own corrective seeks are rebroadcast and move the room, so
   // every test that expects the follower to converge onto a fixed room position also fails.
   'echo-suppress': ['echo suppression', 'large drift', 'small drift', 'quality switch'],
+  // Without the skip, a copy with extras plays them on the room's timeline: a whole extras' length off the others.
+  'episode-start': ['episode start'],
 };
 
 /** Tests excluded from the sabotage runs because they are slow and not affected by any flag. */

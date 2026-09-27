@@ -25,7 +25,7 @@ TypeScript source (`main` points at `src/index.ts`) — there is no build. Root
 | File | Owns |
 |---|---|
 | `protocol.ts` | every wire frame |
-| `room.ts` | the room reducer and room-code rules (Crockford base32, no I/L/O/U) |
+| `room.ts` | the room reducer, room-code rules (Crockford base32, no I/L/O/U), and telling copies of an episode apart (`copyMismatch`, `skipFor`) |
 | `sync.ts` | clock offset, drift bands, the nudge |
 | `providers.ts` | hosts, match patterns, content-id parsing, watch URLs |
 | `content.ts` | content identity (`urn:…` ids) |

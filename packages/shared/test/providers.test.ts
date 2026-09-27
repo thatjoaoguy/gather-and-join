@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PROVIDERS, PLAYER_HOSTS, PLAYER_MATCHES, providerForHost, providerForContentId, parseContentId, watchUrlFor, hbomax, gdrive, harness } from '../src/index.ts';
+import { PROVIDERS, PLAYER_HOSTS, PLAYER_MATCHES, providerForHost, providerForContentId, parseContentId, watchUrlFor, trustedWatchUrl, hbomax, gdrive, harness } from '../src/index.ts';
 
 describe('provider registry', () => {
   it('has unique ids, hosts and match patterns', () => {
@@ -50,5 +50,24 @@ describe('provider registry', () => {
     // Two Drive files can differ only in case; lowercasing would collapse them.
     expect(parseContentId('https://drive.google.com/file/d/1aB_cD-eFgHiJkLm/view')).toBe('gdrive:1aB_cD-eFgHiJkLm');
     expect(parseContentId('https://drive.google.com/file/d/1AB_CD-EFGHIJKLM/view')).toBe('gdrive:1AB_CD-EFGHIJKLM');
+  });
+});
+
+describe('trusted watch URLs', () => {
+  const hbo = 'hbomax:b411d5ce-0436-44a5-856b-473fc140fe79';
+  it('keeps a peer-supplied URL only when it points back at the room\'s content', () => {
+    const url = 'https://play.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79';
+    expect(trustedWatchUrl(hbo, url)).toBe(url);
+    expect(trustedWatchUrl('urn:hbo:episode:G1', 'http://localhost:4173/watch/urn:hbo:episode:G1?copy=plain')).toBe('http://localhost:4173/watch/urn:hbo:episode:G1?copy=plain');
+  });
+  it('falls back to the canonical URL, or nothing, for anything else', () => {
+    expect(trustedWatchUrl(hbo, 'javascript:alert(1)//play.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79')).toBe('https://play.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79');
+    expect(trustedWatchUrl(hbo, 'https://evil.example/video/watch/00000000-0000-0000-0000-000000000000')).toBe('https://play.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79');
+    expect(trustedWatchUrl('urn:hbo:episode:G1', 'javascript:void 0')).toBeNull();
+    expect(trustedWatchUrl('urn:hbo:episode:G1', null)).toBeNull();
+  });
+  it('names every provider', () => {
+    expect(PROVIDERS.map((p) => p.name)).toEqual(['HBO Max', 'Google Drive', 'Fake player']);
+    expect(providerForContentId(hbo)?.name).toBe('HBO Max');
   });
 });

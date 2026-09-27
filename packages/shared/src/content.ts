@@ -24,3 +24,19 @@ export function parseContentId(url: string): string | null {
 export function watchUrlFor(contentId: string): string | null {
   return providerForContentId(contentId)?.watchUrl(contentId) ?? null;
 }
+
+/**
+ * A room's watch URL, if it is safe to send someone to. The URL comes from the
+ * peer who first reported the content, so it is only trusted when it is an
+ * http(s) address that parses back to the room's own content id; otherwise the
+ * provider's canonical URL, or nothing.
+ */
+export function trustedWatchUrl(contentId: string, watchUrl: string | null): string | null {
+  if (watchUrl) {
+    try {
+      const u = new URL(watchUrl);
+      if ((u.protocol === 'https:' || u.protocol === 'http:') && parseContentId(watchUrl) === contentId) return watchUrl;
+    } catch { /* not a URL */ }
+  }
+  return watchUrlFor(contentId);
+}
