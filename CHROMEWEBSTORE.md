@@ -42,7 +42,7 @@ How to use it
 4. Use headphones. Echo cancellation is tuned for the call, not for a show playing out of speakers.
 
 Privacy
-Your video and audio go directly between the people in the room, never through a server. The companion server sees only your chosen display name, the room code, which episode the room is on, and the play/pause position. Nothing is recorded, nothing is sold, and there are no analytics. Playback itself is untouched: every viewer streams from their own HBO Max account, or their own Google Drive, as usual. The extension never downloads, copies, or relays the video.
+Your video and audio go directly between the people in the room, never through a server. The companion server sees only your chosen display name, the room code, which episode the room is on, how long each viewer's copy of it runs, and the play/pause position. Nothing is recorded, nothing is sold, and there are no analytics. Playback itself is untouched: every viewer streams from their own HBO Max account, or their own Google Drive, as usual. The extension never downloads, copies, or relays the video.
 
 Support
 Questions and bug reports: https://github.com/thatjoaoguy/gather-and-join/issues
@@ -113,8 +113,8 @@ exist only in the `GJ_TEST=1` build for the test harness.
 | Personal communications | Yes: microphone and (opt-in) camera streams | Yes, peer-to-peer between room members only; never through a server; never recorded | Voice/video call | No |
 | Location | No | | | |
 | Web history | No | | | |
-| User activity | Yes: play/pause/seek events and playback position | Yes, to the companion server and room peers | Keep playback in sync | No |
-| Website content | Yes: the episode identifier from the HBO Max page URL, or the file id from the Google Drive URL | Yes, to the companion server and room peers | Take everyone to the same episode or file | No |
+| User activity | Yes: play/pause/seek events and playback position; when copies of an episode differ in length, how much of the longer one to skip, as set by a participant | Yes, to the companion server and room peers | Keep playback in sync | No |
+| Website content | Yes: the episode identifier from the HBO Max page URL, or the file id from the Google Drive URL, and the length of the viewer's copy of it | Yes, to the companion server and room peers | Take everyone to the same episode or file, and line up copies of different lengths | No |
 
 Notes for the form: the server is hosted by the users themselves, not operated by the
 developer. No `chrome.storage.sync` (nothing goes to Google). No analytics, no telemetry,
