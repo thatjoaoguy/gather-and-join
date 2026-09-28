@@ -85,8 +85,21 @@ when you are not in one. Its tooltip says which. The dot is drawn onto the icon
 rather than set as a badge: Chrome's badge is a rounded rectangle sized to its
 text, and at 16px that slab covers the mark.
 
+The gear at the top of the participant rail opens room settings without leaving
+the player: the room code, your mic and camera, the service and episode (with a
+link there if you're elsewhere), how much a longer copy skips (below), and the
+server.
+
 If someone buffers, the room pauses and the popup says who. Resume is a manual
 press — there is no auto-resume, on purpose (it thrashes).
+
+Some regions get a copy of an episode with extras in front of it — a promo, a
+"stay tuned" card — so the same episode runs longer for them. When the copies in
+the room differ, the sidebar says by how much and fills that in as how much the longer
+copy skips. Anyone can **Align** it, and change it later from the gear — typed as
+minutes and seconds, to the hundredth. The longer copy skips its extras and
+nobody watches them; the next episode starts without an offset, since it may have
+no extras at all.
 
 ## Hosting the server
 
@@ -172,6 +185,10 @@ room's position (an ad clip) never pauses the room when it ends, and an `ended`
 is only broadcast if the element is still current a second later (players swap
 the element right after an ad).
 
+Ads stitched into the episode's own timeline, rather than played in a separate
+element, would lengthen it for good at every break. The episode start (see
+"Using it") cannot help: it describes extras before the episode, not in it.
+
 ## Legal
 
 Gather & Join is independent software. It is not affiliated with, endorsed by,
@@ -195,7 +212,8 @@ What it does and does not do:
 - It does not circumvent DRM, region restrictions, concurrent-stream limits,
   or advertising. Ads play as served.
 - The signaling server carries display names, room codes, an episode identifier,
-  and playback position — nothing else — and stores nothing on disk.
+  the length of each viewer's copy of it, where the episode starts in a longer
+  copy, and playback position — nothing else — and stores nothing on disk.
 
 Use of a streaming service through this extension remains subject to that
 service's terms; each viewer is responsible for their own account. The software
@@ -252,6 +270,10 @@ pnpm --filter @gj/harness launch 3          # 3 headed Chromes in one room on th
   The nudge scales with drift (`|drift|/4000`, clamped to 3 %–20 %) rather than a
   fixed 3 %: 3 % cannot correct 800 ms inside the 8 s the tests allow (it would
   take ~22 s). Below ~200 ms of drift it is a gentle 3 %.
+- Positions are on the episode's own timeline. A copy with extras in front of the
+  episode skips them: the room's `episodeStart` says where the episode starts in a
+  copy of a given length, and a copy that matches it (within 5 s) adds that on the
+  way in and takes it off on the way out, never broadcasting a position before 0.
 - Commands we apply from the room are tagged so their own `play`/`pause`/`seeking`
   echoes are not rebroadcast (500 ms, per event kind — a genuine user action of a
   different kind inside that window still propagates).
@@ -321,7 +343,11 @@ media-track stand-ins):
 | `room-client.ts` | the WebSocket: reconnect/backoff, clock sync, rejoin | `WebSocket` global |
 | `mesh.ts` + `perfect-peer.ts` | one negotiated `RTCPeerConnection` per peer | a send-signal callback |
 | `loopback-sender.ts` / `sidebar/loopback-receiver.ts` | the two ends of the page loopback | signal callbacks |
-| `sidebar/party-sidebar.ts` | composes `SidebarView` (DOM), `PageLayout` (making room), `LoopbackReceiver` | the port, the provider's video locator |
+| `sidebar/party-sidebar.ts` | composes `SidebarView` (DOM), `PageLayout` (making room), `LoopbackReceiver`, `EpisodeStartControl` | the port, the provider's video locator |
+| `sidebar/episode-start.ts` | the "copies differ" notice: the proposal, nudges, align and clear | a send callback |
+| `sidebar/settings-panel.ts` + `settings-model.ts` | the gear's room settings popover and what it shows | the sidebar's actions |
+| `room-labels.ts` | how the connection, server and camera state are worded, shared by the popup and the settings panel | — |
+| `copy-tracker.ts` | the length of this page's copy, held across element swaps and ad clips | a report callback |
 | `participants.ts` | the one derivation of "who is in the room", used by the popup and the sidebar | — |
 | `badge.ts` | the toolbar dot: which state the snapshot means, and the circle drawn onto the icon for it | a `chrome.action` slice, a canvas |
 | `setup-state.ts` | the one derivation of "what is still to set up" — microphone, camera, address — shared by the popup's first run and the setup page | — |
@@ -353,13 +379,16 @@ hosts. Shared page styles live in `apps/extension/lib/ui`.
 
 ### Wire protocol
 
-See `packages/shared/src/protocol.ts`. Four frames worth knowing beyond the obvious ones:
+See `packages/shared/src/protocol.ts`. Six frames worth knowing beyond the obvious ones:
 `join` carries `create: true` when the client is creating the room (the server
 rejects collisions with `ROOM_EXISTS` and the client retries with a fresh code),
 `playback` may carry `reason: 'stall'` so the popup can say who buffered, a `media`
 frame carries a peer's self-reported mic/camera state (relayed to the others and
-remembered for late joiners, so tiles can show who is muted), and a
-`leader` frame announces a reassignment after the 60 s grace period a disconnected
+remembered for late joiners, so tiles can show who is muted), a `duration`
+frame does the same for the length of a peer's copy of the room's episode,
+`episodeStart` sets or clears where the episode starts in the longer copy (room
+state, dropped if it names content the room has left, cleared by a content
+change), and a `leader` frame announces a reassignment after the 60 s grace period a disconnected
 leader is given (a rejoin with the same peer id within it keeps leadership; the
 server evicts the stale socket).
 Peer ids beginning with `obs:` are non-media observers (the harness) and are never
@@ -408,6 +437,7 @@ dump's calls would each wait out their own timeouts against it.
 | `drift` | the dead zone / rate band (everything hard-seeks) | small drift |
 | `offscreen` | the offscreen document's persistence across navigation | navigation survival, leader authority (both assert the room survives an episode transition). Service-worker termination is skipped under this flag: it kills the worker right before that navigation, and whether the restarting worker closes the document before the new content script reaches it is a race |
 | `echo-suppress` | tagging of locally-applied remote commands | echo suppression, large drift, small drift, quality switch (the follower's own corrective seeks move the room) |
+| `episode-start` | the skip a longer copy applies from the room's episode start | episode start |
 
 ### Diagnostics
 
@@ -427,7 +457,7 @@ frames only) is worth more than usage numbers. What there is instead:
 
   Events: `listening`, `room_created`, `peer_joined`, `peer_left` (with
   `reason=leave|close|error|heartbeat`), `peer_evicted`, `leader_changed`,
-  `join_rejected`, `content_set`, `navigate`, `navigate_rejected`, `stall`,
+  `join_rejected`, `content_set`, `navigate`, `navigate_rejected`, `episode_start`, `stall`,
   `signal_dropped`, `bad_message`, `room_expired`. `GJ_LOG=0` silences it.
 - **Extension diagnostics.** Each extension realm (service worker, offscreen
   document, and every player page via the offscreen document) keeps a ring buffer

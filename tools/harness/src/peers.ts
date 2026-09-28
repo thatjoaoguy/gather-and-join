@@ -20,7 +20,7 @@ export const driveWatchUrl = (contentId: string) => `${PLAYER_ORIGIN}/drivewatch
 export const youtubeWatchUrl = (contentId: string) => `${PLAYER_ORIGIN}/ytwatch/${contentId}`;
 export type PlayerShape = 'hbo' | 'drive' | 'youtube';
 
-export type Sabotage = 'reattach' | 'drift' | 'offscreen' | 'echo-suppress' | null;
+export type Sabotage = 'reattach' | 'drift' | 'offscreen' | 'echo-suppress' | 'episode-start' | null;
 
 export type Peer = {
   index: number;
@@ -107,10 +107,10 @@ export async function launchPeer(index: number, opts: LaunchOptions = {}): Promi
   return peer;
 }
 
-/** Navigate a peer's player page and wait for the extension hook to be live. */
-export async function openPlayer(peer: Peer, contentId = EPISODE(1), shape: PlayerShape = 'hbo') {
+/** Navigate a peer's player page and wait for the extension hook to be live. `copy` picks one of the player's copies of the episode. */
+export async function openPlayer(peer: Peer, contentId = EPISODE(1), shape: PlayerShape = 'hbo', copy?: 'plain' | 'extras') {
   const url = shape === 'drive' ? driveWatchUrl(contentId) : shape === 'youtube' ? youtubeWatchUrl(contentId) : watchUrl(contentId);
-  await peer.page.goto(url);
+  await peer.page.goto(copy ? `${url}?copy=${copy}` : url);
   await waitForHook(peer);
 }
 

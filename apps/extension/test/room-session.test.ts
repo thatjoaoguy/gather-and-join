@@ -91,7 +91,7 @@ function setup(opts: { local?: ReturnType<typeof fakeLocal>; kvStore?: ReturnTyp
 type RoomFrame = Extract<S2C, { type: 'room' }>;
 const roomFrame = (over: Partial<RoomFrame> = {}): RoomFrame => ({
   type: 'room', yourPeerId: 'me', isLeader: true,
-  state: { code: 'RM0001', leaderId: 'me', contentId: null, watchUrl: null, positionMs: 0, paused: true, updatedAt: 0 },
+  state: { code: 'RM0001', leaderId: 'me', contentId: null, watchUrl: null, positionMs: 0, paused: true, updatedAt: 0, episodeStart: null },
   peers: [{ peerId: 'me', name: 'Ana' }], ...over,
 });
 
@@ -429,6 +429,45 @@ describe('RoomSession', () => {
     expect(session.snapshot.peerMedia.p2).toMatchObject({ micOn: true, camOn: false });
     client.frame({ type: 'peerJoined', peerId: 'p3', name: 'Cy' });
     expect(session.snapshot.peerMedia.p3).toMatchObject({ micOn: null, camOn: null }); // not told yet
+  });
+
+  it('reports this copy\'s length, repeats it on rejoin, and mirrors peers\' lengths and the episode start', async () => {
+    const { session, client } = setup();
+    await session.joinRoom('RM0001', 'Ana');
+    client.connect();
+    session.reportDuration('urn:hbo:episode:G1', 3_784_572);
+    expect(client.sent.filter((m) => m.type === 'duration')).toEqual([]); // not in a room yet
+    const room = roomFrame({ state: { ...roomFrame().state, contentId: 'urn:hbo:episode:G1' }, peers: [{ peerId: 'me', name: 'Ana' }, { peerId: 'p2', name: 'Bea' }] });
+    client.frame(room);
+    expect(client.sent.filter((m) => m.type === 'duration')).toEqual([{ type: 'duration', contentId: 'urn:hbo:episode:G1', durationMs: 3_784_572 }]);
+    expect(session.snapshot.peers.find((p) => p.peerId === 'me')?.copy).toEqual({ contentId: 'urn:hbo:episode:G1', durationMs: 3_784_572 }); // measured before the room existed
+    client.frame({ type: 'duration', from: 'p2', contentId: 'urn:hbo:episode:G1', durationMs: 3_360_000 });
+    expect(session.snapshot.peers.find((p) => p.peerId === 'p2')?.copy).toEqual({ contentId: 'urn:hbo:episode:G1', durationMs: 3_360_000 });
+
+    session.setEpisodeStart('urn:hbo:episode:G1', { durationMs: 3_784_572, startMs: 424_000 });
+    expect(client.sent.at(-1)).toEqual({ type: 'episodeStart', contentId: 'urn:hbo:episode:G1', start: { durationMs: 3_784_572, startMs: 424_000 } });
+    client.frame({ type: 'episodeStart', start: { durationMs: 3_784_572, startMs: 424_000 }, originPeerId: 'p2' });
+    expect(session.snapshot.room?.episodeStart).toEqual({ durationMs: 3_784_572, startMs: 424_000 });
+
+    // The next episode may have no extras: the start does not follow the room there.
+    client.frame({ type: 'navigate', contentId: 'urn:hbo:episode:G2', watchUrl: null, originPeerId: 'me' });
+    expect(session.snapshot.room?.episodeStart).toBeNull();
+
+    client.frame(room); // a rejoin after a drop
+    expect(client.sent.filter((m) => m.type === 'duration')).toHaveLength(2);
+  });
+
+  it('a server saved mid-room is for the next join: the room keeps reporting the one it is on', async () => {
+    const { session, client, kv } = setup();
+    await session.joinRoom('RM0001', 'Ana');
+    client.connect();
+    client.frame(roomFrame());
+    const before = session.snapshot.server;
+    await session.setServerUrl('wss://other.example');
+    expect(kv.store.local.serverUrl).toBe('wss://other.example');
+    expect(session.snapshot.server).toEqual(before);
+    await session.probeServer(); // the setup page's check, while still in the room
+    expect(session.snapshot.server).toMatchObject({ url: before.url, state: 'reachable' });
   });
 
   it('tracks speaking for ourselves and for peers without touching ducking', async () => {

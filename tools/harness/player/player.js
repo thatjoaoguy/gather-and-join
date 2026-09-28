@@ -13,6 +13,9 @@
   const urnFromPath = () => (decodeURIComponent(location.pathname).match(/urn:hbo:episode:([A-Za-z0-9]+)/) || [])[1] || EPISODES[0];
   const nextUrn = () => EPISODES[(EPISODES.indexOf(urnFromPath()) + 1) % EPISODES.length];
   const video = () => playerEl.querySelector('video');
+  // `?copy=plain|extras` picks a copy of the episode; the query is dropped by an
+  // episode change, since the next episode need not come with extras.
+  const mainSrc = () => { const c = new URLSearchParams(location.search).get('copy'); return c ? `/media/${c}` : '/media/main'; };
 
   function createVideo(src, { currentTime = 0, autoplay = false, loop = true } = {}) {
     const old = video();
@@ -45,7 +48,7 @@
     cancelCountdown();
     render();
     // SPA episode change: the player recreates the element from scratch.
-    createVideo('/media/main', { autoplay: false });
+    createVideo(mainSrc(), { autoplay: false });
   }
 
   function cancelCountdown() {
@@ -79,7 +82,7 @@
   document.getElementById('seek-fwd').onclick = () => { const v = video(); if (v) v.currentTime += 60; };
   document.getElementById('recreate').onclick = () => {
     const v = video();
-    createVideo('/media/main', { currentTime: v ? v.currentTime : 0 });
+    createVideo(mainSrc(), { currentTime: v ? v.currentTime : 0 });
   };
   document.getElementById('quality').onclick = () => {
     // Same as recreate, but through a detached-then-reattached node, which is
@@ -88,7 +91,7 @@
     const t = v ? v.currentTime : 0;
     const playing = v && !v.paused;
     if (v) v.remove();
-    setTimeout(() => createVideo('/media/main', { currentTime: t, autoplay: !!playing }), 50);
+    setTimeout(() => createVideo(mainSrc(), { currentTime: t, autoplay: !!playing }), 50);
   };
   document.getElementById('ad-break').onclick = () => {
     if (adTimer) return;
@@ -100,7 +103,7 @@
     adTimer = setTimeout(() => {
       adTimer = null;
       delete playerEl.dataset.adBreak;
-      createVideo('/media/main', { currentTime: resumeAt, autoplay: !!wasPlaying });
+      createVideo(mainSrc(), { currentTime: resumeAt, autoplay: !!wasPlaying });
     }, 15_000);
   };
   document.getElementById('next-push').onclick = () => goTo(nextUrn(), 'push');
@@ -108,7 +111,7 @@
   document.getElementById('show-up-next').onclick = startCountdown;
   // Like HBO Max: fullscreen is requested on the player container (a positioned element), not the <video>.
   document.getElementById('fullscreen').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else playerEl.requestFullscreen(); };
-  window.addEventListener('popstate', () => { render(); createVideo('/media/main'); });
+  window.addEventListener('popstate', () => { render(); createVideo(mainSrc()); });
 
   // Autoplay-next fires 30s before the end, independently per client.
   setInterval(() => {
@@ -128,5 +131,5 @@
   window.__fakePlayer = { goTo, createVideo, startCountdown, video, generation: () => generation };
 
   render();
-  createVideo('/media/main');
+  createVideo(mainSrc());
 })();

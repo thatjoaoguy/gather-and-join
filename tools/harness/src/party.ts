@@ -15,13 +15,13 @@ export type Party = {
   close(): Promise<void>;
 };
 
-export type PartyOptions = { n: number; /** Defaults to a fresh code: the server holds a room for ROOM_TTL_MS after the last peer leaves, so a re-run must not reuse one. */ code?: string; sabotage?: Sabotage; headless?: boolean; contentId?: string; withObserver?: boolean; continuousTone?: boolean; shape?: PlayerShape };
+export type PartyOptions = { n: number; /** Defaults to a fresh code: the server holds a room for ROOM_TTL_MS after the last peer leaves, so a re-run must not reuse one. */ code?: string; sabotage?: Sabotage; headless?: boolean; contentId?: string; withObserver?: boolean; continuousTone?: boolean; shape?: PlayerShape; /** Per peer, by index: which copy of the episode it plays. */ copies?: Array<'plain' | 'extras' | undefined> };
 
-export async function startParty({ n, code = generateRoomCode(), sabotage, headless, contentId = EPISODE(1), withObserver = true, continuousTone = false, shape = 'hbo' }: PartyOptions): Promise<Party> {
+export async function startParty({ n, code = generateRoomCode(), sabotage, headless, contentId = EPISODE(1), withObserver = true, continuousTone = false, shape = 'hbo', copies = [] }: PartyOptions): Promise<Party> {
   if (!isValidRoomCode(code)) throw new Error(`test room code ${code} is not Crockford base32 (no I, L, O, U)`);
   const peers: Peer[] = [];
   for (let i = 0; i < n; i++) peers.push(await launchPeer(i, { sabotage, headless, continuousTone }));
-  for (const p of peers) await openPlayer(p, contentId, shape);
+  for (const p of peers) await openPlayer(p, contentId, shape, copies[p.index]);
 
   const leader = peers[0]!;
   await leader.gj('createRoom', code, leader.name);
@@ -81,9 +81,10 @@ async function dumpPartyInner(party: Party, label: string) {
 }
 
 export type Snap = {
-  socket: string; socketReconnects: number; room: { code: string; contentId: string | null; paused: boolean; positionMs: number; leaderId: string } | null;
-  peers: Array<{ peerId: string; name: string }>; yourPeerId: string; isLeader: boolean; camOn: boolean; micOn: boolean;
-  peerMedia: Record<string, { connectionState: string; iceConnectionState: string; signalingState: string; hasAudio: boolean; hasVideo: boolean }>;
+  socket: string; socketReconnects: number;
+  room: { code: string; contentId: string | null; paused: boolean; positionMs: number; leaderId: string; episodeStart: { durationMs: number; startMs: number } | null } | null;
+  peers: Array<{ peerId: string; name: string; copy?: { contentId: string; durationMs: number } }>; yourPeerId: string; isLeader: boolean; camOn: boolean; micOn: boolean;
+  peerMedia: Record<string, { connectionState: string; iceConnectionState: string; signalingState: string; hasAudio: boolean; hasVideo: boolean; micOn: boolean | null; camOn: boolean | null }>;
   lastError: { code: string; message: string } | null;
 };
 export const snapshot = (p: Peer) => p.gj<Snap | null>('getSnapshot');
@@ -123,14 +124,16 @@ export async function pressPause(p: Peer) { await p.page.click('#pause'); }
 /**
  * Pairwise spread of positions across peers, normalised to one clock: a
  * playing peer sampled at t is extrapolated to the common instant T.
+ * `skipMs[i]` takes peer i's extras off its position, so copies of different
+ * lengths compare on the episode's own timeline.
  */
-export async function spreadMs(peers: Peer[]): Promise<{ spread: number; positions: number[] }> {
+export async function spreadMs(peers: Peer[], skipMs: number[] = []): Promise<{ spread: number; positions: number[] }> {
   const states = await Promise.all(peers.map((p) => state(p)));
   const T = Math.max(...states.map((s) => s.atUnixMs));
   const positions = states.map((s) => {
     if (s.positionMs === null) return NaN;
     return s.paused ? s.positionMs : s.positionMs + (T - s.atUnixMs) * (s.playbackRate ?? 1);
-  });
+  }).map((pos, i) => pos - (skipMs[i] ?? 0));
   if (positions.some(Number.isNaN)) return { spread: Infinity, positions };
   return { spread: Math.max(...positions) - Math.min(...positions), positions };
 }

@@ -9,7 +9,7 @@
  * player, duck for the ducker, and video for whoever re-streams camera tracks
  * into pages (the loopback senders).
  */
-import { generateRoomCode, isValidRoomCode, normalizeRoomCode, type C2S, type MediaFlags, type PeerId, type S2C } from '@gj/shared';
+import { generateRoomCode, isValidRoomCode, normalizeRoomCode, type C2S, type CopyInfo, type EpisodeStart, type MediaFlags, type PeerId, type PeerInfo, type S2C } from '@gj/shared';
 import type { PeerMediaState, ServerStatus, Snapshot } from './messages';
 import type { SignalPayload } from './perfect-peer';
 import type { DesiredRoom, SocketStatus } from './room-client';
@@ -110,6 +110,8 @@ export class RoomSession {
   private readonly client: SessionClient;
   private desiredName = 'peer';
   private _content: Content = { contentId: null, url: '' };
+  /** The length of this client's copy, as the page last measured it; re-announced on every room frame. */
+  private ownCopy: CopyInfo | null = null;
   private duckingEnabled = false;
   private _ducked = false;
   private bootReconnects = 0;
@@ -323,6 +325,29 @@ export class RoomSession {
     this.client.send({ type: 'navigate', contentId, watchUrl: url });
   }
 
+  /** The page measured its copy of `contentId`. Remembered, so a rejoin can repeat it. */
+  reportDuration(contentId: string, durationMs: number) {
+    this.ownCopy = { contentId, durationMs };
+    this.snapshot.peers = this.withOwnCopy(this.snapshot.peers, this.snapshot.yourPeerId);
+    this.announceCopy();
+    this.broadcast();
+  }
+
+  /** The server never echoes our own report, and a room frame can predate it; our entry carries it regardless. */
+  private withOwnCopy(peers: PeerInfo[], me: PeerId | null): PeerInfo[] {
+    const copy = this.ownCopy;
+    return copy && me ? peers.map((p) => (p.peerId === me ? { ...p, copy } : p)) : peers;
+  }
+
+  private announceCopy() {
+    if (!this.ownCopy || !this.snapshot.room || this.client.status !== 'connected') return;
+    this.client.send({ type: 'duration', ...this.ownCopy });
+  }
+
+  setEpisodeStart(contentId: string, start: EpisodeStart | null) {
+    this.client.send({ type: 'episodeStart', contentId, start });
+  }
+
   // ---- playback ------------------------------------------------------------------
 
   playback(paused: boolean, positionMs: number) {
@@ -383,6 +408,9 @@ export class RoomSession {
   /** The setup page or popup saved a new address. Applies to the next join; probed at once. */
   async setServerUrl(url: string) {
     await this.deps.kv.set('local', { serverUrl: url });
+    // A room stays on the server it joined; the new address is for the next join, and
+    // until then the snapshot keeps describing the server the room is actually on.
+    if (this.snapshot.room) return;
     this.snapshot.server = serverStatus(url);
     this.broadcast();
     await this.probeServer();
@@ -400,7 +428,8 @@ export class RoomSession {
     const seq = ++this.probeSeq;
     this.snapshot.server = { ...this.snapshot.server, state: 'checking' };
     this.broadcast();
-    const url = await this.configuredServerUrl();
+    // In a room, the server worth checking is the one the room is on, not a newly saved one.
+    const url = this.snapshot.room ? this.client.url : await this.configuredServerUrl();
     if (seq !== this.probeSeq) return; // superseded while resolving
     if (this.snapshot.server.url !== url) { this.snapshot.server = { ...serverStatus(url), state: 'checking' }; this.broadcast(); }
     if (this.snapshot.room && this.client.status === 'connected' && this.client.url === url) {
@@ -487,11 +516,12 @@ export class RoomSession {
         this.rejoinAttempts = 0;
         this.lastRoom = { code: msg.state.code, wasLeader: msg.isLeader };
         for (const p of msg.peers) if (p.media) this.peerFlags.set(p.peerId, p.media);
-        this.patch({ joining: false, room: msg.state, peers: msg.peers, yourPeerId: msg.yourPeerId, isLeader: msg.isLeader, lastError: null });
+        this.patch({ joining: false, room: msg.state, peers: this.withOwnCopy(msg.peers, msg.yourPeerId), yourPeerId: msg.yourPeerId, isLeader: msg.isLeader, lastError: null });
         for (const p of msg.peers) if (p.peerId !== msg.yourPeerId) this.mesh?.add(p.peerId);
         this.refreshPeerMedia();
         void this.persist();
         this.announceMedia();
+        this.announceCopy();
         this.announceContent();
         return;
       }
@@ -531,13 +561,21 @@ export class RoomSession {
         return;
       }
       case 'navigate':
-        if (s.room) s.room = { ...s.room, contentId: msg.contentId, watchUrl: msg.watchUrl, positionMs: 0, paused: true, updatedAt: this.now() + this.client.offsetMs };
+        if (s.room) s.room = { ...s.room, contentId: msg.contentId, watchUrl: msg.watchUrl, positionMs: 0, paused: true, updatedAt: this.now() + this.client.offsetMs, episodeStart: null };
         this.events.navigate({ contentId: msg.contentId, watchUrl: msg.watchUrl, originPeerId: msg.originPeerId });
         this.broadcast();
         return;
       case 'media':
         this.peerFlags.set(msg.from, { micOn: msg.micOn, camOn: msg.camOn });
         this.refreshPeerMedia();
+        this.broadcast();
+        return;
+      case 'duration':
+        s.peers = s.peers.map((p) => (p.peerId === msg.from ? { ...p, copy: { contentId: msg.contentId, durationMs: msg.durationMs } } : p));
+        this.broadcast();
+        return;
+      case 'episodeStart':
+        if (s.room) s.room = { ...s.room, episodeStart: msg.start };
         this.broadcast();
         return;
       case 'signal':

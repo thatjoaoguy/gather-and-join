@@ -6,7 +6,7 @@
  */
 import { queryVideo } from './providers/player-adapter';
 
-export type VideoHandlers = Partial<Record<'play' | 'pause' | 'seeking' | 'seeked' | 'waiting' | 'playing' | 'ended', (v: HTMLVideoElement) => void>>;
+export type VideoHandlers = Partial<Record<'play' | 'pause' | 'seeking' | 'seeked' | 'waiting' | 'playing' | 'ended' | 'durationchange', (v: HTMLVideoElement) => void>>;
 
 export class VideoBinding {
   private video: HTMLVideoElement | null = null;

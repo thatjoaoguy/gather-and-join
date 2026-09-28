@@ -218,13 +218,15 @@ async function onPlayerMessage(port: chrome.runtime.Port, m: PlayerToOffscreen) 
     case 'playback': session.playback(m.paused, m.positionMs); return;
     case 'stalled': session.stalled(); return;
     case 'navigateRequest': session.navigateRequest(m.contentId, m.url); return;
+    case 'duration': session.reportDuration(m.contentId, m.durationMs); return;
+    case 'episodeStart': session.setEpisodeStart(m.contentId, m.start); return;
+    case 'setMic': session.setMic(m.on); return;
+    case 'setCamera': await session.setCamera(m.on); return;
     case 'loopback:want': if (m.want) ensureLoopback(port); else dropLoopback(port); return;
     case 'loopback:signal': void ensureLoopback(port).handle(m.payload as never); return;
     case 'test:createRoom': if (__GJ_TEST__) await session.createRoom(m.name, m.code); return;
     case 'test:joinRoom': if (__GJ_TEST__) await session.joinRoom(m.code, m.name); return;
     case 'test:leaveRoom': if (__GJ_TEST__) session.leaveRoom(); return;
-    case 'test:setCamera': if (__GJ_TEST__) await session.setCamera(m.on); return;
-    case 'test:setMic': if (__GJ_TEST__) session.setMic(m.on); return;
     case 'test:getDiag': if (__GJ_TEST__) post(port, { type: 'test:diag', id: m.id, diag: await collectDiag() }); return;
     case 'test:resetAudioGaps': if (__GJ_TEST__) remote.resetAudioGaps(); return;
     case 'test:dropSocket': if (__GJ_TEST__) session.dropSocketForTest(); return;

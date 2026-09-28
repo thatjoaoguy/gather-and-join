@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   watchUrlFor, generateRoomCode, isValidRoomCode, normalizeRoomCode, expectedPositionMs, applyPlayback, applyNavigate,
-  createRoomState, parseContentId, estimateOffset, decideCorrection, parseC2S,
+  createRoomState, parseContentId, estimateOffset, decideCorrection, parseC2S, applyEpisodeStart, copyMismatch, skipFor,
 } from '../src';
 
 describe('room codes', () => {
@@ -34,6 +34,34 @@ describe('room reducer', () => {
     // Same content: no reset.
     const same = applyNavigate(nav, 'urn:hbo:episode:G2', null, 4000);
     expect(same.updatedAt).toBe(3000);
+  });
+});
+
+describe('episode start', () => {
+  const s0 = applyNavigate(createRoomState('ABC123', 'p1', 1000), 'urn:hbo:episode:G1', null, 1000);
+  const start = { durationMs: 3_784_572, startMs: 390_000 };
+
+  it('is set for the room\'s episode, ignored for any other, and cleared by a content change', () => {
+    const set = applyEpisodeStart(s0, 'urn:hbo:episode:G1', start);
+    expect(set.episodeStart).toEqual(start);
+    expect(applyEpisodeStart(set, 'urn:hbo:episode:OLD', null)).toBe(set);
+    expect(applyNavigate(set, 'urn:hbo:episode:G1', null, 2000).episodeStart).toEqual(start);
+    expect(applyNavigate(set, 'urn:hbo:episode:G2', null, 2000).episodeStart).toBeNull();
+  });
+
+  it('finds the two copies when they differ by more than a wobble', () => {
+    expect(copyMismatch([3_360_000, 3_784_572])).toEqual({ shortMs: 3_360_000, longMs: 3_784_572 });
+    expect(copyMismatch([3_360_000, 3_360_800, 3_784_572])).toEqual({ shortMs: 3_360_000, longMs: 3_784_572 });
+    expect(copyMismatch([3_360_000, 3_364_000])).toBeNull();
+    expect(copyMismatch([3_784_572])).toBeNull();
+  });
+
+  it('skips only in the copy the start describes', () => {
+    expect(skipFor(start, 3_784_572)).toBe(390_000);
+    expect(skipFor(start, 3_783_900)).toBe(390_000); // the same copy, reloaded
+    expect(skipFor(start, 3_360_000)).toBe(0);
+    expect(skipFor(start, null)).toBe(0);
+    expect(skipFor(null, 3_784_572)).toBe(0);
   });
 });
 

@@ -13,6 +13,8 @@
  */
 export type ContentProvider = {
   readonly id: string;
+  /** What people call the service, for the UI. */
+  readonly name: string;
   /** Exact hostnames of the player. Drives webNavigation filters and adapter lookup. */
   readonly hosts: readonly string[];
   /** Manifest match patterns for the content script and host permissions. */
@@ -41,6 +43,7 @@ export type ContentProvider = {
  */
 type PrefixedProviderSpec = {
   readonly id: string;
+  readonly name: string;
   readonly hosts: readonly string[];
   readonly matches: readonly string[];
   /** This provider's own id for the content at `url`, or null if it is not a watch page. */
@@ -58,6 +61,7 @@ function prefixedProvider(spec: PrefixedProviderSpec): ContentProvider {
   const prefix = `${spec.id}:`;
   return {
     id: spec.id,
+    name: spec.name,
     hosts: spec.hosts,
     matches: spec.matches,
     parseContentId(url) {
@@ -77,6 +81,7 @@ const HBOMAX_ORIGIN = 'https://play.hbomax.com';
 
 export const hbomax: ContentProvider = prefixedProvider({
   id: 'hbomax',
+  name: 'HBO Max',
   hosts: ['play.hbomax.com'],
   matches: ['https://play.hbomax.com/*'],
   rawId: pathMatch(/\/video\/watch\/([0-9a-f-]{36})/i),
@@ -106,6 +111,7 @@ const GDRIVE_ORIGIN = 'https://drive.google.com';
 
 export const gdrive: ContentProvider = prefixedProvider({
   id: 'gdrive',
+  name: 'Google Drive',
   hosts: ['drive.google.com'],
   // Deliberately narrower than the host: the extension has no business in the
   // rest of Drive (My Drive, Docs, the picker), and a file-only pattern is the
@@ -142,6 +148,7 @@ const youtubeId = (raw: string | null | undefined): string | null => (raw && YOU
 
 export const youtube: ContentProvider = prefixedProvider({
   id: 'youtube',
+  name: 'YouTube',
   hosts: ['www.youtube.com'],
   matches: ['https://www.youtube.com/*'],
   rawId(url) {
@@ -163,6 +170,7 @@ const CONTENT_URN_RE = /urn:hbo:[a-z]+:[A-Za-z0-9_-]+/;
 
 export const harness: ContentProvider = {
   id: 'harness',
+  name: 'Fake player',
   hosts: ['localhost', '127.0.0.1'],
   matches: ['http://localhost/*', 'http://127.0.0.1/*'],
   parseContentId(url) {

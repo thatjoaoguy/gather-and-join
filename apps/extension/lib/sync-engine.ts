@@ -6,6 +6,9 @@
  *  - A 250ms tick compares local position with the room's expected position and
  *    applies the drift policy: dead zone, rate nudge, or (≥1500ms only) hard seek.
  *  - The leader heartbeats `playback` every 5s while playing.
+ *  - Positions are on the room's timeline, where 0 is the episode's first frame.
+ *    A copy with extras in front skips them: `skipMs` is added on the way in and
+ *    taken off on the way out, and nothing before the episode is ever broadcast.
  */
 import {
   decideCorrection, expectedPositionMs, ECHO_SUPPRESS_MS, HEARTBEAT_MS, DRIFT_DEAD_ZONE_MS, DRIFT_HARD_SEEK_MS,
@@ -39,6 +42,8 @@ export class SyncEngine {
   private driftSamples: number[] = [];
   private lastReport = 0;
   private reported = { hardSeeks: 0, rateAdjustments: 0 };
+  /** How much of this copy precedes the episode, from the room's episode start. */
+  private skipMs = 0;
 
   constructor(
     private readonly binding: VideoBinding,
@@ -49,6 +54,23 @@ export class SyncEngine {
   ) {}
 
   serverNow() { return Date.now() + this.offsetMs; }
+
+  /**
+   * Adopt a new skip. The room's position now names a different frame in this copy,
+   * so jump to it: someone is nudging the start by a second while the others say
+   * what they see, and the drift corrector's gentle catch-up would take seconds.
+   */
+  setSkip(ms: number) {
+    if (ms === this.skipMs) return;
+    this.diag(`episode starts at ${Math.round(ms)}ms in this copy`);
+    this.skipMs = ms;
+    const v = this.binding.get();
+    if (!v || !this.room) return;
+    const drift = this.localPositionMs(v) - expectedPositionMs(this.room, this.serverNow());
+    if (Math.abs(drift) > DRIFT_DEAD_ZONE_MS) this.seekTo(v, expectedPositionMs(this.room, this.serverNow()), `episode start, drift ${Math.round(drift)}ms`);
+    this.setRate(v, 1);
+  }
+  private get skip() { return this.sabotage === 'episode-start' ? 0 : this.skipMs; }
   private suppressed(kind: 'play' | 'pause' | 'seeking') {
     if (Date.now() >= this.suppressUntil) { this.expected.clear(); return false; }
     return this.expected.has(kind);
@@ -63,7 +85,7 @@ export class SyncEngine {
   private seekTo(v: HTMLVideoElement, ms: number, why: string) {
     this.diag(`hard seek to ${Math.round(ms)}ms (${why})`);
     this.tag('seeking');
-    v.currentTime = ms / 1000;
+    v.currentTime = (ms + this.skip) / 1000;
     this.counters.hardSeeks++;
   }
 
@@ -81,17 +103,17 @@ export class SyncEngine {
   onLocalPlay(v: HTMLVideoElement) {
     if (this.suppressed('play')) return;
     this.cancelStall();
-    this.announce({ paused: false, positionMs: v.currentTime * 1000 }, 'play');
+    this.announce({ paused: false, positionMs: this.outboundPositionMs(v) }, 'play');
   }
   onLocalPause(v: HTMLVideoElement) {
     if (this.suppressed('pause')) return;
     if (v.ended) return; // media fires `pause` then `ended`; the ended path decides
     this.cancelStall();
-    this.announce({ paused: true, positionMs: v.currentTime * 1000 }, 'pause');
+    this.announce({ paused: true, positionMs: this.outboundPositionMs(v) }, 'pause');
   }
   onLocalSeeking(v: HTMLVideoElement) {
     if (this.suppressed('seeking')) return;
-    this.announce({ paused: v.paused, positionMs: v.currentTime * 1000 }, 'seek');
+    this.announce({ paused: v.paused, positionMs: this.outboundPositionMs(v) }, 'seek');
   }
   onLocalEnded(_v: HTMLVideoElement) {
     // End of content belongs to the player (HBO Max auto-advances at the natural end,
@@ -119,8 +141,8 @@ export class SyncEngine {
       const cur = this.binding.get();
       if (cur !== v || v.paused || v.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) return;
       if (!this.room || this.room.paused) return;
-      this.diag(`stalled at ${Math.round(v.currentTime * 1000)}ms (readyState ${v.readyState}); pausing the room`);
-      this.send({ paused: true, positionMs: v.currentTime * 1000, stalled: true });
+      this.diag(`stalled at ${Math.round(this.outboundPositionMs(v))}ms (readyState ${v.readyState}); pausing the room`);
+      this.send({ paused: true, positionMs: this.outboundPositionMs(v), stalled: true });
     }, STALL_CONFIRM_MS);
   }
   onLocalPlaying() { this.cancelStall(); }
@@ -151,7 +173,10 @@ export class SyncEngine {
     v.currentTime += ms / 1000;
   }
 
-  private localPositionMs(v: HTMLVideoElement) { return v.currentTime * 1000; }
+  /** This copy's position on the room's timeline; negative inside extras before the episode, which drift correction then skips. */
+  private localPositionMs(v: HTMLVideoElement) { return v.currentTime * 1000 - this.skip; }
+  /** What the room is told: never a position before the episode. */
+  private outboundPositionMs(v: HTMLVideoElement) { return Math.max(0, this.localPositionMs(v)); }
 
   /**
    * Bring the element in line with room state. `immediate` is set when a
@@ -238,7 +263,7 @@ export class SyncEngine {
       const now = Date.now();
       if (now - this.lastHeartbeat >= HEARTBEAT_MS) {
         this.lastHeartbeat = now;
-        this.send({ paused: false, positionMs: v.currentTime * 1000 });
+        this.send({ paused: false, positionMs: this.outboundPositionMs(v) });
       }
     }
   }

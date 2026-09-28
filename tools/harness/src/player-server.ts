@@ -24,6 +24,13 @@ const FIXTURES = path.join(ROOT, 'fixtures');
 export const PLAYER_PORT = Number(process.env.PLAYER_PORT ?? 4173);
 export const MAIN_SECONDS = 330;
 export const AD_SECONDS = 15;
+/**
+ * Two copies of one episode, as different regions get them: `?copy=plain` and
+ * `?copy=extras` on a watch URL, the second with this much in front of the same
+ * episode. Both are generated tracks, so their lengths are exact whether or not
+ * the video fixtures exist.
+ */
+export const EXTRAS_SECONDS = 60;
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css',
@@ -33,6 +40,15 @@ const MIME: Record<string, string> = {
 type Media = { body: Buffer; mime: string };
 let mainMedia: Media | null = null;
 let adMedia: Media | null = null;
+let copies: { plain: Media; extras: Media } | null = null;
+
+function loadCopies() {
+  copies ??= {
+    plain: { body: quietTrack(MAIN_SECONDS), mime: 'audio/wav' },
+    extras: { body: quietTrack(EXTRAS_SECONDS + MAIN_SECONDS), mime: 'audio/wav' },
+  };
+  return copies;
+}
 
 function loadMedia(): { main: Media; ad: Media } {
   if (!mainMedia) {
@@ -78,6 +94,8 @@ export function startPlayerServer(port = PLAYER_PORT): Promise<http.Server> {
     if (p === '/') { res.writeHead(302, { Location: '/watch/urn:hbo:episode:G0000001' }); return res.end(); }
     if (p === '/media/main') return serveMedia(req, res, loadMedia().main);
     if (p === '/media/ad') return serveMedia(req, res, loadMedia().ad);
+    if (p === '/media/plain') return serveMedia(req, res, loadCopies().plain);
+    if (p === '/media/extras') return serveMedia(req, res, loadCopies().extras);
     if (p.startsWith('/watch/urn:hbo:')) return serveFile(res, path.join(PLAYER_DIR, 'index.html'));
     // Drive-shaped variant: no <video> in the top document, playback in a
     // cross-origin iframe driven by the YouTube widget postMessage protocol.

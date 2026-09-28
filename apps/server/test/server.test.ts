@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import WebSocket from 'ws';
-import type { C2S, S2C } from '@gj/shared';
+import { parseC2S, type C2S, type S2C } from '@gj/shared';
 
 process.env.ROOM_TTL_MS = '200';
 process.env.LEADER_GRACE_MS = '300';
@@ -164,6 +164,50 @@ describe('server', () => {
     a.close(); b.close(); c.close();
   });
 
+  it('copy durations are relayed and remembered; the episode start is room state that a content change clears', async () => {
+    const a = await client(); const b = await client(); const c = await client();
+    a.send({ type: 'join', code: 'RM0006', peerId: 'a', name: 'A', create: true });
+    await a.next('room');
+    b.send({ type: 'join', code: 'RM0006', peerId: 'b', name: 'B' });
+    await b.next('room'); await a.next('peerJoined');
+    const nav = b.next('navigate');
+    a.send({ type: 'hello', contentId: 'urn:hbo:episode:G1' }); await nav;
+
+    const seenByA = a.next('duration');
+    b.send({ type: 'duration', contentId: 'urn:hbo:episode:G1', durationMs: 3_784_572 });
+    expect(await seenByA).toEqual({ type: 'duration', from: 'b', contentId: 'urn:hbo:episode:G1', durationMs: 3_784_572 });
+    expect(b.inbox.some((m) => m.type === 'duration')).toBe(false); // not echoed to the sender
+
+    // Set by a guest, confirmed to everyone including the sender.
+    const startA = a.next('episodeStart'); const startB = b.next('episodeStart');
+    b.send({ type: 'episodeStart', contentId: 'urn:hbo:episode:G1', start: { durationMs: 3_784_572, startMs: 390_000 } });
+    for (const m of await Promise.all([startA, startB])) expect(m).toEqual({ type: 'episodeStart', start: { durationMs: 3_784_572, startMs: 390_000 }, originPeerId: 'b' });
+
+    // A frame for another episode is stale: nothing changes, nobody is told.
+    b.send({ type: 'episodeStart', contentId: 'urn:hbo:episode:OLD', start: null });
+    c.send({ type: 'join', code: 'RM0006', peerId: 'c', name: 'C' });
+    const room = await c.next('room');
+    expect(room.state.episodeStart).toEqual({ durationMs: 3_784_572, startMs: 390_000 });
+    expect(room.peers.find((p) => p.peerId === 'b')?.copy).toEqual({ contentId: 'urn:hbo:episode:G1', durationMs: 3_784_572 });
+    expect(room.peers.find((p) => p.peerId === 'a')?.copy).toBeUndefined();
+
+    const navC = c.next('navigate');
+    a.send({ type: 'navigate', contentId: 'urn:hbo:episode:G2' }); await navC;
+    expect(_rooms().get('RM0006')?.state.episodeStart).toBeNull();
+    a.close(); b.close(); c.close();
+  });
+
+  it('rejects an episode start outside its copy', () => {
+    const frame = (start: unknown) => parseC2S({ type: 'episodeStart', contentId: 'x', start });
+    expect(frame({ durationMs: 100, startMs: 99 })).toBeTruthy();
+    expect(frame(null)).toMatchObject({ start: null });
+    expect(frame({ durationMs: 100, startMs: 100 })).toBeNull();
+    expect(frame({ durationMs: 100, startMs: -1 })).toBeNull();
+    expect(frame({ durationMs: 0, startMs: 0 })).toBeNull();
+    expect(frame(undefined)).toBeNull();
+    expect(parseC2S({ type: 'duration', contentId: 'x', durationMs: Infinity })).toBeNull();
+  });
+
   it('writes one greppable key=value line per room event, and nothing for playback or signaling', async () => {
     const lines: string[] = [];
     _setLogSink((l) => lines.push(l));
@@ -175,6 +219,12 @@ describe('server', () => {
       b.send({ type: 'join', code: 'EV0001', peerId: 'b', name: 'B' }); await b.next('room'); await joined;
       const nav = b.next('navigate');
       a.send({ type: 'hello', contentId: 'urn:hbo:episode:G1' }); await nav;
+      const dur = a.next('duration');
+      b.send({ type: 'duration', contentId: 'urn:hbo:episode:G1', durationMs: 3_784_572.4 }); await dur;
+      const start = a.next('episodeStart');
+      b.send({ type: 'episodeStart', contentId: 'urn:hbo:episode:G1', start: { durationMs: 3_784_572.4, startMs: 389_999.6 } }); await start;
+      const cleared = a.next('episodeStart');
+      a.send({ type: 'episodeStart', contentId: 'urn:hbo:episode:G1', start: null }); await cleared;
       const pb = a.next('playback');
       b.send({ type: 'playback', paused: false, positionMs: 500, clientTime: 1 }); await pb;
       const sig = b.next('signal');
@@ -195,6 +245,8 @@ describe('server', () => {
         'join_rejected room=NX0002 peer=b error=ROOM_NOT_FOUND',
         'peer_joined room=EV0001 peer=b name=B peers=2 leader=a',
         'content_set room=EV0001 peer=a content=urn:hbo:episode:G1',
+        'episode_start room=EV0001 peer=b content=urn:hbo:episode:G1 startMs=390000 durationMs=3784572',
+        'episode_start room=EV0001 peer=a content=urn:hbo:episode:G1 startMs=0',
         'stall room=EV0001 peer=b name=B positionMs=4322',
         'navigate_rejected room=EV0001 peer=b content=urn:hbo:episode:G2 leader=a',
         'peer_left room=EV0001 peer=b name=B reason=leave peers=1 leader=a',

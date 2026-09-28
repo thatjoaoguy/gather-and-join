@@ -5,17 +5,19 @@
  * a Port relays everything to the offscreen document.
  */
 import { defineContentScript } from 'wxt/utils/define-content-script';
-import { parseContentId, PLAYER_MATCHES } from '@gj/shared';
+import { parseContentId, skipFor, trustedWatchUrl, PLAYER_MATCHES } from '@gj/shared';
 import { PORT_PLAYER, readTestConfig, type Diag, type OffscreenToPlayer, type PlayerToOffscreen, type Snapshot } from '../lib/messages';
 import { adapterForHost, isHarnessHost } from '../lib/providers';
 import { participantsFrom } from '../lib/participants';
 import { VideoBinding } from '../lib/video-binding';
 import { SyncEngine } from '../lib/sync-engine';
+import { CopyTracker } from '../lib/copy-tracker';
 import { Ducker } from '../lib/ducking';
 import { UpNextSuppressor } from '../lib/up-next';
 import { ReconnectingPort } from '../lib/port';
 import { installTestBridge } from '../lib/test-bridge';
 import { PartySidebar } from '../lib/sidebar/party-sidebar';
+import { settingsModel } from '../lib/sidebar/settings-model';
 import { installLogSink, log } from '../lib/log';
 
 export default defineContentScript({
@@ -48,9 +50,11 @@ export default defineContentScript({
         waiting: (v) => engine.onLocalWaiting(v),
         playing: () => engine.onLocalPlaying(),
         ended: (v) => engine.onLocalEnded(v),
+        durationchange: (v) => onDuration(v),
       },
       (v, isReattach) => {
         log('page', isReattach ? 'video re-attached' : 'video attached', `readyState=${v.readyState}`, `paused=${v.paused}`);
+        onDuration(v);
         if (isReattach) { engine.onVideoAttached(); ducker.reapply(); }
         sidebar.ensureMounted();
       },
@@ -69,9 +73,51 @@ export default defineContentScript({
       cfg.sabotage,
       (line) => log('sync', line),
     );
+    const copy = new CopyTracker((cid, durationMs) => {
+      log('page', 'copy of', cid, 'runs', Math.round(durationMs), 'ms');
+      port.send({ type: 'duration', contentId: cid, durationMs });
+    });
+    // The room's episode start applies only on the room's episode, and only to the copy it describes.
+    const applySkip = () => {
+      const room = snapshot?.room;
+      engine.setSkip(room && room.contentId === contentId() ? skipFor(room.episodeStart, copy.durationFor(room.contentId)) : 0);
+    };
+    function onDuration(v: HTMLVideoElement) {
+      if (copy.observe(contentId(), v.duration)) applySkip();
+    }
     const ducker = new Ducker(() => video.get());
     const upNext = new UpNextSuppressor(adapter.upNext);
-    const sidebar = new PartySidebar(port, adapter.findAnchor ?? adapter.findVideo);
+    const toBackground = (type: string) => { void chrome.runtime.sendMessage({ target: 'background', type }).catch(() => {}); };
+    const sidebar = new PartySidebar(port, adapter.findAnchor ?? adapter.findVideo, {
+      allowCamera: () => toBackground('grantCamera'),
+    });
+    // The setup page's eye also hides the server address here, for screen sharing.
+    let showServer = true;
+    /** The room is elsewhere and there is a trustworthy way there. */
+    function offEpisode(room: Snapshot['room']) {
+      if (!room?.contentId || room.contentId === contentId()) return null;
+      const watchUrl = trustedWatchUrl(room.contentId, room.watchUrl);
+      return watchUrl ? { watchUrl } : null;
+    }
+    function renderSidebar() {
+      const s = snapshot;
+      if (!s) return;
+      const room = s.room;
+      const onRoomEpisode = !!room?.contentId && room.contentId === contentId();
+      const own = copy.durationFor(room?.contentId ?? null);
+      const others = s.peers.filter((p) => p.peerId !== s.yourPeerId && p.copy?.contentId === room?.contentId).map((p) => p.copy!.durationMs);
+      sidebar.update({
+        inRoom: !!room, participants: participantsFrom(s, { selfFirst: true }),
+        connection: s.socket === 'connected' ? 'connected' : 'reconnecting',
+        offEpisode: offEpisode(room),
+        copies: onRoomEpisode ? { contentId: room.contentId!, durationsMs: own === null ? others : [own, ...others], start: room.episodeStart } : null,
+        settings: settingsModel(s, showServer, { contentId: contentId(), title: document.title }),
+      });
+    }
+    void chrome.storage.local.get('showServerAddress').then((v) => { showServer = v.showServerAddress !== false; renderSidebar(); });
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && 'showServerAddress' in changes) { showServer = changes.showServerAddress!.newValue !== false; renderSidebar(); }
+    });
 
     function onOffscreenMessage(m: OffscreenToPlayer) {
       switch (m.type) {
@@ -80,18 +126,14 @@ export default defineContentScript({
           snapshot = m.snapshot;
           engine.isLeader = m.snapshot.isLeader;
           engine.offsetMs = m.snapshot.offsetMs;
+          applySkip(); // before adopting a position: it says which frame of this copy that position is
           if (m.snapshot.room && m.snapshot.room.contentId === contentId()) {
             // First sight of room state on this page (fresh load or late join): adopt it.
             if (!prev?.room || prev.room.updatedAt !== m.snapshot.room.updatedAt) engine.applyRemote(m.snapshot.room, m.snapshot.offsetMs);
           }
           if (!m.snapshot.room) engine.room = null;
           upNext.set(!!m.snapshot.room && !m.snapshot.isLeader);
-          const room = m.snapshot.room;
-          sidebar.update({
-            inRoom: !!room, participants: participantsFrom(m.snapshot, { selfFirst: true }),
-            connection: m.snapshot.socket === 'connected' ? 'connected' : 'reconnecting',
-            offEpisode: room?.contentId && room.watchUrl && room.contentId !== contentId() ? { watchUrl: room.watchUrl } : null,
-          });
+          renderSidebar();
           return;
         }
         case 'playback':
@@ -99,9 +141,12 @@ export default defineContentScript({
           engine.applyRemote({ paused: m.paused, positionMs: m.positionMs, updatedAt: m.serverTime }, m.offsetMs);
           return;
         case 'navigate':
-          if (m.contentId !== contentId() && m.watchUrl && m.originPeerId !== snapshot?.yourPeerId) {
-            log('page', 'following navigate to', m.watchUrl);
-            location.assign(m.watchUrl);
+          if (m.contentId !== contentId() && m.originPeerId !== snapshot?.yourPeerId) {
+            // The URL comes from a peer: follow it only if it is the content it claims to be.
+            const url = trustedWatchUrl(m.contentId, m.watchUrl);
+            if (!url) { log('page', 'not following navigate: no trusted URL for', m.contentId); return; }
+            log('page', 'following navigate to', url);
+            location.assign(url);
           }
           return;
         case 'duck':
@@ -145,8 +190,8 @@ export default defineContentScript({
         createRoom: (code: string, name = 'peer') => port.send({ type: 'test:createRoom', code, name }),
         joinRoom: (code: string, name = 'peer') => port.send({ type: 'test:joinRoom', code, name }),
         leaveRoom: () => port.send({ type: 'test:leaveRoom' }),
-        setCamera: (on: boolean) => port.send({ type: 'test:setCamera', on }),
-        setMic: (on: boolean) => port.send({ type: 'test:setMic', on }),
+        setCamera: (on: boolean) => port.send({ type: 'setCamera', on }),
+        setMic: (on: boolean) => port.send({ type: 'setMic', on }),
         navigate: (cid: string) => port.send({ type: 'navigateRequest', contentId: cid, url: `${location.origin}/watch/${cid}` }),
         resetAudioGaps: () => port.send({ type: 'test:resetAudioGaps' }),
         dropSocket: () => port.send({ type: 'test:dropSocket' }),

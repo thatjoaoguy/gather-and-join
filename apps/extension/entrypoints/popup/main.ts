@@ -3,9 +3,10 @@
  * readiness) and room (code, participants, media, recovery). Screens follow
  * docs/design-system/screens/index.html.
  */
-import { parseContentId, isValidRoomCode, normalizeRoomCode, ROOM_CODE_LENGTH } from '@gj/shared';
+import { parseContentId, isValidRoomCode, normalizeRoomCode, trustedWatchUrl, ROOM_CODE_LENGTH } from '@gj/shared';
 import { PORT_POPUP, type OffscreenToPopup, type PopupToOffscreen, type Snapshot } from '../../lib/messages';
 import { participantsFrom, type Participant } from '../../lib/participants';
+import { cameraProblem, connectionLabel, serverState } from '../../lib/room-labels';
 import { firstRun, type SetupInput } from '../../lib/setup-state';
 import { ReconnectingPort } from '../../lib/port';
 import { ic, escapeHtml as esc } from '../../lib/ui/icons';
@@ -57,8 +58,7 @@ function serverRow(s: Snapshot): string {
   const st = s.server;
   // Nothing was ever saved: there is no address to report on, only a step to take.
   if (!serverConfigured && st.state !== 'reachable') return `<li class="server warn">${ic('server')}<span>Server not set up</span><a href="#" id="change-server">Set up</a></li>`;
-  const cls = st.state === 'reachable' ? 'ok' : st.state === 'checking' ? 'busy' : st.state === 'unreachable' ? 'err' : '';
-  const word = st.state === 'reachable' ? 'Reachable' : st.state === 'checking' ? 'Connecting' : st.state === 'unreachable' ? 'Can’t reach it' : 'Not checked';
+  const { tone: cls, word } = serverState(st);
   const host = showServer ? esc(st.host) : `<span class="spoiler" tabindex="0" title="Hidden · hover or press to reveal">${esc(st.host)}</span>`;
   const eye = `<button class="iconbtn" id="eye" type="button" aria-pressed="${showServer}" aria-label="${showServer ? 'Hide' : 'Show'} server address">${showServer ? ic('eye') : ic('eyeOff')}</button>`;
   return `<li class="server ${cls}">${ic('server')}<span>${host}<span class="sr"> · ${word}</span></span>${eye}<a href="#" id="change-server">Change</a></li>`;
@@ -170,14 +170,15 @@ function renderRoom(s: Snapshot) {
   $('role').textContent = s.isLeader ? 'Host' : 'Guest';
   $('role').className = `chip${s.isLeader ? ' host' : ''}`;
   $('conn').className = `conn ${connected ? 'connected' : 'connecting'}`;
-  $('conn-label').textContent = connected ? (others.length ? `Connected · ${ps.length} in the room` : 'Connected · just you so far') : 'Reconnecting…';
+  $('conn-label').textContent = connectionLabel(s);
 
   // Notices above the code, actions beneath them on the surface
   let notice = ''; let actions = '';
   if (!connected) notice += `<div class="notice warning" role="status"><strong>${ic('warn')} Reconnecting to your room…</strong><p>Your connection dropped. We’re trying again. Your friends stay where they are.</p></div>`;
   if (s.stalledBy) notice += `<div class="notice warning" role="status"><strong>${ic('warn')} ${esc(s.stalledBy.name === 'you' ? 'You are' : s.stalledBy.name + ' is')} buffering</strong><p>The show is paused. Press play when everyone is ready.</p></div>`;
   const here = activeTabUrl ? parseContentId(activeTabUrl) : null;
-  if (room.contentId && room.watchUrl && here !== room.contentId) {
+  const goto = room.contentId ? trustedWatchUrl(room.contentId, room.watchUrl) : null;
+  if (room.contentId && goto && here !== room.contentId) {
     notice += `<div class="notice info" role="status"><strong>${ic('info')} Your room is watching another episode</strong><p>Open the room’s episode to catch up with your friends.</p></div>`;
     actions += `<button class="primary full" id="goto" type="button">Go to episode</button>`;
   }
@@ -204,9 +205,9 @@ function renderRoom(s: Snapshot) {
   cam.className = `toggle ${s.camOn ? 'on' : 'off'}`;
   cam.innerHTML = `${ic(s.camOn ? 'cam' : 'camOff')}${s.camOn ? 'Camera on' : 'Camera off'}`;
 
-  const camErr = s.lastError && (s.lastError.code === 'CAMERA_NOT_ALLOWED' || s.lastError.code === 'CAMERA_UNAVAILABLE');
+  const camErr = cameraProblem(s);
   $('cam-notice').innerHTML = camErr
-    ? `<div class="notice error" role="alert"><strong>${ic('err')} ${s.lastError!.code === 'CAMERA_UNAVAILABLE' ? 'No camera found' : 'Camera access is blocked'}</strong><p>${s.lastError!.code === 'CAMERA_UNAVAILABLE' ? 'Plug one in, or check that another app isn’t using it.' : 'You can stay in the room. Allow your camera on the setup page to turn it on.'}</p></div>${s.lastError!.code === 'CAMERA_NOT_ALLOWED' ? '<button class="primary full" id="grant-cam-room" type="button" style="margin-bottom:12px">Allow camera</button>' : ''}`
+    ? `<div class="notice error" role="alert"><strong>${ic('err')} ${camErr === 'missing' ? 'No camera found' : 'Camera access is blocked'}</strong><p>${camErr === 'missing' ? 'Plug one in, or check that another app isn’t using it.' : 'You can stay in the room. Allow your camera on the setup page to turn it on.'}</p></div>${camErr === 'blocked' ? '<button class="primary full" id="grant-cam-room" type="button" style="margin-bottom:12px">Allow camera</button>' : ''}`
     : '';
   const leader = ps.find((p) => p.leader);
   $('closing').textContent = s.isLeader ? 'Everyone can play or pause. You choose the episode.' : leader ? `Everyone can play or pause. ${leader.name} chooses the episode.` : 'Everyone can play or pause.';
@@ -245,7 +246,12 @@ document.addEventListener('click', (e) => {
     case 'retry-probe': send({ type: 'probeServer' }); return;
     case 'grant-mic': e.preventDefault(); void toBackground('grantMic'); return;
     case 'grant-cam': case 'grant-cam-room': e.preventDefault(); void toBackground('grantCamera'); return;
-    case 'goto': if (snapshot?.room?.watchUrl) void chrome.tabs.update({ url: snapshot.room.watchUrl }); return;
+    case 'goto': {
+      const room = snapshot?.room;
+      const url = room?.contentId ? trustedWatchUrl(room.contentId, room.watchUrl) : null;
+      if (url) void chrome.tabs.update({ url });
+      return;
+    }
   }
   if (t.classList.contains('spoiler')) t.classList.toggle('open');
 });

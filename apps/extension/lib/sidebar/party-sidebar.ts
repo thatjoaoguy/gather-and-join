@@ -8,15 +8,20 @@ import type { Participant } from '../participants';
 import { LoopbackReceiver } from './loopback-receiver';
 import { PageLayout } from './page-layout';
 import { SidebarView, type OffEpisode, type SidebarConnection } from './sidebar-view';
+import { EpisodeStartControl, type CopiesInput } from './episode-start';
+import type { SettingsModel } from './settings-panel';
 
-export type SidebarModel = { inRoom: boolean; participants: Participant[]; connection: SidebarConnection; offEpisode?: OffEpisode };
+export type SidebarModel = { inRoom: boolean; participants: Participant[]; connection: SidebarConnection; offEpisode?: OffEpisode; copies?: CopiesInput | null; settings?: SettingsModel | null };
 type Sender = { send(m: PlayerToOffscreen): void };
+/** What the page cannot do itself: the camera grant opens in a tab of its own. */
+export type SidebarOpeners = { allowCamera(): void };
 
 const REMOUNT_POLL_MS = 500;
 
 export class PartySidebar {
   private readonly loopback: LoopbackReceiver;
   private readonly view: SidebarView;
+  private readonly episodeStart: EpisodeStartControl;
   private model: SidebarModel = { inRoom: false, participants: [], connection: 'connected' };
   private poll: ReturnType<typeof setInterval> | null = null;
   private readonly onFullscreen = () => { if (this.model.inRoom) this.view.mount(); };
@@ -24,10 +29,21 @@ export class PartySidebar {
   constructor(
     private readonly port: Sender,
     findAnchor: (root: ParentNode) => HTMLElement | null,
+    openers: SidebarOpeners,
     private readonly doc: Document = document,
   ) {
     this.loopback = new LoopbackReceiver((payload) => port.send({ type: 'loopback:signal', payload }), () => this.render());
-    this.view = new SidebarView(new PageLayout(findAnchor, doc), (url) => doc.location.assign(url), doc);
+    this.episodeStart = new EpisodeStartControl((contentId, start) => port.send({ type: 'episodeStart', contentId, start }));
+    this.view = new SidebarView(new PageLayout(findAnchor, doc), {
+      goToEpisode: (url) => doc.location.assign(url),
+      enterStart: (ms) => { this.episodeStart.enter(ms); this.render(); },
+      alignStart: () => this.episodeStart.align(),
+      clearStart: () => this.episodeStart.clear(),
+      setMic: (on) => port.send({ type: 'setMic', on }),
+      setCamera: (on) => port.send({ type: 'setCamera', on }),
+      copyCode: (code) => doc.defaultView!.navigator.clipboard.writeText(code).then(() => true, () => false),
+      ...openers,
+    }, doc);
   }
 
   /** Players re-render their container on fullscreen and other transitions and drop foreign children with it; poll and put the sidebar back. */
@@ -65,11 +81,13 @@ export class PartySidebar {
 
   private render() {
     if (!this.model.inRoom) return;
-    this.view.update(
-      this.model.participants.map(({ peerId, name, self, speaking, micOn, lost }) => ({ peerId, name, self, speaking, muted: micOn === false, lost })),
-      (id) => this.loopback.streamFor(id),
-      this.model.connection,
-      this.model.offEpisode ?? null,
-    );
+    this.view.update({
+      tiles: this.model.participants.map(({ peerId, name, self, speaking, micOn, lost }) => ({ peerId, name, self, speaking, muted: micOn === false, lost })),
+      streamFor: (id) => this.loopback.streamFor(id),
+      connection: this.model.connection,
+      offEpisode: this.model.offEpisode ?? null,
+      copies: this.episodeStart.model(this.model.copies ?? null),
+      settings: this.model.settings ?? null,
+    });
   }
 }
