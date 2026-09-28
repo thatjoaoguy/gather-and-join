@@ -1,0 +1,96 @@
+<!doctype html>
+<!--
+  Fake YouTube watch page, reproducing the hazards the HBO-shaped page cannot:
+
+   - an ad that plays through the *same* <video>, announced only by a class on
+     the player, and cleared while the element is empty so the content position
+     is restored afterwards;
+   - a CSS reset whose selector list includes `div`, which reaches the sidebar's
+     shadow host and strips anything :host sets without !important;
+   - an app layer laid out against the viewport, which stays full width while
+     <html> shrinks under it;
+   - fullscreen requested on <html>, so narrowing the fullscreen element's
+     children only ever reaches <body>.
+
+  The break is 6s: what is measured is what the room does while a peer is away,
+  not how long it can wait. Markup and selectors are duplicated from the real
+  site rather than shared with the adapter, so a change there cannot quietly
+  change the fixture with it.
+-->
+<meta charset="utf-8">
+<title>Fake YouTube</title>
+<style>
+  /* The reset, in the shape YouTube ships it. `div` is the entry that matters. */
+  div, span, p, video, iframe { margin: 0; padding: 0; border: 0; font: inherit; vertical-align: baseline; background: transparent; }
+  html, body { margin: 0; background: #0f0f0f; color: #f1f1f1; font: 14px system-ui, sans-serif; }
+  /* Laid out against the viewport, not against <html>: no positioned ancestor. */
+  #app-layer { position: absolute; top: 46px; left: 0; width: 100%; }
+  /* Above the app layer, which is absolutely positioned over the top of the page. */
+  header { position: relative; z-index: 2; display: flex; gap: 8px; align-items: center; padding: 8px 12px; height: 28px; }
+  #movie_player { position: relative; width: 640px; height: 360px; background: #000; margin: 0 12px; }
+  #movie_player video { width: 100%; height: 100%; }
+  /* Like YouTube: the ad badge only exists while the marker class is on the player. */
+  #movie_player.ad-showing::after { content: 'Ad'; position: absolute; left: 8px; bottom: 8px; background: #ffd400; color: #000; padding: 2px 6px; }
+  #status { padding: 8px 12px; font: 13px ui-monospace, monospace; }
+</style>
+<header>
+  <strong id="title">video</strong>
+  <button id="play" type="button">Play</button>
+  <button id="pause" type="button">Pause</button>
+  <button id="ad" type="button">Ad break (same element)</button>
+  <button id="fullscreen" type="button">Fullscreen</button>
+</header>
+<div id="app-layer">
+  <ytd-watch-flexy>
+    <div id="movie_player" class="html5-video-player">
+      <video class="video-stream html5-main-video" preload="auto" src="/media/main"></video>
+    </div>
+  </ytd-watch-flexy>
+  <div id="status"></div>
+</div>
+<script>
+(() => {
+  const AD_MS = 6000;
+  const contentId = (decodeURIComponent(location.pathname).match(/\/ytwatch\/(.+)$/) || [])[1] || 'urn:hbo:episode:G0000001';
+  document.getElementById('title').textContent = contentId;
+  document.title = 'Fake YouTube — ' + contentId;
+
+  const player = document.getElementById('movie_player');
+  const video = player.querySelector('video');
+  document.getElementById('play').addEventListener('click', () => video.play());
+  // On <html>, the way YouTube does it — not on the player.
+  document.getElementById('fullscreen').addEventListener('click', () => document.documentElement.requestFullscreen());
+  document.getElementById('pause').addEventListener('click', () => video.pause());
+
+  document.getElementById('ad').addEventListener('click', () => {
+    if (player.classList.contains('ad-showing')) return;
+    const resumeAt = video.currentTime;
+    // Marker first, source second: the extension must have let go of the element
+    // before the ad's own play/seeking events start firing.
+    player.classList.add('ad-showing');
+    video.src = '/media/ad';
+    video.play();
+    setTimeout(() => {
+      // The content is restored after the marker clears, not before: an adapter
+      // that reopens on the marker alone attaches to an empty element here and
+      // broadcasts the restore seek below as if the viewer had scrubbed.
+      video.removeAttribute('src');
+      video.load();
+      player.classList.remove('ad-showing');
+      setTimeout(() => {
+        video.src = '/media/main';
+        video.addEventListener('loadedmetadata', () => {
+          // Where the viewer left off, not where the room has got to; catching up is the extension's job.
+          video.currentTime = resumeAt;
+          video.play();
+        }, { once: true });
+      }, 700);
+    }, AD_MS);
+  });
+
+  setInterval(() => {
+    document.getElementById('status').textContent =
+      `t=${video.currentTime.toFixed(2)} paused=${video.paused} rate=${video.playbackRate} ad=${player.classList.contains('ad-showing') ? 1 : 0}`;
+  }, 250);
+})();
+</script>

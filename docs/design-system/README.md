@@ -9,7 +9,7 @@ The system is dark, welcoming, polished, and simple for friends and family. Part
 - **Typography:** Quicksand, bundled locally in weights 400, 500, 600, and 700.
 - **Shape and motion:** round and playful. Panels 28px, controls 22px, small participant tiles 14px, avatars circular.
 - **Brand balance:** purple for Join, warm pink-red for Create, with equal action weight in the lobby.
-- **Mark:** Softer heart, the original heart-shaped loveseat without feet or a play icon. Purple left half, red right half.
+- **Mark:** Softer heart, the original heart-shaped loveseat without feet or a play icon. Purple left half, red right half, meeting with no gap — the mark closes the gap between two people the way the app does.
 - **Wordmark:** purple “Gather”, white (`#FFFFFF`) ampersand, red “Join”, supplied as outlined SVG.
 - **Primary lockup:** mark to the left of the name. Do not stack the mark above the wordmark; their color boundaries should not imply a shared vertical split.
 - **Environment:** dark mode only. Large surfaces and the viewing HUD remain subdued.
@@ -74,9 +74,9 @@ The HUD reference uses a 180px rail on wide windows; the current extension uses 
 
 `brand/mark.svg` is the canonical vector geometry on a 128 × 128 transparent canvas. `brand/mark-white.svg` and `brand/mark-dark.svg` preserve the same shape in one color. PNG exports at 16, 32, 48, 128, 256, and 512px are rasterizations of that approved geometry with transparent backgrounds.
 
-Use the color mark by default, and the white or dark versions for single-color contexts or background contrast. Preserve the viewBox padding, proportions, and center seam. Keep purple on the left and red on the right. Do not add feet, a play symbol, gradients, or other details. Alongside the wordmark, the image is decorative; when used alone, supply an accessible name such as “Gather & Join”.
+Use the color mark by default, and the white or dark versions for single-color contexts or background contrast. Preserve the viewBox padding and proportions, and keep the two halves touching; do not reopen a gap between them. Keep purple on the left and red on the right. Do not add feet, a play symbol, gradients, or other details. Alongside the wordmark, the image is decorative; when used alone, supply an accessible name such as “Gather & Join”.
 
-The 16px icon uses the same approved geometry; its center seam is small. The extension's toolbar icons (`apps/extension/public/icon`) are rasterized from `mark.svg` with a tight square crop (viewBox `10 8.5 108 108`) so the mark fills Chrome's icon frame; the padded PNGs here remain the general-purpose exports. The lockup ships on the popup and setup page (`apps/extension/public/brand`).
+The 16px icon uses the same approved geometry. The extension's toolbar icons (`apps/extension/public/icon`) are rasterized from `mark.svg` with a tight square crop (viewBox `10 8.5 108 108`) so the mark fills Chrome's icon frame; the padded PNGs here remain the general-purpose exports. The lockup ships on the popup and setup page (`apps/extension/public/brand`).
 
 ## Files
 

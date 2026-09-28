@@ -7,16 +7,18 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { chromium, type BrowserContext, type Page } from '@playwright/test';
 import { ensurePeerFixtures } from './fixtures.ts';
+import { PLAYER_ORIGIN, SERVER_URL } from './endpoints.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..', '..');
 export const EXT_DIR = path.join(ROOT, 'apps', 'extension', '.output-test', 'chrome-mv3');
-export const PLAYER_ORIGIN = process.env.PLAYER_ORIGIN ?? 'http://localhost:4173';
-export const SERVER_URL = process.env.SERVER_URL ?? 'ws://localhost:8080';
+export { PLAYER_ORIGIN, SERVER_URL } from './endpoints.ts';
 export const EPISODE = (n: number) => `urn:hbo:episode:G000000${n}`;
 export const watchUrl = (contentId: string) => `${PLAYER_ORIGIN}/watch/${contentId}`;
 /** The Drive-shaped page: same content ids, but the media is in a cross-origin iframe. */
 export const driveWatchUrl = (contentId: string) => `${PLAYER_ORIGIN}/drivewatch/${contentId}`;
-export type PlayerShape = 'hbo' | 'drive';
+/** The YouTube-shaped page: same content ids, but an ad break reuses the one <video>. */
+export const youtubeWatchUrl = (contentId: string) => `${PLAYER_ORIGIN}/ytwatch/${contentId}`;
+export type PlayerShape = 'hbo' | 'drive' | 'youtube';
 
 export type Sabotage = 'reattach' | 'drift' | 'offscreen' | 'echo-suppress' | 'episode-start' | null;
 
@@ -107,7 +109,7 @@ export async function launchPeer(index: number, opts: LaunchOptions = {}): Promi
 
 /** Navigate a peer's player page and wait for the extension hook to be live. `copy` picks one of the player's copies of the episode. */
 export async function openPlayer(peer: Peer, contentId = EPISODE(1), shape: PlayerShape = 'hbo', copy?: 'plain' | 'extras') {
-  const url = shape === 'drive' ? driveWatchUrl(contentId) : watchUrl(contentId);
+  const url = shape === 'drive' ? driveWatchUrl(contentId) : shape === 'youtube' ? youtubeWatchUrl(contentId) : watchUrl(contentId);
   await peer.page.goto(copy ? `${url}?copy=${copy}` : url);
   await waitForHook(peer);
 }

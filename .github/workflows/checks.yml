@@ -60,14 +60,14 @@ jobs:
         uses: actions/checkout@v7
 
       - name: 🧰 Setup Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # Build only, and only for the runner's own architecture. The point is to fail a PR
       # on a broken Dockerfile: the real multi-arch push happens after semantic-release has
       # already tagged, so a break discovered there leaves a release with no image.
       # Cache is read-only on purpose — a write from every PR branch would evict main's.
       - name: 🐳 Build Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: apps/server/Dockerfile

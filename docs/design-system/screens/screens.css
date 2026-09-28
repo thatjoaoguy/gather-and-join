@@ -150,6 +150,15 @@ button.not-ready{cursor:not-allowed;opacity:.45}
 .setting-block{border-bottom:1px solid var(--line)}
 .setting-block .setting{border-bottom:0;padding-bottom:12px}
 .setting-block .notice{margin:0 0 18px}
+/* Numbered setup steps; the badge turns green once the step is answered */
+.setting strong{display:flex;align-items:center}
+.step{display:inline-grid;place-items:center;width:22px;height:22px;margin-right:9px;border-radius:11px;background:var(--field);border:1px solid var(--line);color:var(--muted);font-size:11px;font-weight:700;flex:none}
+.setting strong.done .step{background:var(--success-bg);border-color:var(--success);color:var(--success)}
+.host-guide{margin:-6px 0 16px;font-size:13px}
+/* flex:none alone still lets a button's label wrap word by word in a tight row */
+.setting button{white-space:nowrap}
+.form-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.setup > .notice{margin-bottom:8px}
 
 /* HUD: muted badge */
 .badge-muted{position:absolute;top:8px;left:8px;z-index:2;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--warning-bg);border:1px solid var(--warning);color:var(--warning)}

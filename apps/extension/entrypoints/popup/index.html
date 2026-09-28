@@ -66,12 +66,12 @@
   <div id="view-lobby">
     <img class="lockup" src="/brand/lockup.svg" alt="Gather &amp; Join">
     <h3 class="hero">A little closer.<br>Even from afar.</h3>
-    <div class="seg" role="tablist" aria-label="Join or create">
+    <div class="seg" id="tabs" role="tablist" aria-label="Join or create">
       <button id="tab-join" class="seg-join" role="tab" aria-selected="true" type="button">Join a room</button>
       <button id="tab-create" class="seg-create" role="tab" aria-selected="false" type="button">Create a room</button>
     </div>
     <form id="lobby-form" novalidate>
-      <label for="name">Your name</label>
+      <label for="name" id="name-label">Your name</label>
       <input id="name" type="text" maxlength="24" autocomplete="given-name" placeholder="Your name">
       <div id="join-fields">
         <label for="code">Room code <span class="count" id="count">0 of 6</span></label>
@@ -82,7 +82,7 @@
       <button id="submit" class="primary full" type="submit">Join room</button>
       <div id="lobby-recovery"></div>
     </form>
-    <div class="divider"></div>
+    <div class="divider" id="lobby-divider"></div>
     <ul class="readiness" id="readiness" aria-label="Ready to join"></ul>
     <p class="small muted footnote" id="lobby-foot">Headphones on. Make yourself at home.</p>
   </div>

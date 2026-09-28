@@ -36,7 +36,7 @@ export default defineConfig({
   filterEntrypoints: TEST_BUILD ? undefined : ['background', 'player', 'offscreen', 'popup', 'options'],
   manifest: {
     name: TEST_BUILD ? 'Gather & Join (test build)' : 'Gather & Join',
-    description: 'Watch together in sync, with voice and video, on HBO Max and Google Drive. Everyone plays from their own account.',
+    description: 'Watch together in sync, with voice and video, on HBO Max, YouTube and Google Drive. Everyone plays from their own account.',
     permissions: ['offscreen', 'storage', 'tabs', 'webNavigation', 'scripting'],
     host_permissions: MATCHES,
     // The participant HUD declares Quicksand in the host document (a shadow root cannot), so the font files must be fetchable from player pages.

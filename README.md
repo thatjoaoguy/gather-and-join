@@ -16,7 +16,26 @@ affiliated with, endorsed by, or sponsored by any streaming service (see
 ## Supported services
 
 - HBO Max
+- YouTube
 - Google Drive — for video files you own or that are shared with you
+
+On YouTube, an ad break is ignored rather than shared: while one is playing that
+viewer neither drives the room nor is corrected by it, and they rejoin the room's
+position when their ad ends. Ads are never skipped, hidden or counted — different
+people simply get different ones, and the room waits for nobody. A `youtu.be` or
+`/live/` link is understood as the same video as its `/watch?v=` form. Shorts are
+not supported: the feed scrolls itself to the next video, which would walk a
+viewer off the room's content.
+
+An accepted limitation on YouTube: the sidebar takes its width out of the page,
+and the masthead, the player and the video's own column all move over, but the
+related-videos column does not and is clipped by about 60px. YouTube sizes that
+column from `100vh` and `window.innerWidth` rather than from its container —
+`--ytd-watch-flexy-sidebar-width` is a pixel value its own script computes for
+the full window — and an extension cannot change the window's width or make the
+site recompute against a narrower one (a synthetic `resize` does not do it).
+Fixing it would mean writing YouTube's private layout variables, which its next
+relayout overwrites. Deliberately left alone.
 
 Drive is not a subscription service, so two things work differently. The file
 must be shared with **every** participant's Google account, and Drive rate-limits
@@ -39,8 +58,11 @@ More are planned. Adding one is a provider entry plus an adapter; see
 2. **Everyone installs the extension.** From the Chrome Web Store link the host
    shares (the listing is unlisted for now), or by building it yourself (see
    [Development](#development)).
-3. **Set it up once.** Click the extension, open **Connection & device setup**,
-   allow the microphone (camera optional), paste the server address, save.
+3. **Set it up once.** Installing opens the setup page by itself: allow the
+   microphone (camera optional) and paste the server address the host shared,
+   then save. It walks the three steps in order and says what is still missing,
+   so nobody lands in the popup with a server they were never asked about. Reach
+   it again any time from the extension, under **Connection & device setup**.
 
 ## Using it
 
@@ -56,6 +78,12 @@ More are planned. Adding one is a provider entry plus an adapter; see
    tuned for the call, not for the show coming out of your speakers. Voice ducking
    (lowering the show while you talk) is **off by default** — it's a checkbox on the
    setup page, because with speakers the show itself keeps triggering it.
+
+The toolbar icon carries a dot while you are in a room — green once you are
+connected, amber while a join or a reconnect is in flight — and nothing at all
+when you are not in one. Its tooltip says which. The dot is drawn onto the icon
+rather than set as a badge: Chrome's badge is a rounded rectangle sized to its
+text, and at 16px that slab covers the mark.
 
 The gear at the top of the participant rail opens room settings without leaving
 the player: the room code, your mic and camera, the service and episode (with a
@@ -258,7 +286,7 @@ context that dies on navigation:
 | Component | Lifetime | Owns |
 |---|---|---|
 | Content script | dies on every navigation | `<video>` binding, local player events, drift correction, the party sidebar |
-| Service worker | killed at will by Chrome | navigation detection, offscreen keep-alive, storage proxy |
+| Service worker | killed at will by Chrome | navigation detection, offscreen keep-alive, storage proxy, the toolbar badge |
 | Offscreen document | survives everything | the `RoomSession` (room state, rejoin logic), the WebSocket, every `RTCPeerConnection`, mic, remote audio playback |
 | Popup | open/close at will | create/join, mic/camera toggles, peer list |
 | Server | long-running | room registry, authoritative sync state, signaling relay |
@@ -271,6 +299,16 @@ Two facts discovered while building that shape the code:
   viewer presses its own "Cancel autoplay" button. On non-leaders the extension
   presses that same control on the viewer's behalf and hides the countdown
   panel, so the room stays on one episode until the leader moves it.
+- **The page can hold more than one player, and one of them can be an ad.** On
+  YouTube `querySelector('video')` is wrong twice over: the home feed's hover
+  preview is a second `.html5-main-video`, and routing away from a watch page
+  leaves the real player in the DOM, video still attached, inside a hidden
+  `ytd-watch-flexy`. Both are excluded by scoping the lookup to a *visible*
+  watch page. Ads are harder, because they play through the very same element:
+  the adapter reports no video at all while the player carries `ad-showing`, so
+  nothing is broadcast and nothing corrected, and the end of the break arrives
+  as an ordinary re-attach — the path that already resyncs a fresh element to
+  the room. No new machinery, and the ad itself is untouched.
 - **Not every player is a `<video>` you can reach.** Google Drive has no `<video>`
   in the page at all: playback runs in a cross-origin iframe on
   `youtube.googleapis.com`, reachable only through the YouTube widget
@@ -283,7 +321,9 @@ Two facts discovered while building that shape the code:
   latency, not tick spacing.
 - **Offscreen documents have no `chrome.storage`** (only `chrome.runtime`). Anything
   the offscreen document persists or reads from storage goes through the service
-  worker (`lib/kv.ts`).
+  worker (`lib/kv.ts`). The toolbar badge goes the same way for the same
+  reason: `chrome.action` is out of reach there too, so the offscreen document
+  reports a state and the worker paints it (`lib/badge.ts`).
 - **Media cannot cross extension contexts.** Remote audio therefore plays inside the
   offscreen document (which is what lets the call survive navigation), and remote
   *video* is re-streamed to the page's tiles over a local loopback
@@ -309,6 +349,8 @@ media-track stand-ins):
 | `room-labels.ts` | how the connection, server and camera state are worded, shared by the popup and the settings panel | — |
 | `copy-tracker.ts` | the length of this page's copy, held across element swaps and ad clips | a report callback |
 | `participants.ts` | the one derivation of "who is in the room", used by the popup and the sidebar | — |
+| `badge.ts` | the toolbar dot: which state the snapshot means, and the circle drawn onto the icon for it | a `chrome.action` slice, a canvas |
+| `setup-state.ts` | the one derivation of "what is still to set up" — microphone, camera, address — shared by the popup's first run and the setup page | — |
 | `sync-engine.ts`, `video-binding.ts`, `ducking.ts`, `up-next.ts` | per-page playback behaviour | a video locator, callbacks |
 
 #### Streaming providers

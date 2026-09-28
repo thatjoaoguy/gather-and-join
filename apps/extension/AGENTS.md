@@ -7,7 +7,7 @@ split exists so the voice call survives an episode change. Root `AGENTS.md` firs
 
 ```
 entrypoints/        wiring only — no behaviour lives here
-  background.ts       service worker: offscreen keep-alive, navigation detection, storage proxy
+  background.ts       service worker: offscreen keep-alive, navigation detection, storage proxy, toolbar badge
   offscreen/          the long-lived context: RoomSession, WebSocket, every RTCPeerConnection, mic, remote audio
   player.content.ts   dies on every navigation: <video> binding, drift correction, the sidebar
   popup/ options/     UI, built fresh on every open
@@ -25,7 +25,10 @@ test/               vitest; fakes.ts has the RTCPeerConnection / WebSocket / tra
   touches Chrome, the network or media, then it runs under vitest with a fake. An
   entrypoint is untestable by construction, so it gets no logic.
 - **The offscreen document has no `chrome.storage`.** Use `lib/kv.ts`, which
-  proxies through the service worker. Same for anything that needs a tab opened.
+  proxies through the service worker. Same for anything that needs a tab opened,
+  and for the toolbar dot — `chrome.action` is the worker's alone, so the
+  offscreen document reports a state and the worker draws it onto the icon with
+  an `OffscreenCanvas` (`lib/badge.ts`).
 - **The service worker holds no state that matters.** Chrome kills it whenever it
   likes; anything you keep there must be re-derivable on the next wake.
 - **Content scripts cannot reach session storage.** Their diagnostics lines go over
