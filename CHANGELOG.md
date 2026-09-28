@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.8.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.7.0...v0.8.0) (2026-09-28)
+
+
+### Features
+
+* align copies of an episode that start at different points ([#40](https://github.com/thatjoaoguy/gather-and-join/issues/40)) ([e81da85](https://github.com/thatjoaoguy/gather-and-join/commit/e81da85be5afd76c6bde931410678b6f7dedc685))
+
 # [0.7.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.6.0...v0.7.0) (2026-09-25)
 
 
