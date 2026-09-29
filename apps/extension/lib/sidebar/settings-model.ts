@@ -39,10 +39,19 @@ export function settingsModel(s: Snapshot, showServer: boolean, page: PageInfo):
 function episodeOf(contentId: string | null, watchUrl: string | null, page: PageInfo): SettingsModel['episode'] {
   if (!contentId) return null;
   const here = page.contentId === contentId;
+  const service = providerForContentId(contentId)?.name ?? null;
   return {
-    service: providerForContentId(contentId)?.name ?? null,
-    title: here ? page.title.trim() || null : null,
+    service,
+    title: here ? withoutService(page.title.trim(), service) || null : null,
     here,
     watchUrl: here ? null : trustedWatchUrl(contentId, watchUrl),
   };
+}
+
+/** Services end the tab title with their own name, which the panel already shows above it. */
+function withoutService(title: string, service: string | null): string {
+  if (!service || !title.endsWith(service)) return title;
+  const rest = title.slice(0, -service.length);
+  const sep = /\s*[|•·–—-]\s*$/.exec(rest);
+  return sep ? rest.slice(0, sep.index) : title;
 }

@@ -61,9 +61,9 @@ export const SETTINGS_STYLE = `
   .settings .copies:not(.set) button.clear, .settings .copies.set button.align { display: none; }
   .settings .server { display: flex; align-items: center; gap: 7px; font-size: 11px; }
   .settings .server > svg { width: 14px; height: 14px; flex: none; color: var(--muted); }
-  .settings .server .host { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-  .settings .server .host.hidden { filter: blur(4px); }
-  .settings .server .host.hidden:hover, .settings .server .host.hidden:focus { filter: none; }
+  .settings .server .address { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .settings .server .address.hidden { filter: blur(4px); }
+  .settings .server .address.hidden:hover, .settings .server .address.hidden:focus { filter: none; }
   .settings .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--muted); }
   .settings .dot.ok { background: var(--success); } .settings .dot.busy { background: var(--warning); } .settings .dot.err { background: var(--red); }
 `;
@@ -112,7 +112,7 @@ export class SettingsPanel {
       <div class="toggles"><button type="button" class="mic"></button><button type="button" class="cam"></button></div>
       <div class="problem" role="alert" hidden><span class="problem-text"></span><button type="button" class="primary allow">Allow camera</button></div>
       <h3>Server</h3>
-      <div class="server">${ICONS.server}<span class="dot"></span><span class="host" tabindex="0"></span></div>`;
+      <div class="server">${ICONS.server}<span class="dot"></span><span class="address" tabindex="0"></span></div>`;
 
     const q = <T extends HTMLElement>(sel: string) => this.panel.querySelector<T>(sel)!;
     q('.copy').onclick = async () => {
@@ -179,10 +179,10 @@ export class SettingsPanel {
       this.field.show(copies.startMs);
     }
 
-    const host = q('.host');
-    host.textContent = model.server.host;
-    host.classList.toggle('hidden', model.server.hidden);
-    host.title = model.server.hidden ? 'Hidden · hover to reveal' : '';
+    const address = q('.address');
+    address.textContent = model.server.host;
+    address.classList.toggle('hidden', model.server.hidden);
+    address.title = model.server.hidden ? 'Hidden · hover to reveal' : '';
     q('.dot').className = `dot ${model.server.tone}`;
     q('.dot').setAttribute('aria-label', model.server.word);
     q('.dot').setAttribute('role', 'img');
