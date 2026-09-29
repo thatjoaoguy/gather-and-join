@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/thatjoaoguy/gather-and-join/compare/v0.8.0...v0.8.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* settings panel shows the server address in the Host chip ([#43](https://github.com/thatjoaoguy/gather-and-join/issues/43)) ([95acac6](https://github.com/thatjoaoguy/gather-and-join/commit/95acac6d7c68559e55978eaba72fedfca04625c4))
+
 # [0.8.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.7.0...v0.8.0) (2026-09-28)
 
 
