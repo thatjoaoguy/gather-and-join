@@ -23,7 +23,7 @@ describe('settingsModel', () => {
     expect(settingsModel(snap(), true, here)).toEqual({
       code: 'G7K2MX', host: true, connection: 'Connected · 2 in the room', micOn: true, camOn: false, camProblem: null,
       server: { host: 'party.example', tone: 'ok', word: 'Reachable', hidden: false },
-      episode: { service: 'HBO Max', title: 'The Episode | HBO Max', here: true, watchUrl: null },
+      episode: { service: 'HBO Max', title: 'The Episode', here: true, watchUrl: null },
     });
   });
 
@@ -34,6 +34,13 @@ describe('settingsModel', () => {
       service: 'HBO Max', title: null, here: false, watchUrl: 'https://play.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79',
     });
     expect(settingsModel(snap({ room: { ...room, contentId: null } }), true, elsewhere)!.episode).toBeNull();
+  });
+
+  it('drops the service name the tab title ends with, since the panel names the service already', () => {
+    const title = (t: string) => settingsModel(snap(), true, { ...here, title: t })!.episode!.title;
+    expect(title('The Rains of Castamere • HBO Max')).toBe('The Rains of Castamere');
+    expect(title('Watch HBO Max')).toBe('Watch HBO Max');
+    expect(title('HBO Max')).toBe('HBO Max');
   });
 
   it('hides the address when the setup page does, and reports a camera that could not start', () => {
