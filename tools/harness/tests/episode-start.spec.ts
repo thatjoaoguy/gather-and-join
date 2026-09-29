@@ -65,6 +65,8 @@ test.describe('settings panel', () => {
       await rail.locator('.gear').click();
       await expect(panel).toBeVisible();
       await expect(panel.locator('.code')).toHaveText(party.code);
+      await expect(panel.locator('.role')).toHaveText('Host');
+      await expect(panel.locator('.server .address')).toHaveText(/\S/);
       await expect(panel.locator('.episode .service')).toHaveText('Fake player');
       await expect(panel.locator('.episode .title')).toContainText('G0000001');
       await expect(panel.locator('.episode .copies')).toBeHidden(); // same copies: nothing to skip, nothing shown
