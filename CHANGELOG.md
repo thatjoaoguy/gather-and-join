@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.9.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.8.1...v0.9.0) (2026-09-30)
+
+
+### Features
+
+* support Wix Video (new host permission: embed.wix.com, existing users must accept it) ([#45](https://github.com/thatjoaoguy/gather-and-join/issues/45)) ([c7d8cb8](https://github.com/thatjoaoguy/gather-and-join/commit/c7d8cb8a418512b0876165b3e345f7230a12b883))
+
 ## [0.8.1](https://github.com/thatjoaoguy/gather-and-join/compare/v0.8.0...v0.8.1) (2026-09-29)
 
 
