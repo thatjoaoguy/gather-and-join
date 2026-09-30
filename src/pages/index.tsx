@@ -17,14 +17,14 @@ export default function Home(): ReactNode {
         <div className={`container ${styles.inner}`}>
           <div>
             <Heading as="h1">A little <em>closer</em>.<br />Even from <span>afar</span>.</Heading>
-            <p className={styles.lead}>Gather &amp; Join keeps a small group in sync while they watch the same thing, and adds a voice call so it feels like one room. Works with HBO Max and with video files on Google Drive; more services are on the way.</p>
+            <p className={styles.lead}>Gather &amp; Join keeps a small group in sync while they watch the same thing, and adds a voice call so it feels like one room. Works with HBO Max, YouTube, video files on Google Drive, and the video player on Wix sites; more services are on the way.</p>
             <div className={styles.actions}>
               <Link className="button button--primary button--lg" to="/docs/install">Install</Link>
               <Link className="button button--red button--lg" to="/docs/host-a-server">Host a server</Link>
             </div>
           </div>
           <aside className={styles.card} aria-label="At a glance">
-            <div><strong>Works with</strong><span>HBO Max, Google Drive</span></div>
+            <div><strong>Works with</strong><span>HBO Max, YouTube, Google Drive, Wix Video</span></div>
             <div><strong>Room size</strong><span>Best up to 6 on camera, more on voice</span></div>
             <div><strong>Server</strong><span>Self-hosted, one file, no accounts</span></div>
             <div><strong>Cost</strong><span>Free, open source (MIT)</span></div>
@@ -50,7 +50,7 @@ export default function Home(): ReactNode {
             <ol>
               <li>Someone in the group runs the small companion server and shares its address. See <Link to="/docs/host-a-server">Host a server</Link>.</li>
               <li>Everyone installs the extension and enters that address once on the setup page.</li>
-              <li>One person opens the episode, or a video file on Google Drive, presses <strong>Create a room</strong>, and reads out the six-character code. Everyone else presses <strong>Join</strong>.</li>
+              <li>One person opens the episode or video, presses <strong>Create a room</strong>, and reads out the six-character code. Everyone else presses <strong>Join</strong>.</li>
             </ol>
             <p className={styles.fine}>Use headphones. Echo cancellation is tuned for the call, not for a show playing out of your speakers.</p>
           </div>
