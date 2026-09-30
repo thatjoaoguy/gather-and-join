@@ -14,20 +14,67 @@
  */
 export const SIDEBAR_WIDTH = 240;
 
-/** Narrow an element by the sidebar width, remembering its own inline width so it can be put back exactly. */
+/** The inline properties narrowing overrides, and where each one's own value is kept meanwhile. */
+const SAVED = [
+  ['width', 'gjPrevWidth', 'gjPrevWidthPriority'],
+  ['min-width', 'gjPrevMinWidth', 'gjPrevMinWidthPriority'],
+] as const;
+
+/**
+ * The width `el`'s percentage width resolves against. For an absolutely positioned
+ * element with no positioned ancestor, `offsetParent` reports <body>, but the box
+ * is the initial containing block, which is the viewport. <html>'s own box is
+ * measured rather than read from `clientWidth`, which reports the viewport there.
+ */
+function containingWidth(el: HTMLElement): number {
+  const doc = el.ownerDocument;
+  const viewport = doc.documentElement.clientWidth;
+  const inner = (box: HTMLElement) => (box === doc.documentElement ? box.getBoundingClientRect().width : box.clientWidth);
+  const position = getComputedStyle(el).position;
+  if (position === 'fixed' || !el.parentElement) return viewport;
+  if (position !== 'absolute') return inner(el.parentElement);
+  const op = el.offsetParent as HTMLElement | null;
+  if (!op || (op === doc.body && getComputedStyle(op).position === 'static')) return viewport;
+  return inner(op);
+}
+
+/**
+ * Narrow an element to fit beside the sidebar, remembering its own inline width
+ * and min-width so they can be put back exactly. Idempotent, and called again
+ * on every poll: a site that lays itself out again (Wix Video, on leaving
+ * fullscreen) writes its own widths over ours, and those become the ones to put
+ * back.
+ *
+ * An element whose containing block already fits only needs to fill it: another
+ * `- SIDEBAR_WIDTH` would take the sidebar's width twice. That is the case for a
+ * player that sizes itself to the window in inline pixels, as Wix Video does,
+ * inside a <html> already narrowed. Such a player also pins its min-width to the
+ * window, which would hold it open whatever its width says.
+ */
 function narrow(el: HTMLElement, tag: string): boolean {
-  if (el.dataset.gjShrunk) return el.dataset.gjShrunk === tag;
+  const ours = el.dataset.gjShrunk;
+  if (ours && ours !== tag) return false;
+  // Ours is the only `!important` there: a site's write over it drops the priority.
+  const overwritten = SAVED.filter(([prop]) => !ours || el.style.getPropertyPriority(prop) !== 'important');
+  if (!overwritten.length) return true;
+  const fits = containingWidth(el) <= el.ownerDocument.documentElement.clientWidth - SIDEBAR_WIDTH + 1;
   el.dataset.gjShrunk = tag;
-  el.dataset.gjPrevWidth = el.style.getPropertyValue('width');
-  el.dataset.gjPrevWidthPriority = el.style.getPropertyPriority('width');
-  el.style.setProperty('width', `calc(100% - ${SIDEBAR_WIDTH}px)`, 'important');
+  for (const [prop, value, priority] of overwritten) {
+    el.dataset[value] = el.style.getPropertyValue(prop);
+    el.dataset[priority] = el.style.getPropertyPriority(prop);
+  }
+  el.style.setProperty('width', fits ? '100%' : `calc(100% - ${SIDEBAR_WIDTH}px)`, 'important');
+  el.style.setProperty('min-width', '0', 'important');
   return true;
 }
 function restore(el: HTMLElement) {
   if (!el.dataset.gjShrunk) return;
-  const prev = el.dataset.gjPrevWidth ?? '';
-  if (prev) el.style.setProperty('width', prev, el.dataset.gjPrevWidthPriority ?? ''); else el.style.removeProperty('width');
-  delete el.dataset.gjShrunk; delete el.dataset.gjPrevWidth; delete el.dataset.gjPrevWidthPriority;
+  for (const [prop, value, priority] of SAVED) {
+    const prev = el.dataset[value] ?? '';
+    if (prev) el.style.setProperty(prop, prev, el.dataset[priority] ?? ''); else el.style.removeProperty(prop);
+    delete el.dataset[value]; delete el.dataset[priority];
+  }
+  delete el.dataset.gjShrunk;
 }
 
 export class PageLayout {
@@ -62,6 +109,7 @@ export class PageLayout {
   refreshPage() {
     if (!this.pageShrunk) return;
     this.shrunk = this.shrunk.filter((t) => t.isConnected);
+    for (const t of this.shrunk) narrow(t, '1');
     const layer = this.wideLayer(this.doc.documentElement);
     if (layer && !this.shrunk.includes(layer) && narrow(layer, '1')) this.shrunk.push(layer);
   }
@@ -100,7 +148,7 @@ export class PageLayout {
       return;
     }
     for (const child of fs.children) {
-      if (child === except || !(child instanceof HTMLElement) || child.dataset.gjShrunk) continue;
+      if (child === except || !(child instanceof HTMLElement)) continue;
       narrow(child, 'fs');
     }
     // Not enough when a child is only an ancestor of the player on paper: <body> is,
