@@ -41,8 +41,7 @@ relayout overwrites. Deliberately left alone.
 Wix Video is a widget that Wix sites embed from `embed.wix.com`, so the
 extension runs in that widget and never on the site around it: the sidebar sits
 inside the widget, and the room's "Go to episode" link is the widget's own
-address, which plays full-window by itself. That is also true of a members-only
-site: the widget plays without signing in to it.
+address, which opens the video full-window rather than the site's page.
 
 Drive is not a subscription service, so two things work differently. The file
 must be shared with **every** participant's Google account, and Drive rate-limits
@@ -207,9 +206,10 @@ any arrangement, and nothing is received for naming it.
 
 What it does and does not do:
 
-- Every viewer needs their own subscription and watches through the service's
-  own player, signed in to their own account. The extension never handles
-  credentials, cookies, or session tokens.
+- Every viewer needs their own access to what the room watches (their own
+  subscription, where the service has one) and watches through the service's
+  own player. The extension never handles credentials, cookies, or session
+  tokens.
 - It operates only the standard player controls a viewer already has (play,
   pause, seek, volume, cancel autoplay), hides the autoplay countdown on
   non-leaders, and draws its own participant tiles over the page.
@@ -379,10 +379,13 @@ Provider knowledge is split in two, both keyed by provider id:
   host permissions, the content script's `matches` and the service worker's
   navigation filter are all derived from it.
 - `apps/extension/lib/providers/` — DOM level (`PlayerAdapter`: how to find the
-  `<video>`, the up-next panel selectors).
+  `<video>`, the up-next panel selectors, and whether the player is `embedded`,
+  a widget other sites put in an iframe, as Wix Video is).
 
 Adding a provider means one entry in each and a rebuild; nothing else knows
-which provider it is running on.
+which provider it is running on. An embedded provider's content script runs in
+its widget's frame, and a frame gets a player only when it is itself a watch
+page of an embedded provider (`adapterForDocument`).
 
 ### Look and feel
 
