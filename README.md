@@ -5,7 +5,7 @@
 Watch together in sync, with voice and video. Gather & Join is a Chrome
 extension that keeps a small group on the same second of the same episode and
 adds a call alongside the show, plus a small server one of you hosts.
-Guide and privacy policy: [thatjoaoguy.github.io/gather-and-join](https://thatjoaoguy.github.io/gather-and-join/).
+Guide and privacy policy: [gatherandjoin.com](https://gatherandjoin.com).
 
 Every participant streams from their own account through the service's own
 player. **No media ever goes through the server**: it sees room metadata and

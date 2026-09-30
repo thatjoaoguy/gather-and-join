@@ -1,7 +1,7 @@
 {
   "name": "gather-and-join",
   "description": "Watch together in sync, with voice and video. Chrome extension plus a self-hosted signaling server.",
-  "homepage": "https://thatjoaoguy.github.io/gather-and-join/",
+  "homepage": "https://gatherandjoin.com",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thatjoaoguy/gather-and-join.git"

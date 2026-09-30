@@ -65,10 +65,10 @@ Unlisted (install by link; can be switched to Public from the dashboard without 
 https://github.com/thatjoaoguy/gather-and-join/issues
 
 **Homepage URL**
-https://thatjoaoguy.github.io/gather-and-join/
+https://gatherandjoin.com
 
 **Privacy policy URL**
-https://thatjoaoguy.github.io/gather-and-join/privacy (the policy text is `src/pages/privacy.md`
+https://gatherandjoin.com/privacy (the policy text is `src/pages/privacy.md`
 on the `docs` branch; it covers peer IP visibility, the Google STUN server, and the diagnostics paste)
 
 ## Graphics
