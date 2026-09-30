@@ -1,14 +1,11 @@
 name: ✅ Checks
 on:
+  # Every pull request starts this workflow, docs-only ones included: `Verify` is a
+  # required check, and a workflow a path filter never starts reports nothing, which
+  # GitHub counts as pending for ever. The filter is the `changes` job instead.
   pull_request:
     branches:
       - main
-    # Docs-only pull requests change nothing lint, typecheck, unit tests, the
-    # build or the image can see, so they skip this. `docs/design-system` is not
-    # ignored: the extension build copies fonts and brand marks out of it.
-    # Mirrors the same filter on release.yml.
-    paths-ignore:
-      - '**.md'
   # Pushes to main run this through release.yml, so a failure there stops the release.
   workflow_call:
   workflow_dispatch:
@@ -28,8 +25,48 @@ concurrency:
 # runner was clean — but one run is not a success rate, so they do not gate anything here.
 # Run them locally: `pnpm test:e2e`, `pnpm test:sabotage [row]`.
 jobs:
+  # Docs-only pull requests change nothing lint, typecheck, unit tests, the build or
+  # the image can see, so the jobs below skip them, and a job skipped by its `if`
+  # counts as passed. `docs/design-system` is not ignored: the extension build copies
+  # fonts and brand marks out of it. Same filter as release.yml's `paths-ignore`.
+  # A git diff rather than the pull request API: release.yml calls this workflow with
+  # `contents: read` only, and a called job cannot ask for more than its caller grants.
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - name: 📂 Checkout
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: 🔎 Anything besides Markdown?
+        id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" != pull_request ]]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Listed first, not piped: under pipefail, grep -q quitting early can fail git diff.
+          files=$(git diff --name-only "$BASE...$HEAD")
+          if grep -qv '\.md$' <<<"$files"; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+            echo "Markdown only: lint, typecheck, tests, build and image skipped." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
   verify:
     name: Verify
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -53,6 +90,8 @@ jobs:
 
   server-image:
     name: Server Image
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
