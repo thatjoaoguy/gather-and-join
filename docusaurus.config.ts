@@ -11,8 +11,8 @@ const config: Config = {
   favicon: 'brand/icon-32.png',
   future: {v4: true},
 
-  url: `https://${OWNER}.github.io`,
-  baseUrl: `/${REPO}/`,
+  url: 'https://gatherandjoin.com',
+  baseUrl: '/',
   organizationName: OWNER,
   projectName: REPO,
   trailingSlash: false,
