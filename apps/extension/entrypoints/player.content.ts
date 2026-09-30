@@ -7,7 +7,7 @@
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { parseContentId, skipFor, trustedWatchUrl, PLAYER_MATCHES } from '@gj/shared';
 import { PORT_PLAYER, readTestConfig, type Diag, type OffscreenToPlayer, type PlayerToOffscreen, type Snapshot } from '../lib/messages';
-import { adapterForHost, isHarnessHost } from '../lib/providers';
+import { adapterForDocument, isHarnessHost } from '../lib/providers';
 import { participantsFrom } from '../lib/participants';
 import { VideoBinding } from '../lib/video-binding';
 import { SyncEngine } from '../lib/sync-engine';
@@ -22,9 +22,11 @@ import { installLogSink, log } from '../lib/log';
 
 export default defineContentScript({
   matches: [...PLAYER_MATCHES],
+  // An embedded player (Wix Video) is only ever a frame; adapterForDocument keeps every other frame out.
+  allFrames: true,
   runAt: 'document_idle',
   async main() {
-    const adapter = adapterForHost(location.hostname);
+    const adapter = adapterForDocument(location.href, window === window.top);
     if (!adapter) return;
     const cfg = await readTestConfig();
     const contentId = () => parseContentId(location.href);
@@ -146,7 +148,9 @@ export default defineContentScript({
             const url = trustedWatchUrl(m.contentId, m.watchUrl);
             if (!url) { log('page', 'not following navigate: no trusted URL for', m.contentId); return; }
             log('page', 'following navigate to', url);
-            location.assign(url);
+            // A frame can only become another embed: a site like YouTube refuses to be framed, so the tab goes instead.
+            if (window === window.top || adapterForDocument(url, false)) location.assign(url);
+            else void chrome.runtime.sendMessage({ target: 'background', type: 'navigateTab', url }).catch(() => {});
           }
           return;
         case 'duck':

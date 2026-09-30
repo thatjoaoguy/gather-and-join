@@ -113,9 +113,10 @@ export type OffscreenToPopup = { type: 'snapshot'; snapshot: Snapshot };
 export type ToBackground =
   | { target: 'background'; type: 'ensureOffscreen' }
   | { target: 'background'; type: 'openPage'; url: string }
+  | { target: 'background'; type: 'navigateTab'; url: string }
   | { target: 'background'; type: 'grantMic' }
   | { target: 'background'; type: 'grantCamera' }
-  | { target: 'background'; type: 'getActiveTabUrl' }
+  | { target: 'background'; type: 'getActivePlayerUrl' }
   /** Only the worker may call chrome.action, so the offscreen document reports here. */
   | { target: 'background'; type: 'badge'; state: BadgeState }
   | { target: 'background'; type: 'kv:get'; area: 'local' | 'session'; keys: string[] | null }

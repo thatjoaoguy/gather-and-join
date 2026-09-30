@@ -162,6 +162,37 @@ export const youtube: ContentProvider = prefixedProvider({
 });
 
 /**
+ * Wix Video (inspected 2026-09-29): a Wix site's video widget is an iframe on
+ * `embed.wix.com/video?instanceId=…&channelId=…&videoId=…`, and the player is a
+ * plain <video> inside it. The site around it can be on any domain, so the
+ * frame is what the extension matches, and the content id is
+ * `wixvideo:<videoId>` (32 hex digits, a dashless uuid).
+ *
+ * No watch URL can be derived from the video id alone: the embed also needs
+ * the site's instance and channel. The URL the leader reported is used instead,
+ * which is the embed itself (a frame's own URL) and plays as a page on its own,
+ * even where the site that embeds it is members-only.
+ *
+ * The id is a generic query parameter, so it is read on embed.wix.com only:
+ * parseContentId tries every provider on an unknown host.
+ */
+const WIX_EMBED_HOST = 'embed.wix.com';
+
+export const wixvideo: ContentProvider = prefixedProvider({
+  id: 'wixvideo',
+  name: 'Wix Video',
+  hosts: [WIX_EMBED_HOST],
+  matches: [`https://${WIX_EMBED_HOST}/video*`],
+  rawId(url) {
+    if (url.hostname !== WIX_EMBED_HOST || url.pathname !== '/video') return null;
+    const id = url.searchParams.get('videoId');
+    return id && /^[0-9a-f]{32}$/i.test(id) ? id : null;
+  },
+  normalize: (id) => id.toLowerCase(),
+  watchUrl: () => null,
+});
+
+/**
  * The test harness's fake player, served on localhost. It embeds an HBO-shaped
  * URN in its path. Its watch URL depends on the port it was started on, so the
  * server's WATCH_URL_TEMPLATE supplies it instead of this provider.
@@ -182,7 +213,7 @@ export const harness: ContentProvider = {
 };
 
 /** Every provider, in lookup order. */
-export const PROVIDERS: readonly ContentProvider[] = [hbomax, gdrive, youtube, harness];
+export const PROVIDERS: readonly ContentProvider[] = [hbomax, gdrive, youtube, wixvideo, harness];
 
 /** All manifest match patterns, for the content script and host permissions. */
 export const PLAYER_MATCHES: readonly string[] = PROVIDERS.flatMap((p) => p.matches);

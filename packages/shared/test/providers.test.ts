@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PROVIDERS, PLAYER_HOSTS, PLAYER_MATCHES, providerForHost, providerForContentId, parseContentId, watchUrlFor, trustedWatchUrl, hbomax, gdrive, youtube, harness } from '../src/index.ts';
+import { PROVIDERS, PLAYER_HOSTS, PLAYER_MATCHES, providerForHost, providerForContentId, parseContentId, watchUrlFor, trustedWatchUrl, hbomax, gdrive, youtube, wixvideo, harness } from '../src/index.ts';
 
 describe('provider registry', () => {
   it('has unique ids, hosts and match patterns', () => {
@@ -15,11 +15,13 @@ describe('provider registry', () => {
     expect(providerForHost('localhost')).toBe(harness);
     expect(providerForHost('drive.google.com')).toBe(gdrive);
     expect(providerForHost('www.youtube.com')).toBe(youtube);
+    expect(providerForHost('embed.wix.com')).toBe(wixvideo);
     expect(providerForHost('example.com')).toBeNull();
     expect(providerForContentId('hbomax:abc')).toBe(hbomax);
     expect(providerForContentId('urn:hbo:episode:G1')).toBe(harness);
     expect(providerForContentId('gdrive:1A2b3C4d5E6f7G8h')).toBe(gdrive);
     expect(providerForContentId('youtube:aqz-KE-bpKQ')).toBe(youtube);
+    expect(providerForContentId('wixvideo:fedcba9876543210fedcba9876543210')).toBe(wixvideo);
     expect(providerForContentId('netflix:1')).toBeNull();
   });
 
@@ -32,6 +34,7 @@ describe('provider registry', () => {
     const yid = 'youtube:aqz-KE-bpKQ';
     expect(youtube.parseContentId(new URL(youtube.watchUrl(yid)!))).toBe(yid);
     expect(harness.watchUrl('urn:hbo:episode:G1')).toBeNull(); // the server's WATCH_URL_TEMPLATE supplies it
+    expect(wixvideo.watchUrl('wixvideo:fedcba9876543210fedcba9876543210')).toBeNull(); // the embed needs the site's instance and channel too
   });
 
   it('a provider only parses its own page shapes on its own host', () => {
@@ -75,6 +78,24 @@ describe('provider registry', () => {
     expect(watchUrlFor('urn:hbo:episode:G1')).toBeNull();
   });
 
+  it('reads a Wix Video id from the embed frame, and only there', () => {
+    const embed = 'https://embed.wix.com/video?instanceId=11111111-2222-4333-8444-555555555555&biToken=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee&pathToPage=%2Fvideos&channelId=0123456789abcdef0123456789abcdef&videoId=FEDCBA9876543210FEDCBA9876543210&compId=comp-abc123&sitePageId=page1';
+    expect(parseContentId(embed)).toBe('wixvideo:fedcba9876543210fedcba9876543210');
+    // The same video in another widget, on another page of the site, is the same content.
+    expect(parseContentId('https://embed.wix.com/video?videoId=fedcba9876543210fedcba9876543210&compId=comp-other')).toBe('wixvideo:fedcba9876543210fedcba9876543210');
+    expect(parseContentId('https://embed.wix.com/video?channelId=0123456789abcdef0123456789abcdef')).toBeNull();
+    expect(parseContentId('https://embed.wix.com/video?videoId=not-a-video-id')).toBeNull();
+    // `videoId` is a common parameter name; tried against the whole web it must not match.
+    expect(parseContentId('https://example.com/video?videoId=fedcba9876543210fedcba9876543210')).toBeNull();
+    expect(parseContentId('https://example.wixsite.com/site/videos')).toBeNull();
+  });
+
+  it('trusts a reported Wix embed URL, since there is no canonical one to fall back to', () => {
+    const embed = 'https://embed.wix.com/video?instanceId=11111111-2222-4333-8444-555555555555&channelId=0123456789abcdef0123456789abcdef&videoId=fedcba9876543210fedcba9876543210';
+    expect(trustedWatchUrl('wixvideo:fedcba9876543210fedcba9876543210', embed)).toBe(embed);
+    expect(trustedWatchUrl('wixvideo:fedcba9876543210fedcba9876543210', 'https://example.com/video?videoId=fedcba9876543210fedcba9876543210')).toBeNull();
+  });
+
   it('keeps Google Drive file ids case-sensitive, unlike HBO Max uuids', () => {
     // Two Drive files can differ only in case; lowercasing would collapse them.
     expect(parseContentId('https://drive.google.com/file/d/1aB_cD-eFgHiJkLm/view')).toBe('gdrive:1aB_cD-eFgHiJkLm');
@@ -96,7 +117,7 @@ describe('trusted watch URLs', () => {
     expect(trustedWatchUrl('urn:hbo:episode:G1', null)).toBeNull();
   });
   it('names every provider', () => {
-    expect(PROVIDERS.map((p) => p.name)).toEqual(['HBO Max', 'Google Drive', 'YouTube', 'Fake player']);
+    expect(PROVIDERS.map((p) => p.name)).toEqual(['HBO Max', 'Google Drive', 'YouTube', 'Wix Video', 'Fake player']);
     expect(providerForContentId(hbo)?.name).toBe('HBO Max');
   });
 });

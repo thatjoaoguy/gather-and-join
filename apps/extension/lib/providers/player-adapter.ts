@@ -26,6 +26,12 @@ export type PlayerAdapter = {
    * Element, so those providers must point at the iframe instead.
    */
   findAnchor?(root: ParentNode): HTMLElement | null;
+  /**
+   * The player is a widget other sites put in an iframe (Wix Video), so the
+   * content script runs in that frame. Every other adapter runs in the top
+   * document only.
+   */
+  readonly embedded?: boolean;
   /** Autoplay-next panel: the panel elements to hide, and the dismiss buttons inside them to click. */
   readonly upNext: { readonly panel: readonly string[]; readonly dismiss: readonly string[] };
 };

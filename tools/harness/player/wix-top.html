@@ -1,0 +1,26 @@
+<!doctype html>
+<!--
+  Fake Wix site page. The hazard it reproduces is where the player lives: in a
+  cross-origin iframe on a site whose own domain the extension does not match
+  (served as wixsite.localhost, which Chrome resolves to loopback). The frame is
+  the ordinary fake player, so the content script runs inside it or not at all,
+  sized from script to the frame's window like Wix's player (`?fit=window`).
+  This page has no controls of its own: on the real site they are the widget's.
+-->
+<meta charset="utf-8">
+<title>Fake Wix site</title>
+<style>
+  html, body { margin: 0; background: #f5e9ec; color: #222; font: 14px system-ui, sans-serif; }
+  header { padding: 12px 16px; background: #1c1c1c; color: #eee; }
+  iframe { display: block; width: 820px; height: 480px; margin: 16px auto; border: 0; background: #000; }
+</style>
+<header><strong>VIDEOS</strong></header>
+<iframe id="widget" allow="autoplay; fullscreen"></iframe>
+<script>
+  const urn = (decodeURIComponent(location.pathname).match(/\/wixsite\/(.+)$/) || [])[1] || 'urn:hbo:episode:G0000001';
+  const embedOrigin = location.origin.replace('wixsite.localhost', 'localhost');
+  // The widget sizes its player to its own window, as Wix's does.
+  const query = new URLSearchParams(location.search);
+  query.set('fit', 'window');
+  document.getElementById('widget').src = `${embedOrigin}/wixembed/${urn}?${query}`;
+</script>

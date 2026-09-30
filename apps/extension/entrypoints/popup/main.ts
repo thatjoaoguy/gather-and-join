@@ -16,7 +16,7 @@ ensureQuicksand();
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 let snapshot: Snapshot | null = null;
-let activeTabUrl: string | null = null;
+let activePlayerUrl: string | null = null;
 let tab: 'join' | 'create' = 'join';
 let showServer = true;
 let probed = false;
@@ -176,7 +176,7 @@ function renderRoom(s: Snapshot) {
   let notice = ''; let actions = '';
   if (!connected) notice += `<div class="notice warning" role="status"><strong>${ic('warn')} Reconnecting to your room…</strong><p>Your connection dropped. We’re trying again. Your friends stay where they are.</p></div>`;
   if (s.stalledBy) notice += `<div class="notice warning" role="status"><strong>${ic('warn')} ${esc(s.stalledBy.name === 'you' ? 'You are' : s.stalledBy.name + ' is')} buffering</strong><p>The show is paused. Press play when everyone is ready.</p></div>`;
-  const here = activeTabUrl ? parseContentId(activeTabUrl) : null;
+  const here = activePlayerUrl ? parseContentId(activePlayerUrl) : null;
   const goto = room.contentId ? trustedWatchUrl(room.contentId, room.watchUrl) : null;
   if (room.contentId && goto && here !== room.contentId) {
     notice += `<div class="notice info" role="status"><strong>${ic('info')} Your room is watching another episode</strong><p>Open the room’s episode to catch up with your friends.</p></div>`;
@@ -289,6 +289,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
 for (const [key, name] of [['mic', 'microphone'], ['cam', 'camera']] as const) {
   navigator.permissions?.query({ name: name as PermissionName }).then((p) => { perms[key] = p.state; p.onchange = () => { perms[key] = p.state; render(); }; render(); }).catch(() => {});
 }
-void toBackground('getActiveTabUrl').then((u) => { activeTabUrl = u as string | null; render(); });
+void toBackground('getActivePlayerUrl').then((u) => { activePlayerUrl = u as string | null; render(); });
 setTab('join');
 void port.open();

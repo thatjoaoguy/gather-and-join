@@ -5,7 +5,7 @@
  */
 import path from 'node:path';
 import fs from 'node:fs';
-import { chromium, type BrowserContext, type Page } from '@playwright/test';
+import { chromium, type BrowserContext, type Frame, type Page } from '@playwright/test';
 import { ensurePeerFixtures } from './fixtures.ts';
 import { PLAYER_ORIGIN, SERVER_URL } from './endpoints.ts';
 
@@ -18,7 +18,13 @@ export const watchUrl = (contentId: string) => `${PLAYER_ORIGIN}/watch/${content
 export const driveWatchUrl = (contentId: string) => `${PLAYER_ORIGIN}/drivewatch/${contentId}`;
 /** The YouTube-shaped page: same content ids, but an ad break reuses the one <video>. */
 export const youtubeWatchUrl = (contentId: string) => `${PLAYER_ORIGIN}/ytwatch/${contentId}`;
-export type PlayerShape = 'hbo' | 'drive' | 'youtube';
+/**
+ * The Wix-shaped page: the HBO page in a cross-origin frame of a site on
+ * wixsite.localhost, a host the extension does not match, so the player and
+ * the test hook live in the frame.
+ */
+export const wixSiteUrl = (contentId: string) => `${PLAYER_ORIGIN.replace('://localhost', '://wixsite.localhost')}/wixsite/${contentId}`;
+export type PlayerShape = 'hbo' | 'drive' | 'youtube' | 'wix';
 
 export type Sabotage = 'reattach' | 'drift' | 'offscreen' | 'echo-suppress' | 'episode-start' | null;
 
@@ -30,6 +36,8 @@ export type Peer = {
   page: Page;
   extensionId: string;
   userDataDir: string;
+  /** The document the player is in: the page, or the Wix shape's frame. */
+  player(): Frame;
   /** Call a `window.__gj` method on the player page. */
   gj<T = unknown>(method: string, ...args: unknown[]): Promise<T>;
   /** Evaluate against the extension's popup page (has chrome.* APIs). */
@@ -102,20 +110,21 @@ export async function launchPeer(index: number, opts: LaunchOptions = {}): Promi
   const page = await context.newPage();
   const peer: Peer = {
     index, peerId, name: peerId, context, page, extensionId, extPage, userDataDir,
-    gj: (method, ...args) => peer.page.evaluate(([m, a]) => (window as any).__gj[m](...a), [method, args] as const),
+    player: () => peer.page.frames().find((f) => f.url().includes('/wixembed/')) ?? peer.page.mainFrame(),
+    gj: (method, ...args) => peer.player().evaluate(([m, a]) => (window as any).__gj[m](...a), [method, args] as const),
   };
   return peer;
 }
 
 /** Navigate a peer's player page and wait for the extension hook to be live. `copy` picks one of the player's copies of the episode. */
 export async function openPlayer(peer: Peer, contentId = EPISODE(1), shape: PlayerShape = 'hbo', copy?: 'plain' | 'extras') {
-  const url = shape === 'drive' ? driveWatchUrl(contentId) : shape === 'youtube' ? youtubeWatchUrl(contentId) : watchUrl(contentId);
+  const url = { hbo: watchUrl, drive: driveWatchUrl, youtube: youtubeWatchUrl, wix: wixSiteUrl }[shape](contentId);
   await peer.page.goto(copy ? `${url}?copy=${copy}` : url);
   await waitForHook(peer);
 }
 
 export async function waitForHook(peer: Peer, timeout = 15_000) {
-  await peer.page.waitForFunction(() => typeof (window as any).__gj?.ping === 'function', null, { timeout });
+  await waitForCondition(async () => peer.player().evaluate(() => typeof (window as any).__gj?.ping === 'function').catch(() => false), { timeout, label: 'test hook in the player document' });
   await waitForCondition(async () => (await peer.gj('ping').catch(() => null)) === 'pong', { timeout, label: 'content script bridge' });
 }
 
