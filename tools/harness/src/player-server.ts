@@ -1,9 +1,11 @@
 /**
- * Fake player, served on localhost, in three shapes: HBO (a <video> in the top
- * document), Drive (`/drivewatch/`, a cross-origin embed) and YouTube
- * (`/ytwatch/`, a <video> whose ad break reuses the same element). Between them
- * they reproduce the hazards the extension must survive: element recreation,
- * ad breaks of both kinds, SPA and hard navigation, autoplay-next countdown.
+ * Fake player, served on localhost, in four shapes: HBO (a <video> in the top
+ * document), Drive (`/drivewatch/`, a cross-origin embed), YouTube
+ * (`/ytwatch/`, a <video> whose ad break reuses the same element) and Wix
+ * (`/wixsite/`, the HBO page framed by a site the extension does not match).
+ * Between them they reproduce the hazards the extension must survive: element
+ * recreation, ad breaks of both kinds, SPA and hard navigation, autoplay-next
+ * countdown, a player that is only ever a frame.
  * See player/player.js for the HBO page.
  *
  * Media: prefers `fixtures/player.webm` (from `make fixtures`); otherwise serves
@@ -104,6 +106,10 @@ export function startPlayerServer(port = PLAYER_PORT): Promise<http.Server> {
     // YouTube-shaped variant: an ordinary <video>, but its ad break plays through
     // that same element and is announced only by a class on the player.
     if (p.startsWith('/ytwatch/')) return serveFile(res, path.join(PLAYER_DIR, 'yt-top.html'));
+    // Wix-shaped variant: the ordinary player, but framed by a site on a host the
+    // extension does not match (wixsite.localhost), so it runs in the frame only.
+    if (p.startsWith('/wixsite/')) return serveFile(res, path.join(PLAYER_DIR, 'wix-top.html'));
+    if (p.startsWith('/wixembed/urn:hbo:')) return serveFile(res, path.join(PLAYER_DIR, 'index.html'));
     if (p.startsWith('/static/')) return serveFile(res, path.join(PLAYER_DIR, p.slice('/static/'.length)));
     res.writeHead(404); res.end('not found');
   });

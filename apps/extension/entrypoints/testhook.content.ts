@@ -15,6 +15,8 @@ export default defineContentScript({
   matches: ['http://localhost/*', 'http://127.0.0.1/*'],
   world: 'MAIN',
   runAt: 'document_start',
+  // The Wix-shaped harness page plays in a frame, and that is where the bridge answers.
+  allFrames: true,
   main() {
     if (!__GJ_TEST__) return;
     let seq = 0;

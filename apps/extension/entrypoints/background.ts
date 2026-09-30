@@ -10,6 +10,7 @@ import { parseContentId, PLAYER_HOSTS } from '@gj/shared';
 import { applyBadge, badgeStateFrom, type BadgeState, type IconDeps } from '../lib/badge';
 import { readTestConfig, type Snapshot, type ToBackground, type ToOffscreen } from '../lib/messages';
 import { log } from '../lib/log';
+import { adapterForDocument, playerUrlOf } from '../lib/providers';
 
 const OFFSCREEN_URL = 'offscreen.html';
 let creating: Promise<void> | null = null;
@@ -81,8 +82,16 @@ async function refreshBadge(): Promise<void> {
   await showBadge(snapshot ? badgeStateFrom(snapshot) : 'idle');
 }
 
+/** The active tab's player URL: the tab's own, or its embedded player's frame. */
+async function activePlayerUrl(): Promise<string | null> {
+  const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  if (!tab?.url || tab.id === undefined) return null;
+  const frames = (await chrome.webNavigation.getAllFrames({ tabId: tab.id })) ?? [];
+  return playerUrlOf(tab.url, frames.map((f) => f.url));
+}
+
 export default defineBackground(() => {
-  chrome.runtime.onMessage.addListener((msg: ToBackground, _sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
     if (!msg || msg.target !== 'background') return;
     switch (msg.type) {
       case 'ensureOffscreen':
@@ -91,14 +100,19 @@ export default defineBackground(() => {
       case 'openPage':
         chrome.tabs.create({ url: msg.url }).then(() => sendResponse(true));
         return true;
+      // A player frame cannot navigate the page it sits in; this moves the sender's whole tab.
+      case 'navigateTab':
+        if (sender.tab?.id === undefined) { sendResponse(false); return; }
+        chrome.tabs.update(sender.tab.id, { url: msg.url }).then(() => sendResponse(true), () => sendResponse(false));
+        return true;
       case 'grantMic':
         chrome.tabs.create({ url: chrome.runtime.getURL('options.html?grant=1') }).then(() => sendResponse(true));
         return true;
       case 'grantCamera':
         chrome.tabs.create({ url: chrome.runtime.getURL('options.html?grant=camera') }).then(() => sendResponse(true));
         return true;
-      case 'getActiveTabUrl':
-        chrome.tabs.query({ active: true, lastFocusedWindow: true }).then(([tab]) => sendResponse(tab?.url ?? null));
+      case 'getActivePlayerUrl':
+        activePlayerUrl().then(sendResponse, () => sendResponse(null));
         return true;
       case 'badge':
         void showBadge(msg.state);
@@ -119,7 +133,8 @@ export default defineBackground(() => {
     url: PLAYER_HOSTS.map((hostEquals) => ({ hostEquals })),
   };
   const onNav = async (d: { tabId: number; url: string; frameId: number }) => {
-    if (d.frameId !== 0) return;
+    // An embedded player's frame is the player; any other frame is not.
+    if (d.frameId !== 0 && !adapterForDocument(d.url, false)) return;
     log('background', 'navigation', d.url);
     if (__GJ_TEST__ && (await readTestConfig()).sabotage === 'offscreen') {
       // Sabotage: pretend long-lived state lived in a context that dies on navigation.
@@ -155,11 +170,20 @@ export default defineBackground(() => {
     const manifest = chrome.runtime.getManifest();
     const cs = manifest.content_scripts?.find((c) => c.js?.some((f) => f.includes('player')));
     if (!cs?.js) return;
-    const tabs = await chrome.tabs.query({ url: cs.matches });
-    for (const tab of tabs) {
+    const files = cs.js;
+    const inject = async (target: chrome.scripting.InjectionTarget, url: string) => {
+      try { await chrome.scripting.executeScript({ target, files }); log('background', 'reinjected into tab', target.tabId, url); }
+      catch (e) { log('background', 'reinject failed', target.tabId, String(e)); }
+    };
+    for (const tab of await chrome.tabs.query({ url: cs.matches })) {
+      if (tab.id !== undefined) await inject({ tabId: tab.id }, tab.url ?? '');
+    }
+    // An embedded player's page is on a domain the manifest does not match, so that query misses its tab.
+    for (const tab of await chrome.tabs.query({})) {
       if (tab.id === undefined) continue;
-      try { await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: cs.js }); log('background', 'reinjected into tab', tab.id, tab.url ?? ''); }
-      catch (e) { log('background', 'reinject failed', tab.id, String(e)); }
+      const frames = (await chrome.webNavigation.getAllFrames({ tabId: tab.id }).catch(() => null)) ?? [];
+      const players = frames.filter((f) => f.frameId !== 0 && adapterForDocument(f.url, false));
+      if (players.length) await inject({ tabId: tab.id, frameIds: players.map((f) => f.frameId) }, players[0]!.url);
     }
   }
 });

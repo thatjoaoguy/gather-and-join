@@ -10,6 +10,20 @@
   let adTimer = null;
   let countdownTimer = null;
 
+  // `?fit=window` sizes the player the way the Wix Video embed does: from script,
+  // to the window, as inline pixel widths on the player and on its container,
+  // with a min-width on the player. Measured before any sidebar exists, and
+  // again after leaving fullscreen: after its re-render, as Wix's is, so over
+  // the widths the sidebar has set by then.
+  if (new URLSearchParams(location.search).get('fit') === 'window') {
+    const fit = () => {
+      document.body.style.width = `${innerWidth}px`;
+      Object.assign(playerEl.style, { width: `${innerWidth}px`, minWidth: `${innerWidth}px`, margin: '0' });
+    };
+    fit();
+    document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) setTimeout(fit, 250); });
+  }
+
   const urnFromPath = () => (decodeURIComponent(location.pathname).match(/urn:hbo:episode:([A-Za-z0-9]+)/) || [])[1] || EPISODES[0];
   const nextUrn = () => EPISODES[(EPISODES.indexOf(urnFromPath()) + 1) % EPISODES.length];
   const video = () => playerEl.querySelector('video');

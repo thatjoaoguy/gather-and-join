@@ -6,8 +6,10 @@ import { embedMedia } from './yt-embed-media';
  * `/watch/...` mirrors HBO Max (a real <video> in the top document),
  * `/drivewatch/...` mirrors Google Drive (no <video>; a cross-origin iframe on
  * 127.0.0.1 speaking the YouTube widget protocol), and `/ytwatch/...` mirrors
- * YouTube (a real <video> whose ad break reuses that same element). Which one a
- * page is decides itself by what is in the DOM, so one adapter covers all three.
+ * YouTube (a real <video> whose ad break reuses that same element), and
+ * `/wixembed/...` is the frame of the Wix-shaped `/wixsite/...` page (a real
+ * <video> in an iframe on a site the extension does not match). Which one a
+ * page is decides itself by what is in the DOM, so one adapter covers all four.
  *
  * The upNext selectors below are byte-identical to hbomax.ts on purpose, and the
  * ad marker to youtube.ts, and neither must be hoisted into a shared constant.
@@ -32,5 +34,7 @@ export const harnessAdapter: PlayerAdapter = {
     return v ?? embed.findVideo(root);
   },
   findAnchor: (root) => queryVideo(root) ?? embed.findAnchor(root),
+  // For the Wix shape. The Drive shape's frame is not a watch page, so it stays out.
+  embedded: true,
   upNext: { panel: ['[data-testid="up_next"]'], dismiss: ['[data-testid="player-ux-up-next-dismiss"]'] },
 };

@@ -18,6 +18,7 @@ affiliated with, endorsed by, or sponsored by any streaming service (see
 - HBO Max
 - YouTube
 - Google Drive — for video files you own or that are shared with you
+- Wix Video — the video widget on any Wix site
 
 On YouTube, an ad break is ignored rather than shared: while one is playing that
 viewer neither drives the room nor is corrected by it, and they rejoin the room's
@@ -36,6 +37,12 @@ the full window — and an extension cannot change the window's width or make th
 site recompute against a narrower one (a synthetic `resize` does not do it).
 Fixing it would mean writing YouTube's private layout variables, which its next
 relayout overwrites. Deliberately left alone.
+
+Wix Video is a widget that Wix sites embed from `embed.wix.com`, so the
+extension runs in that widget and never on the site around it: the sidebar sits
+inside the widget, and the room's "Go to episode" link is the widget's own
+address, which plays full-window by itself. That is also true of a members-only
+site: the widget plays without signing in to it.
 
 Drive is not a subscription service, so two things work differently. The file
 must be shared with **every** participant's Google account, and Drive rate-limits
@@ -319,6 +326,16 @@ Two facts discovered while building that shape the code:
   the real element that estimate holds to a p95 of ~2 ms (see
   `tools/harness/src/embed-drift-probe.ts`), because the error comes from tick
   latency, not tick spacing.
+- **A player can be a frame on a site the extension does not know.** Wix Video
+  is an iframe on `embed.wix.com` inside a site of any domain, so matching the
+  site is impossible and the player script is injected into every matching
+  frame instead. `adapterForDocument` then keeps it only in the top document
+  or, for an embedded provider, in a frame that is itself a watch page, so the
+  other frames of a YouTube or HBO Max page stay empty. Whatever assumed the
+  player was the tab follows from that: the worker's navigation watcher also
+  accepts the player's frame, the popup finds the tab's player among its
+  frames, and a guest's frame that the room sends somewhere a frame cannot go
+  (HBO Max, YouTube) moves the whole tab instead.
 - **Offscreen documents have no `chrome.storage`** (only `chrome.runtime`). Anything
   the offscreen document persists or reads from storage goes through the service
   worker (`lib/kv.ts`). The toolbar badge goes the same way for the same

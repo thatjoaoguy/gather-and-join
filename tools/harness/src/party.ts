@@ -82,7 +82,7 @@ async function dumpPartyInner(party: Party, label: string) {
 
 export type Snap = {
   socket: string; socketReconnects: number;
-  room: { code: string; contentId: string | null; paused: boolean; positionMs: number; leaderId: string; episodeStart: { durationMs: number; startMs: number } | null } | null;
+  room: { code: string; contentId: string | null; watchUrl: string | null; paused: boolean; positionMs: number; leaderId: string; episodeStart: { durationMs: number; startMs: number } | null } | null;
   peers: Array<{ peerId: string; name: string; copy?: { contentId: string; durationMs: number } }>; yourPeerId: string; isLeader: boolean; camOn: boolean; micOn: boolean;
   peerMedia: Record<string, { connectionState: string; iceConnectionState: string; signalingState: string; hasAudio: boolean; hasVideo: boolean; micOn: boolean | null; camOn: boolean | null }>;
   lastError: { code: string; message: string } | null;
@@ -118,8 +118,8 @@ export async function waitForMesh(peers: Peer[], timeout = 30_000) {
 }
 
 /** Press the fake player's Play button on a peer's page. */
-export async function pressPlay(p: Peer) { await p.page.click('#play'); }
-export async function pressPause(p: Peer) { await p.page.click('#pause'); }
+export async function pressPlay(p: Peer) { await p.player().click('#play'); }
+export async function pressPause(p: Peer) { await p.player().click('#pause'); }
 
 /**
  * Pairwise spread of positions across peers, normalised to one clock: a

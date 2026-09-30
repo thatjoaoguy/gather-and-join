@@ -50,7 +50,9 @@ One entry in `packages/shared/src/providers.ts` (URL-level, DOM-free) and one
 adapter in `lib/providers/` implementing `PlayerAdapter` (find the `<video>`, the
 up-next panel). Register the adapter in `lib/providers/index.ts`. Nothing else in
 the extension should learn which provider it is on — manifest matches, the content
-script's `matches` and the worker's navigation filter are all derived.
+script's `matches` and the worker's navigation filter are all derived. A player
+that other sites embed as an iframe (Wix Video) sets `embedded` on its adapter;
+the content script then runs in that frame, and never in anyone else's.
 
 ## Verifying
 
