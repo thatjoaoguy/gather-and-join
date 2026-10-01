@@ -34,7 +34,7 @@ bundled `gj-server.mjs` and a container image. See "Packaging" below.
   what arrives; never widen a type locally to make a message fit.
 - **Keep the log line shape.** `<iso> <event> key=value …`, one line, no
   multi-line dumps — people paste these into bug reports. New event → add it to
-  the event list in the README.
+  the event list in `docs/development/diagnostics.md` on the `docs` branch.
 - **Peer ids starting with `obs:`** are non-media observers (the harness) and are
   never negotiated with. Don't special-case them anywhere else.
 - **Rooms live in one process's memory,** so the server never scales past a
@@ -43,7 +43,9 @@ bundled `gj-server.mjs` and a container image. See "Packaging" below.
   store) is a design change, not a tweak.
 - `PORT` overrides 8080; `ROOM_TTL_MS`, `LEADER_GRACE_MS`, `HEARTBEAT_MS`,
   `WATCH_URL_TEMPLATE`, `GJ_LOG` and `GJ_VERSION` are the rest. Adding a knob
-  means adding it to the header comment in `src/index.ts` and to the README.
+  means adding it to the header comment in `src/index.ts` and, on the `docs`
+  branch, to the table in `docs/host-a-server.md` (or to
+  `docs/development/diagnostics.md` for one only development uses).
 
 ## Packaging
 

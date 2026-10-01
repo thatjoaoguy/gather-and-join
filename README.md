@@ -1,202 +1,71 @@
-# Gather & Join
+<p align="center">
+  <a href="https://gatherandjoin.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/design-system/brand/lockup.svg">
+      <img src="docs/design-system/brand/lockup-dark.svg" alt="Gather &amp; Join" width="320">
+    </picture>
+  </a>
+</p>
 
-[![release](https://github.com/thatjoaoguy/gather-and-join/actions/workflows/release.yml/badge.svg)](https://github.com/thatjoaoguy/gather-and-join/actions/workflows/release.yml)
+<p align="center">
+  <strong>Watch together in sync, with voice and video.</strong><br>
+  Everyone plays from their own account. No media ever goes through the server.
+</p>
 
-Watch together in sync, with voice and video. Gather & Join is a Chrome
-extension that keeps a small group on the same second of the same episode and
-adds a call alongside the show, plus a small server one of you hosts.
-Guide and privacy policy: [gatherandjoin.com](https://gatherandjoin.com).
+<p align="center">
+  <a href="https://github.com/thatjoaoguy/gather-and-join/actions/workflows/release.yml"><img src="https://github.com/thatjoaoguy/gather-and-join/actions/workflows/release.yml/badge.svg" alt="Release"></a>
+  <a href="https://github.com/thatjoaoguy/gather-and-join/releases/latest"><img src="https://img.shields.io/github/v/release/thatjoaoguy/gather-and-join?sort=semver&label=version&color=b9a0ff" alt="Latest version"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-b9a0ff" alt="License: MIT"></a>
+</p>
 
-Every participant streams from their own account through the service's own
-player. **No media ever goes through the server**: it sees room metadata and
-call-setup messages only. Gather & Join is independent software and is not
-affiliated with, endorsed by, or sponsored by any streaming service (see
-[Legal](#legal)).
+<p align="center">
+  <a href="https://gatherandjoin.com/docs/install"><strong>Install</strong></a> ·
+  <a href="https://gatherandjoin.com/docs/host-a-server"><strong>Host a server</strong></a> ·
+  <a href="https://gatherandjoin.com/docs/watch-together"><strong>Watch together</strong></a> ·
+  <a href="https://gatherandjoin.com/docs/troubleshooting"><strong>Troubleshooting</strong></a>
+</p>
 
-## Supported services
+<p align="center">
+  <img src="https://gatherandjoin.com/img/room.webp" alt="A room in progress: the episode playing, the room popup with its invite code and three people connected, and webcam tiles for the call beside the player.">
+</p>
 
-- HBO Max
-- YouTube
-- Google Drive — for video files you own or that are shared with you
-- Wix Video — the video widget on any Wix site
+Gather & Join is a Chrome extension that keeps a small group on the same second
+of the same episode and puts a voice call alongside the show, plus a small
+server one of you hosts. Each viewer watches through the service's own player,
+signed in to their own account; voice and video go directly between you. The
+server only sees room details and the messages that set up the call.
 
-On YouTube, an ad break is ignored rather than shared: while one is playing that
-viewer neither drives the room nor is corrected by it, and they rejoin the room's
-position when their ad ends. Ads are never skipped, hidden or counted — different
-people simply get different ones, and the room waits for nobody. A `youtu.be` or
-`/live/` link is understood as the same video as its `/watch?v=` form. Shorts are
-not supported: the feed scrolls itself to the next video, which would walk a
-viewer off the room's content.
+**Works with** HBO Max, YouTube, video files on Google Drive, and Wix Video, with
+more on the way.
 
-An accepted limitation on YouTube: the sidebar takes its width out of the page,
-and the masthead, the player and the video's own column all move over, but the
-related-videos column does not and is clipped by about 60px. YouTube sizes that
-column from `100vh` and `window.innerWidth` rather than from its container —
-`--ytd-watch-flexy-sidebar-width` is a pixel value its own script computes for
-the full window — and an extension cannot change the window's width or make the
-site recompute against a narrower one (a synthetic `resize` does not do it).
-Fixing it would mean writing YouTube's private layout variables, which its next
-relayout overwrites. Deliberately left alone.
+## How it works
 
-Wix Video is a widget that Wix sites embed from `embed.wix.com`, so the
-extension runs in that widget and never on the site around it: the sidebar sits
-inside the widget, and the room's "Go to episode" link is the widget's own
-address, which opens the video full-window rather than the site's page.
+1. **Someone hosts the server** and shares its address. It runs free on Render
+   with no credit card. [Host a server →](https://gatherandjoin.com/docs/host-a-server)
+2. **Everyone installs the extension** and pastes that address once.
+   [Install →](https://gatherandjoin.com/docs/install)
+3. **One person creates a room** on the episode and reads out the six-character
+   code; everyone else joins. Anyone can play, pause or seek, and only the room's
+   leader changes episodes. [Watch together →](https://gatherandjoin.com/docs/watch-together)
 
-Drive is not a subscription service, so two things work differently. The file
-must be shared with **every** participant's Google account, and Drive rate-limits
-a single file streamed by several people at once ("Sorry, you can't view or
-download this file at this time"), which is exactly the situation a watch party
-creates. An accepted limitation: an unqualified Drive link opens under the viewer's
-*first* Google account, so on a profile signed into several accounts the popup's
-**Go to episode** button can land on "Unable to load video". Open the file's URL
-directly in that case. This is not planned for a fix — the account index is
-per-profile, so there is no single index the room could hand out that is right
-for everyone in it.
+The mic is on when you join and the camera is opt-in. If someone buffers, the
+room pauses until someone presses play again. Use headphones.
 
-More are planned. Adding one is a provider entry plus an adapter; see
-[Streaming providers](#streaming-providers).
+## Development
 
-## Getting started
-
-1. **Someone hosts the server.** One person in the group runs it and shares its
-   address. See [Hosting the server](#hosting-the-server).
-2. **Everyone installs the extension.** From the Chrome Web Store link the host
-   shares (the listing is unlisted for now), or by building it yourself (see
-   [Development](#development)).
-3. **Set it up once.** Installing opens the setup page by itself: allow the
-   microphone (camera optional) and paste the server address the host shared,
-   then save. It walks the three steps in order and says what is still missing,
-   so nobody lands in the popup with a server they were never asked about. Reach
-   it again any time from the extension, under **Connection & device setup**.
-
-## Using it
-
-1. One person opens the episode on a supported service, clicks the extension,
-   **Create room**, and reads out the 6-character code. The first time on each
-   service the popup asks to **Allow** it there: the extension holds no access to
-   any site until you do, and asks for that one service only. The setup page
-   lists every service with a switch, to see what you allowed or take it back.
-2. Everyone else clicks the extension, types the code, **Join**. If they are not on
-   the room's episode, the popup shows one button that takes them there.
-3. Anyone can play, pause, or seek. Only the room host (the creator; passed to the
-   oldest remaining peer if they leave) can change episodes — everyone follows.
-   The popup's lobby shows whether your microphone, camera and server are ready
-   before you join; the eye next to the server address hides it for screen sharing.
-4. Mic is on by default, camera is opt-in. **Use headphones**: echo cancellation is
-   tuned for the call, not for the show coming out of your speakers. Voice ducking
-   (lowering the show while you talk) is **off by default** — it's a checkbox on the
-   setup page, because with speakers the show itself keeps triggering it.
-
-The toolbar icon carries a dot while you are in a room — green once you are
-connected, amber while a join or a reconnect is in flight — and nothing at all
-when you are not in one. Its tooltip says which. The dot is drawn onto the icon
-rather than set as a badge: Chrome's badge is a rounded rectangle sized to its
-text, and at 16px that slab covers the mark.
-
-The gear at the top of the participant rail opens room settings without leaving
-the player: the room code, your mic and camera, the service and episode (with a
-link there if you're elsewhere), how much a longer copy skips (below), and the
-server.
-
-If someone buffers, the room pauses and the popup says who. Resume is a manual
-press — there is no auto-resume, on purpose (it thrashes).
-
-Some regions get a copy of an episode with extras in front of it — a promo, a
-"stay tuned" card — so the same episode runs longer for them. When the copies in
-the room differ, the sidebar says by how much and fills that in as how much the longer
-copy skips. Anyone can **Align** it, and change it later from the gear — typed as
-minutes and seconds, to the hundredth. The longer copy skips its extras and
-nobody watches them; the next episode starts without an offset, since it may have
-no extras at all.
-
-## Hosting the server
-
-One person in the group runs the server and shares its address; everyone else
-pastes that address into the extension's setup page once. It holds room state in
-memory, stores nothing on disk, and never sees any video.
-
-**The short version: deploy the published image on Render's free tier.** It costs
-nothing, needs no credit card, and gives an address that does not change between
-parties — so everyone pastes it once, ever. Render is an unaffiliated third-party
-company; their limits and terms are theirs to change, and your room's signaling
-passes through their infrastructure.
-
-1. At [dashboard.render.com](https://dashboard.render.com), choose **New → Web
-   Service**, then the **Existing Image** tab, and paste
-   `ghcr.io/thatjoaoguy/gather-and-join-server:latest`.
-2. Name it something only your group would guess; the name becomes the address.
-3. Under **Compute**, select the **$0/month Free** plan — Render pre-selects the
-   $7 one.
-4. Deploy. Nothing under **Advanced** needs changing — Render watches the port,
-   which for one process with no database is the same as watching the server.
-5. Open the address Render gives you. A running server says so in plain text,
-   and `/health` reports its version, uptime and how many people are connected.
-6. Share that address with `wss://` in place of `https://`.
-
-The [hosting guide](https://thatjoaoguy.github.io/gather-and-join/docs/host-a-server)
-walks through the same steps with screenshots, and covers what the free tier's
-sleep does and does not mean. Short answer: it cannot sleep mid-party, and waking
-takes about 12 seconds.
-
-### The other two ways
-
-- **[From your own machine](https://thatjoaoguy.github.io/gather-and-join/docs/host-on-your-machine)**
-  — run the server, then `cloudflared tunnel --url http://localhost:8080` in
-  front of it, and share the printed address with `wss://`. Good for one
-  evening; the address changes every run and the room ends when the laptop
-  sleeps. (From a checkout, `pnpm host` does both at once.)
-- **[On your local network](https://thatjoaoguy.github.io/gather-and-join/docs/host-on-your-network)**
-  — everyone on the same Wi-Fi, sharing `ws://<your-ip>:8080`. Nothing is exposed
-  to the internet.
-
-### Running it anywhere else
-
-The server is one Node program with no database and nothing on disk. It ships as
-a container image and as a single file, so it runs on anything with **Docker** or
-**Node ≥ 22.6**:
-
-```bash
-docker run -d --restart unless-stopped -p 8080:8080 \
-  ghcr.io/thatjoaoguy/gather-and-join-server:latest
-
-node gather-and-join-server-0.3.1.mjs     # from the latest release
+```sh
+pnpm install
+pnpm dev:server     # ws://localhost:8080
+pnpm dev:harness    # fake player at http://localhost:4173
+pnpm verify         # lint → typecheck → unit → build → e2e → sabotage matrix
 ```
 
-Wherever it runs it needs port `8080` (or `PORT` set to match), `/health` as the
-health check if that host requires one, and **exactly one copy** — rooms live in
-one process's memory, so a second copy silently splits the party in two under
-the same room code.
-
-Use `wss://` for anything beyond the local network: signaling carries display
-names and room codes, and only TLS keeps them private in transit. Plain `ws://`
-to a LAN address is fine (Chrome does not apply mixed-content blocking to
-extension pages).
-
-### What hosting commits you to
-
-The room lives on that machine: if it stops, the room is gone. The person hosting
-is responsible for keeping it up for the length of the party.
-
-Environment variables: `PORT` (default 8080), `ROOM_TTL_MS` (how long an empty
-room is kept), `LEADER_GRACE_MS`, `HEARTBEAT_MS`, `GJ_LOG=0` to silence the event
-log. The server prints one `key=value` line per room event to stdout and keeps no
-other record.
-
-## Known unsolvable
-
-On ad-supported tiers, ad breaks land at different points per viewer, so
-`currentTime` is not comparable across the room mid-break. The extension does
-not skip, hide, mute, or shorten ads — they play exactly as the service serves
-them — so there is no fix; the room re-converges after the break. Two small guards keep a break
-from doing worse than desync: an element whose duration ends far before the
-room's position (an ad clip) never pauses the room when it ends, and an `ended`
-is only broadcast if the element is still current a second later (players swap
-the element right after an ad).
-
-Ads stitched into the episode's own timeline, rather than played in a separate
-element, would lengthen it for good at every break. The episode start (see
-"Using it") cannot help: it describes extras before the episode, not in it.
+The [development docs](https://gatherandjoin.com/docs/development) cover the
+architecture, the sync policy and wire protocol, testing without a subscription,
+and diagnostics. [CONTRIBUTING.md](./CONTRIBUTING.md) is the process and the
+product decisions a change must preserve, [AGENTS.md](./AGENTS.md) is the guide
+for coding agents, and [CHANGELOG.md](./CHANGELOG.md) is what shipped. The
+website is built from the `docs` branch.
 
 ## Legal
 
@@ -229,281 +98,3 @@ Use of a streaming service through this extension remains subject to that
 service's terms; each viewer is responsible for their own account. The software
 is released under the [MIT License](./LICENSE) and provided as is, without
 warranty of any kind.
-
-## Development
-
-Everything below is for people working on the code.
-
-### Layout
-
-| Path | What |
-|---|---|
-| `apps/extension` | WXT + TypeScript extension: content script, service worker, offscreen document, popup, options |
-| `apps/server` | Node + `ws` signaling/sync server. One file. No database, no auth. Ships as a bundled `.mjs` and a container image — see [`Dockerfile`](./apps/server/Dockerfile) |
-| `packages/shared` | Wire protocol types, room reducer, clock/drift policy — imported by both sides |
-| `tools/harness` | Fake player page, self-identifying fake media, observer client, multi-peer launcher, Playwright suite, sabotage matrix |
-
-### Quick start
-
-```sh
-pnpm install
-npx skills install                  # optional: agent skills pinned in skills-lock.json (Chrome extension + modern web guidance)
-pnpm dev:server                     # ws://localhost:8080
-pnpm dev:harness                    # fake player at http://localhost:4173
-pnpm --filter @gj/extension build  # → apps/extension/.output/chrome-mv3
-```
-
-Load `apps/extension/.output/chrome-mv3` as an unpacked extension
-(`chrome://extensions` → Developer mode → Load unpacked). Open the extension's
-options page once to allow the microphone and set the server URL.
-
-To watch the whole thing run without a subscription:
-
-```sh
-pnpm --filter @gj/extension build:test      # test build with the in-page hook
-pnpm --filter @gj/harness launch 3          # 3 headed Chromes in one room on the fake player
-```
-
-### How it stays in sync
-
-- The server is the clock. Each client estimates its offset with 5 ping/pong round
-  trips (lowest RTT wins), re-run every 60 s and whenever a peer connection comes up.
-- The leader heartbeats position every 5 s while playing.
-- Each client compares local position to the room's expected position every 250 ms:
-
-  | drift | action |
-  |---|---|
-  | < 250 ms | nothing |
-  | 250–1500 ms | `playbackRate` nudge, held until < 100 ms |
-  | ≥ 1500 ms | hard seek |
-
-  The nudge scales with drift (`|drift|/4000`, clamped to 3 %–20 %) rather than a
-  fixed 3 %: 3 % cannot correct 800 ms inside the 8 s the tests allow (it would
-  take ~22 s). Below ~200 ms of drift it is a gentle 3 %.
-- Positions are on the episode's own timeline. A copy with extras in front of the
-  episode skips them: the room's `episodeStart` says where the episode starts in a
-  copy of a given length, and a copy that matches it (within 5 s) adds that on the
-  way in and takes it off on the way out, never broadcasting a position before 0.
-- Commands we apply from the room are tagged so their own `play`/`pause`/`seeking`
-  echoes are not rebroadcast (500 ms, per event kind — a genuine user action of a
-  different kind inside that window still propagates).
-
-### Architecture (why five pieces)
-
-The voice call must survive episode changes, so nothing long-lived may live in a
-context that dies on navigation:
-
-| Component | Lifetime | Owns |
-|---|---|---|
-| Content script | dies on every navigation | `<video>` binding, local player events, drift correction, the party sidebar |
-| Service worker | killed at will by Chrome | navigation detection, offscreen keep-alive, storage proxy, the toolbar badge |
-| Offscreen document | survives everything | the `RoomSession` (room state, rejoin logic), the WebSocket, every `RTCPeerConnection`, mic, remote audio playback |
-| Popup | open/close at will | create/join, mic/camera toggles, peer list |
-| Server | long-running | room registry, authoritative sync state, signaling relay |
-
-Two facts discovered while building that shape the code:
-
-- **Provider specifics** (the first adapter, inspected live): the app is
-  `play.hbomax.com`, watch URLs are `/video/watch/<uuid>`, `currentTime` seeks cleanly,
-  and the up-next panel auto-advances 20 s *before* the episode ends unless its
-  viewer presses its own "Cancel autoplay" button. On non-leaders the extension
-  presses that same control on the viewer's behalf and hides the countdown
-  panel, so the room stays on one episode until the leader moves it.
-- **The page can hold more than one player, and one of them can be an ad.** On
-  YouTube `querySelector('video')` is wrong twice over: the home feed's hover
-  preview is a second `.html5-main-video`, and routing away from a watch page
-  leaves the real player in the DOM, video still attached, inside a hidden
-  `ytd-watch-flexy`. Both are excluded by scoping the lookup to a *visible*
-  watch page. Ads are harder, because they play through the very same element:
-  the adapter reports no video at all while the player carries `ad-showing`, so
-  nothing is broadcast and nothing corrected, and the end of the break arrives
-  as an ordinary re-attach — the path that already resyncs a fresh element to
-  the room. No new machinery, and the ad itself is untouched.
-- **Not every player is a `<video>` you can reach.** Google Drive has no `<video>`
-  in the page at all: playback runs in a cross-origin iframe on
-  `youtube.googleapis.com`, reachable only through the YouTube widget
-  postMessage protocol. `lib/providers/yt-embed-media.ts` wraps that protocol in
-  the slice of `HTMLVideoElement` the rest of the code already speaks, so
-  `SyncEngine` needed no changes. Position arrives as a pushed sample every
-  ~266 ms and is dead-reckoned from the local clock in between; measured against
-  the real element that estimate holds to a p95 of ~2 ms (see
-  `tools/harness/src/embed-drift-probe.ts`), because the error comes from tick
-  latency, not tick spacing.
-- **A player can be a frame on a site the extension does not know.** Wix Video
-  is an iframe on `embed.wix.com` inside a site of any domain, so matching the
-  site is impossible and the player script is injected into every matching
-  frame instead. `adapterForDocument` then keeps it only in the top document
-  or, for an embedded provider, in a frame that is itself a watch page, so the
-  other frames of a YouTube or HBO Max page stay empty. Whatever assumed the
-  player was the tab follows from that: the worker's navigation watcher also
-  accepts the player's frame, the popup finds the tab's player among its
-  frames, and a guest's frame that the room sends somewhere a frame cannot go
-  (HBO Max, YouTube) moves the whole tab instead.
-- **Offscreen documents have no `chrome.storage`** (only `chrome.runtime`). Anything
-  the offscreen document persists or reads from storage goes through the service
-  worker (`lib/kv.ts`). The toolbar badge goes the same way for the same
-  reason: `chrome.action` is out of reach there too, so the offscreen document
-  reports a state and the worker paints it (`lib/badge.ts`).
-- **Media cannot cross extension contexts.** Remote audio therefore plays inside the
-  offscreen document (which is what lets the call survive navigation), and remote
-  *video* is re-streamed to the page's tiles over a local loopback
-  `RTCPeerConnection` (`lib/loopback-sender.ts` in the offscreen document,
-  `lib/sidebar/loopback-receiver.ts` in the page).
-
-#### Modules
-
-Entry points are wiring only; behaviour lives in `apps/extension/lib` as classes
-with injected collaborators, so each runs under vitest with fakes
-(`apps/extension/test/fakes.ts` has the `RTCPeerConnection`, `WebSocket` and
-media-track stand-ins):
-
-| Module | Owns | Injected |
-|---|---|---|
-| `room-session.ts` | the `Snapshot`, join/rejoin/error recovery, mesh wiring, media toggles, persistence | client, mesh factory, local/remote media, storage |
-| `room-client.ts` | the WebSocket: reconnect/backoff, clock sync, rejoin | `WebSocket` global |
-| `mesh.ts` + `perfect-peer.ts` | one negotiated `RTCPeerConnection` per peer | a send-signal callback |
-| `loopback-sender.ts` / `sidebar/loopback-receiver.ts` | the two ends of the page loopback | signal callbacks |
-| `sidebar/party-sidebar.ts` | composes `SidebarView` (DOM), `PageLayout` (making room), `LoopbackReceiver`, `EpisodeStartControl` | the port, the provider's video locator |
-| `sidebar/episode-start.ts` | the "copies differ" notice: the proposal, nudges, align and clear | a send callback |
-| `sidebar/settings-panel.ts` + `settings-model.ts` | the gear's room settings popover and what it shows | the sidebar's actions |
-| `room-labels.ts` | how the connection, server and camera state are worded, shared by the popup and the settings panel | — |
-| `copy-tracker.ts` | the length of this page's copy, held across element swaps and ad clips | a report callback |
-| `participants.ts` | the one derivation of "who is in the room", used by the popup and the sidebar | — |
-| `badge.ts` | the toolbar dot: which state the snapshot means, and the circle drawn onto the icon for it | a `chrome.action` slice, a canvas |
-| `player-access.ts` | which services the user granted, the player script registered for exactly those, and the pages open when a grant or revocation lands | `chrome.permissions`, `chrome.scripting`, tab and frame lookups |
-| `setup-state.ts` | the one derivation of "what is still to set up" — microphone, camera, address — shared by the popup's first run and the setup page | — |
-| `sync-engine.ts`, `video-binding.ts`, `ducking.ts`, `up-next.ts` | per-page playback behaviour | a video locator, callbacks |
-
-#### Streaming providers
-
-Provider knowledge is split in two, both keyed by provider id:
-
-- `packages/shared/src/providers.ts` — URL level (hosts, content-id parsing,
-  watch URLs). Imported by the server too, so it is DOM-free. The manifest's
-  optional host permissions, the player script's `matches` and the service
-  worker's navigation filter are all derived from it.
-- `apps/extension/lib/providers/` — DOM level (`PlayerAdapter`: how to find the
-  `<video>`, the up-next panel selectors, and whether the player is `embedded`,
-  a widget other sites put in an iframe, as Wix Video is).
-
-Adding a provider means one entry in each and a rebuild; nothing else knows
-which provider it is running on. Every service is an optional host permission
-the user grants from the popup the first time they watch there, so the
-manifest has no required hosts and no `content_scripts` entry for the player:
-the service worker registers the script at runtime for the granted services
-(`lib/player-access.ts`). Adding a service therefore asks nothing of existing
-users until they use it. An embedded provider's content script runs in
-its widget's frame, and a frame gets a player only when it is itself a watch
-page of an embedded provider (`adapterForDocument`).
-
-### Look and feel
-
-The UI follows the approved design system in `docs/design-system` (Quicksand,
-round and playful, purple for Join and red for Create, dark only); the screens it
-implements are `docs/design-system/screens/index.html`. The toolbar icons live in
-`apps/extension/public`; fonts and the lockup are copied from the design system at
-build time (`wxt.config.ts`). The participant HUD declares Quicksand in the host
-document (a shadow root cannot), which is why `fonts/*` is web-accessible on player
-hosts. Shared page styles live in `apps/extension/lib/ui`.
-
-### Wire protocol
-
-See `packages/shared/src/protocol.ts`. Six frames worth knowing beyond the obvious ones:
-`join` carries `create: true` when the client is creating the room (the server
-rejects collisions with `ROOM_EXISTS` and the client retries with a fresh code),
-`playback` may carry `reason: 'stall'` so the popup can say who buffered, a `media`
-frame carries a peer's self-reported mic/camera state (relayed to the others and
-remembered for late joiners, so tiles can show who is muted), a `duration`
-frame does the same for the length of a peer's copy of the room's episode,
-`episodeStart` sets or clears where the episode starts in the longer copy (room
-state, dropped if it names content the room has left, cleared by a content
-change), and a `leader` frame announces a reassignment after the 60 s grace period a disconnected
-leader is given (a rejoin with the same peer id within it keeps leadership; the
-server evicts the stale socket).
-Peer ids beginning with `obs:` are non-media observers (the harness) and are never
-negotiated with.
-
-### Testing
-
-Everything below runs without any streaming subscription, headless, unattended.
-
-```sh
-pnpm verify              # lint → typecheck → unit → e2e (clean) → e2e sabotage matrix
-pnpm test:unit           # shared reducer/policy + server integration
-pnpm test:e2e            # Playwright: N Chromes with the test build, fake player, fake media
-pnpm test:sabotage       # each flag disables one mechanism; its guarding test must fail, the rest pass
-GJ_SABOTAGE=drift pnpm test:e2e    # one sabotage run by hand
-GJ_REUSE_SERVERS=1 TEST_SERVER_PORT=8080 TEST_PLAYER_PORT=4173 pnpm test:e2e   # against your own dev servers
-```
-
-The Playwright suite spins up the server on `:18080` and the fake player on
-`:14173` (high ports so a dev server on 8080 never collides), launches one
-Chromium per peer with `--use-fake-device-for-media-stream` fixtures — a distinct
-sine per peer (440/554/659/784 Hz) and a distinct solid colour — and asserts
-numbers: pairwise position spread from a headless observer's ground-truth frame
-log, hard-seek and re-attach counters, per-peer peak frequency bin, sampled pixel
-colour, `framesDecoded`, `video.volume`.
-
-`make -C tools/harness fixtures` builds the full fixtures with ffmpeg (labels
-burned into the video, a 5.5-minute test-pattern source for the fake player).
-When they are absent the suite writes minimal in-process equivalents, so ffmpeg is
-optional.
-
-The sabotage rows run concurrently, each on its own ports and Playwright output
-directory (`GJ_SABOTAGE_PARALLEL`, default 4; set 1 on a small machine): about
-3.5 minutes for the matrix on a 14-core laptop, 7 in sequence. Each row's full
-Playwright output is in `tools/harness/test-results/sabotage-logs/<flag>.log`.
-Sabotage runs cap every test at 100 s (the slowest passing one takes ~40 s) and
-skip the failure dump for tests the matrix expects to fail: under `echo-suppress`
-the peers feed each other an unbounded seek storm that jams their pages, and the
-dump's calls would each wait out their own timeouts against it.
-
-#### Sabotage flags
-
-| flag | disables | must fail |
-|---|---|---|
-| `reattach` | `MutationObserver` re-wiring of a recreated `<video>` | element re-attach, quality switch |
-| `drift` | the dead zone / rate band (everything hard-seeks) | small drift |
-| `offscreen` | the offscreen document's persistence across navigation | navigation survival, leader authority (both assert the room survives an episode transition). Service-worker termination is skipped under this flag: it kills the worker right before that navigation, and whether the restarting worker closes the document before the new content script reaches it is a race |
-| `echo-suppress` | tagging of locally-applied remote commands | echo suppression, large drift, small drift, quality switch (the follower's own corrective seeks move the room) |
-| `episode-start` | the skip a longer copy applies from the room's episode start | episode start |
-
-### Diagnostics
-
-There is no analytics or telemetry: five people in one household do not need a
-funnel, and the privacy claim above (the server sees room metadata and signaling
-frames only) is worth more than usage numbers. What there is instead:
-
-- **Server event log.** One `key=value` line per room event on stdout, nothing for
-  playback or signaling frames (stalls are the exception):
-
-  ```
-  2026-09-18T20:01:02.345Z room_created room=RM0001 peer=a3f9 name=Ana rooms=1
-  2026-09-18T20:01:09.010Z peer_joined room=RM0001 peer=7c21 name=Ben peers=2 leader=a3f9
-  2026-09-18T20:14:31.877Z stall room=RM0001 peer=7c21 name=Ben positionMs=812340
-  2026-09-18T20:40:02.101Z peer_left room=RM0001 peer=7c21 name=Ben reason=heartbeat peers=1 leader=a3f9
-  ```
-
-  Events: `listening`, `room_created`, `peer_joined`, `peer_left` (with
-  `reason=leave|close|error|heartbeat`), `peer_evicted`, `leader_changed`,
-  `join_rejected`, `content_set`, `navigate`, `navigate_rejected`, `episode_start`, `stall`,
-  `signal_dropped`, `bad_message`, `room_expired`. `GJ_LOG=0` silences it.
-- **Extension diagnostics.** Each extension realm (service worker, offscreen
-  document, and every player page via the offscreen document) keeps a ring buffer
-  of its last 400 events in `chrome.storage.session`: room frames in and out,
-  socket status, peer connection state changes, mic/camera outcomes, video
-  (re)attaches, every hard seek and rate nudge, and a drift summary every 30 s
-  while playing (`drift 30s: n=118 p50=32ms max=410ms seeks=0 nudges=1`). The
-  buffers survive Chrome restarting the worker or the offscreen document (a
-  `--- restarted ---` marker separates incarnations) and are cleared when Chrome
-  exits. The setup page's **Diagnostics** section shows the current room and peer
-  states and has a **Copy diagnostics** button that assembles all of it, with peer
-  byte counts, into one paste. Nothing is sent anywhere by itself.
-
-## Contributing
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development loop and the
-product decisions a change must preserve, and [CHANGELOG.md](./CHANGELOG.md)
-for what shipped. The project website and the privacy policy live on the
-`docs` branch (a Docusaurus site deployed to GitHub Pages); the policy is
-`src/pages/privacy.md` there.

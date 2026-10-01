@@ -6,9 +6,11 @@ signaling server one participant hosts. pnpm workspace, no UI framework, no
 bundler for the server.
 
 Read this file, then the `AGENTS.md` in the workspace you are about to change.
-`README.md` is the product and the protocol in detail; `CONTRIBUTING.md` is the
-human process. This file does not repeat them — it routes you to the right code
-and tells you what a change has to survive.
+The product and the protocol in detail are on the website, built from the `docs`
+branch: the Guide for behavior, Development for architecture, sync, the wire
+protocol and tests (`git show origin/docs:docs/development/<page>.md` from
+here). `CONTRIBUTING.md` is the human process. This file does not repeat them —
+it routes you to the right code and tells you what a change has to survive.
 
 ## Where work goes
 
@@ -22,9 +24,9 @@ and tells you what a change has to survive.
 | Popup / options / sidebar UI | `apps/extension/entrypoints/*`, `lib/sidebar/`, `lib/ui/` | tokens from `docs/design-system`; screens are `docs/design-system/screens/index.html` |
 | What the server prints | `apps/server/src/index.ts` | `apps/server/test/server.test.ts`; keep the `key=value` line shape |
 
-Don't guess which layer owns a behaviour. The README's "Architecture (why five
-pieces)" and "Modules" tables say who owns what, and the ownership is load-bearing:
-each context has a different lifetime.
+Don't guess which layer owns a behaviour. The tables on the Architecture page
+(`docs/development/architecture.md` on the `docs` branch) say who owns what, and
+the ownership is load-bearing: each context has a different lifetime.
 
 ## Commands
 
@@ -101,3 +103,6 @@ Technical ones, each of which has already cost someone a day:
    and granted on first use, so adding one does not.
 5. Store listing, permissions or data handling changed → update
    `CHROMEWEBSTORE.md` and the privacy page on the `docs` branch.
+6. Changed something the website describes (a module's ownership, a wire
+   frame, a sabotage row, a server event or setting, what a user sees) → update
+   that page on the `docs` branch in a companion pull request.

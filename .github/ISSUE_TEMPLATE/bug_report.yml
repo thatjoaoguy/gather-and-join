@@ -45,7 +45,7 @@ body:
     id: tier
     attributes:
       label: Streaming plan
-      description: Ad-supported plans desync during ad breaks by design; see the README.
+      description: Ad-supported plans desync during ad breaks by design; see https://gatherandjoin.com/docs/watch-together#ad-supported-plans.
       options:
         - Ad-free
         - With ads
