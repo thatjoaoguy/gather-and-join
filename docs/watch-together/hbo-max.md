@@ -19,4 +19,4 @@ handles your sign-in.
   [ad-supported plans](/docs/watch-together#ad-supported-plans).
 - **If your copies of an episode differ in length**, because some regions put
   extras in front of it, the participant rail offers to skip them; see
-  [when copies differ](/docs/watch-together#when-copies-differ).
+  [when copies differ](/docs/watch-together/when-copies-differ).

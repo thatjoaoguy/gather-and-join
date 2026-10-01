@@ -36,22 +36,11 @@ sharing your screen.
 - **The gear** at the top of the participant rail opens the room's settings
   without leaving the player: the room code, your mic and camera, the service
   and episode (with a link there if you are somewhere else), how much a longer
-  copy skips, and the server.
+  copy skips ([when copies differ](/docs/watch-together/when-copies-differ)),
+  and the server.
 - **The toolbar icon** carries a dot while you are in a room: green once you
   are connected, amber while a join or a reconnect is in progress. No dot means
   you are not in a room.
-
-## When copies differ
-
-In some regions a service puts extras in front of an episode, such as a promo
-or a "stay tuned" card, so the same episode runs longer for some people than
-for others. When the copies in the room differ, the participant rail says by
-how much and suggests that as how much the longer copy skips. Anyone can press
-**Align**, and change it later from the gear, typed as minutes and seconds to
-the hundredth.
-
-The longer copy then skips its extras and nobody watches them. The next episode
-starts with no skip, since it may have no extras at all.
 
 ## Services
 
@@ -61,6 +50,9 @@ Each service has its own quirks, so each has a page:
 - [YouTube](/docs/watch-together/youtube)
 - [Google Drive](/docs/watch-together/google-drive)
 - [Wix Video](/docs/watch-together/wix-video)
+
+If the room says its copies of an episode differ, see
+[when copies differ](/docs/watch-together/when-copies-differ).
 
 ## How many people?
 

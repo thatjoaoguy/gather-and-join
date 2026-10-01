@@ -23,6 +23,7 @@ const sidebars: SidebarsConfig = {
         'watch-together/youtube',
         'watch-together/google-drive',
         'watch-together/wix-video',
+        'watch-together/when-copies-differ',
       ],
     },
     'how-it-stays-in-sync',
