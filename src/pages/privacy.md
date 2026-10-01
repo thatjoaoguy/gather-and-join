@@ -5,7 +5,7 @@ description: Every piece of data Gather & Join handles, and who sees it.
 
 # Privacy Policy for Gather & Join
 
-Last updated: 2026-09-29
+Last updated: 2026-09-30
 
 Gather & Join is a browser extension that keeps a group in sync while they
 watch a streaming service, a video file on Google Drive, or a Wix site's videos,
@@ -98,15 +98,18 @@ everyone opens the same video.
 The extension asks Chrome for: access to the sites it supports (to control the
 player and draw the participant rail), tab URLs (to know which episode or file
 is open and to take you to the room's), navigation events (to follow changes of
-episode), scripting (to re-attach to tabs that were already open), an offscreen
-document (to keep the call alive across page changes), and local storage (for
-your settings).
+episode), scripting (to run only on the services you allowed, including tabs
+that were already open when you allowed one), an offscreen document (to keep the
+call alive across page changes), and local storage (for your settings).
 
-The site access is granted per site, and on Drive it is deliberately narrow:
-only the file viewer at `drive.google.com/file/...`. The extension does not run
-on My Drive, Docs, Sheets, or the file picker, and has no access to them. On
-Wix sites it is the video player at `embed.wix.com/video` alone: the extension
-has no access to the site that shows it, whatever its address.
+Site access is granted per service, and only when you allow it: the extension
+has access to no site when it is installed, asks for each service the first time
+you watch there, and lists them on the setup page, where you can take any of
+them back. On Drive it is deliberately narrow: only the file viewer at
+`drive.google.com/file/...`. The extension does not run on My Drive, Docs,
+Sheets, or the file picker, and has no access to them. On Wix sites it is the
+video player at `embed.wix.com/video` alone: the extension has no access to the
+site that shows it, whatever its address.
 
 ## Retention and deletion
 
