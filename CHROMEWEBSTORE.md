@@ -15,8 +15,9 @@ they stay in step with it. Copy from here at submit time. Not shipped in the ZIP
   one it accepted, including rejected submissions. Every release bumps the
   version, so re-upload a new release rather than a rebuilt ZIP; to get one
   after a rejection, merge the fix as a `fix:` commit.
-- Adding a streaming service later adds a host permission, which disables the
-  extension for existing users until they accept it. Announce it.
+- Every streaming service is an optional host permission, requested from the
+  popup the first time someone watches there. Adding one later disables nobody's
+  extension; a new *required* permission would, so announce that if it happens.
 
 ## Store listing
 
@@ -24,7 +25,7 @@ they stay in step with it. Copy from here at submit time. Not shipped in the ZIP
 Gather & Join
 
 **Short description**
-Watch together in sync, with voice and video, on HBO Max, YouTube, Google Drive and Wix Video. Everyone plays from their own account.
+Watch together in sync, with voice and video, on HBO Max, YouTube, Google Drive and Wix. Everyone plays from their own account.
 
 **Detailed description**
 
@@ -37,7 +38,7 @@ Play, pause, and seek are shared: when anyone presses play, everyone plays. If s
 
 How to use it
 1. One person hosts the companion server (included in the project, open source) at an address everyone can reach, and shares that address. Each participant enters it once on the extension's setup page.
-2. Open an episode on HBO Max, a video on YouTube, a video file on Google Drive, or a video on a Wix site, click the extension, and press Create room. Read out the six-character code.
+2. Open an episode on HBO Max, a video on YouTube, a video file on Google Drive, or a video on a Wix site, click the extension, and press Create room. Read out the six-character code. The first time on each service, the extension asks to be allowed there; it has no access to any site until you do.
 3. Everyone else clicks the extension, types the code, and presses Join. If they are on a different episode, one button takes them to the right one.
 4. Use headphones. Echo cancellation is tuned for the call, not for a show playing out of speakers.
 
@@ -91,14 +92,17 @@ standalone element or anything that looks like an official HBO screen.
 |------------|------|---------------|
 | `tabs` | permissions | Read the URL of the player tab to know which episode or file the room is on, open it when a joiner is elsewhere, and switch the user to that tab. |
 | `webNavigation` | permissions | Detect when the user moves between episodes or videos inside HBO Max and YouTube (in-app navigation without a full page load) so the room follows the leader's change, and find the Wix Video widget's frame on a Wix site's page. Filtered to play.hbomax.com, www.youtube.com, drive.google.com and embed.wix.com only. |
-| `scripting` | permissions | Re-inject the player script into player tabs, and Wix Video widget frames, that were already open when the extension was installed or updated, so the user does not have to reload. |
+| `scripting` | permissions | Register the player script for only the services the user has allowed, and inject it into player tabs, and Wix Video widget frames, that were already open when the user allowed one or when the extension was installed or updated, so the user does not have to reload. |
 | `offscreen` | permissions | Keep the voice call and the room connection alive while the user navigates between episodes. Audio playback and peer connections cannot survive page navigation otherwise. |
 | `storage` | permissions | Save the user's display name, the companion server address, and the voice-ducking preference on the device. |
-| `https://play.hbomax.com/*` | host_permissions | One of the two sites the extension operates on: it reads and controls the video player's play/pause/position and draws the participant tiles over it. |
-| `https://www.youtube.com/*` | host_permissions | Same purpose, for YouTube video. Scoped to the whole site rather than to watch pages because YouTube navigates client-side: a script limited to `/watch` would never be injected for a viewer who reached the video from the home feed. It reads the video id already visible in the URL, and the player's play/pause/position. It does not read the user's account, history, subscriptions or recommendations, and it never modifies, blocks or skips advertising. |
-| `https://drive.google.com/file/*` | host_permissions | Same purpose, for Drive-hosted video. Deliberately scoped to the file viewer path: the extension does not run on My Drive, Docs, Sheets, the file picker, or anywhere else in Drive, and it neither reads nor transmits file contents, names, or any other Drive data. The only thing it takes from the page is the file id already visible in the URL. |
-| `https://embed.wix.com/video*` | host_permissions | Same purpose, for the Wix Video widget, which Wix sites of any domain embed as an iframe from this address. Scoped to the widget itself: the extension runs in that frame and nowhere on the site around it, so it needs no permission for any site. It reads the video id already in the widget's URL, and the player's play/pause/position. |
+| `https://play.hbomax.com/*` | optional_host_permissions | One of the sites the extension operates on, requested only when the user allows it on HBO Max: it reads and controls the video player's play/pause/position and draws the participant tiles over it. |
+| `https://www.youtube.com/*` | optional_host_permissions | Same purpose, for YouTube video. Scoped to the whole site rather than to watch pages because YouTube navigates client-side: a script limited to `/watch` would never be injected for a viewer who reached the video from the home feed. It reads the video id already visible in the URL, and the player's play/pause/position. It does not read the user's account, history, subscriptions or recommendations, and it never modifies, blocks or skips advertising. |
+| `https://drive.google.com/file/*` | optional_host_permissions | Same purpose, for Drive-hosted video. Deliberately scoped to the file viewer path: the extension does not run on My Drive, Docs, Sheets, the file picker, or anywhere else in Drive, and it neither reads nor transmits file contents, names, or any other Drive data. The only thing it takes from the page is the file id already visible in the URL. |
+| `https://embed.wix.com/video*` | optional_host_permissions | Same purpose, for the Wix Video widget, which Wix sites of any domain embed as an iframe from this address. Scoped to the widget itself: the extension runs in that frame and nowhere on the site around it, so it needs no permission for any site. It reads the video id already in the widget's URL, and the player's play/pause/position. |
 
+No host permission is granted at install. Each service's is optional and
+requested from the popup, for that service only, the first time the user
+watches there; the setup page lists them with switches to review or revoke.
 The production build contains no localhost or 127.0.0.1 host permissions; those
 exist only in the `GJ_TEST=1` build for the test harness.
 
@@ -129,9 +133,10 @@ the extension's core functionality, and not used for creditworthiness or lending
 
 > This extension needs a running companion server, and for the HBO Max flow a subscription. The Google Drive flow needs neither: any video file in the reviewer's own Drive works. Neither does Wix Video: any video in a Wix site's video widget works, on the site or opened on its own at its embed.wix.com address.
 > Test server: wss://[fill in before submitting; keep it up for the review window]
-> Steps: install (the setup page opens by itself; it is also reachable from the extension) → allow the microphone → paste the server address → Save. Open any episode on play.hbomax.com, or any video file at drive.google.com/file/d/<id>/view → click the extension → Create room. A second browser profile can Join with the six-character code; play/pause on one follows on the other. For the Drive flow the file must be shared with the second profile's Google account.
+> Steps: install (the setup page opens by itself; it is also reachable from the extension) → allow the microphone → paste the server address → Save. Open any episode on play.hbomax.com, any video file at drive.google.com/file/d/<id>/view, or any page with a Wix Video widget → click the extension → Allow on that service (Chrome asks once, for that site only) → Create room. A second browser profile can Join with the six-character code; play/pause on one follows on the other. For the Drive flow the file must be shared with the second profile's Google account.
 > Without a subscription, the same flow can be seen on the demo video: [link]
 > Microphone and camera are requested only when the user clicks Allow on the setup page; they are never recorded and never touch a server.
+> Site access works the same way: no host permission at install, and each service is requested from the popup, for that service only, the first time the user watches there.
 
 Known limitations to expect during review: a fresh install cannot join anything until a
 server address is configured — the setup page opens on install and says which of the three

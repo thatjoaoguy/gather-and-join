@@ -58,7 +58,7 @@
     .toggle.on { background: var(--success-bg); border-color: var(--success); } .toggle.on .ic { color: var(--success); }
     .toggle.off { background: var(--warning-bg); border-color: var(--warning); } .toggle.off .ic { color: var(--warning); }
     .closing { margin: 0 0 10px; }
-    #room-actions button { margin-bottom: 10px; }
+    #room-actions button, #lobby-access button { margin-bottom: 10px; }
     .chip { font-size: 10px; padding: 3px 8px; }
   </style>
 </head>
@@ -66,6 +66,7 @@
   <div id="view-lobby">
     <img class="lockup" src="/brand/lockup.svg" alt="Gather &amp; Join">
     <h3 class="hero">A little closer.<br>Even from afar.</h3>
+    <div id="lobby-access"></div>
     <div class="seg" id="tabs" role="tablist" aria-label="Join or create">
       <button id="tab-join" class="seg-join" role="tab" aria-selected="true" type="button">Join a room</button>
       <button id="tab-create" class="seg-create" role="tab" aria-selected="false" type="button">Create a room</button>

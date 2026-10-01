@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PROVIDERS, PLAYER_HOSTS, PLAYER_MATCHES, providerForHost, providerForContentId, parseContentId, watchUrlFor, trustedWatchUrl, hbomax, gdrive, youtube, wixvideo, harness } from '../src/index.ts';
+import { PROVIDERS, SERVICES, PLAYER_HOSTS, PLAYER_MATCHES, providerForHost, providerForContentId, parseContentId, watchUrlFor, trustedWatchUrl, hbomax, gdrive, youtube, wixvideo, harness } from '../src/index.ts';
 
 describe('provider registry', () => {
   it('has unique ids, hosts and match patterns', () => {
@@ -8,6 +8,10 @@ describe('provider registry', () => {
     expect(new Set(PLAYER_HOSTS).size).toBe(PLAYER_HOSTS.length);
     expect(new Set(PLAYER_MATCHES).size).toBe(PLAYER_MATCHES.length);
     for (const p of PROVIDERS) for (const h of p.hosts) expect(p.matches.some((m) => m.includes(`://${h}/`))).toBe(true);
+  });
+
+  it('offers every provider but the harness as a service to grant', () => {
+    expect(SERVICES).toEqual(PROVIDERS.filter((p) => p !== harness));
   });
 
   it('routes by host and by content id', () => {

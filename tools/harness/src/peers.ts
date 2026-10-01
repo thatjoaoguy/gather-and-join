@@ -95,6 +95,12 @@ export async function launchPeer(index: number, opts: LaunchOptions = {}): Promi
   let [sw] = context.serviceWorkers();
   if (!sw) sw = await context.waitForEvent('serviceworker', { timeout: 15_000 });
   const extensionId = new URL(sw.url()).host;
+  // The player script is registered by the worker at install, not by the manifest; a page opened first would get none.
+  const deadline = Date.now() + 15_000;
+  while (!(await sw.evaluate(() => chrome.scripting.getRegisteredContentScripts({ ids: ['player'] }).then((s) => s.length > 0)))) {
+    if (Date.now() > deadline) throw new Error('the worker never registered the player script');
+    await new Promise((r) => setTimeout(r, 100));
+  }
 
   // Test configuration lives in chrome.storage.local; set it before any player page loads.
   const extPage = await context.newPage();

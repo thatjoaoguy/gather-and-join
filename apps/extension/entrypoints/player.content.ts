@@ -5,8 +5,8 @@
  * a Port relays everything to the offscreen document.
  */
 import { defineContentScript } from 'wxt/utils/define-content-script';
-import { parseContentId, skipFor, trustedWatchUrl, PLAYER_MATCHES } from '@gj/shared';
-import { PORT_PLAYER, readTestConfig, type Diag, type OffscreenToPlayer, type PlayerToOffscreen, type Snapshot } from '../lib/messages';
+import { parseContentId, skipFor, trustedWatchUrl } from '@gj/shared';
+import { PORT_PLAYER, readTestConfig, type Diag, type OffscreenToPlayer, type PlayerToOffscreen, type Snapshot, type ToPlayer } from '../lib/messages';
 import { adapterForDocument, isHarnessHost } from '../lib/providers';
 import { participantsFrom } from '../lib/participants';
 import { VideoBinding } from '../lib/video-binding';
@@ -21,10 +21,10 @@ import { settingsModel } from '../lib/sidebar/settings-model';
 import { installLogSink, log } from '../lib/log';
 
 export default defineContentScript({
-  matches: [...PLAYER_MATCHES],
-  // An embedded player (Wix Video) is only ever a frame; adapterForDocument keeps every other frame out.
-  allFrames: true,
-  runAt: 'document_idle',
+  // Registered by the service worker (lib/player-access.ts) for the services the
+  // user has granted, with its matches and frames. A manifest entry would make
+  // every service an install-time permission.
+  registration: 'runtime',
   async main() {
     const adapter = adapterForDocument(location.href, window === window.top);
     if (!adapter) return;
@@ -207,17 +207,22 @@ export default defineContentScript({
     sidebar.start();
     await port.open();
 
-    // If the extension is reloaded or updated, this copy is orphaned: chrome.runtime.id
-    // goes away and every API call throws. Stand down rather than keep correcting the
-    // video against stale room state while a fresh copy takes over.
-    const watchdog = setInterval(() => {
-      if (chrome.runtime?.id) return;
+    let stood = false;
+    const standDown = () => {
+      if (stood) return;
+      stood = true;
       clearInterval(watchdog);
       engine.stop();
       video.stop();
       upNext.stop();
       sidebar.stop();
       port.close();
-    }, 1000);
+    };
+    // If the extension is reloaded or updated, this copy is orphaned: chrome.runtime.id
+    // goes away and every API call throws. Stand down rather than keep correcting the
+    // video against stale room state while a fresh copy takes over.
+    const watchdog = setInterval(() => { if (!chrome.runtime?.id) standDown(); }, 1000);
+    // Chrome leaves a running script in place when the user revokes the service; the worker says so.
+    chrome.runtime.onMessage.addListener((m: ToPlayer) => { if (m?.target === 'player' && m.type === 'standDown') standDown(); });
   },
 });

@@ -73,7 +73,10 @@ More are planned. Adding one is a provider entry plus an adapter; see
 ## Using it
 
 1. One person opens the episode on a supported service, clicks the extension,
-   **Create room**, and reads out the 6-character code.
+   **Create room**, and reads out the 6-character code. The first time on each
+   service the popup asks to **Allow** it there: the extension holds no access to
+   any site until you do, and asks for that one service only. The setup page
+   lists every service with a switch, to see what you allowed or take it back.
 2. Everyone else clicks the extension, types the code, **Join**. If they are not on
    the room's episode, the popup shows one button that takes them there.
 3. Anyone can play, pause, or seek. Only the room host (the creator; passed to the
@@ -367,6 +370,7 @@ media-track stand-ins):
 | `copy-tracker.ts` | the length of this page's copy, held across element swaps and ad clips | a report callback |
 | `participants.ts` | the one derivation of "who is in the room", used by the popup and the sidebar | — |
 | `badge.ts` | the toolbar dot: which state the snapshot means, and the circle drawn onto the icon for it | a `chrome.action` slice, a canvas |
+| `player-access.ts` | which services the user granted, the player script registered for exactly those, and the pages open when a grant or revocation lands | `chrome.permissions`, `chrome.scripting`, tab and frame lookups |
 | `setup-state.ts` | the one derivation of "what is still to set up" — microphone, camera, address — shared by the popup's first run and the setup page | — |
 | `sync-engine.ts`, `video-binding.ts`, `ducking.ts`, `up-next.ts` | per-page playback behaviour | a video locator, callbacks |
 
@@ -376,14 +380,19 @@ Provider knowledge is split in two, both keyed by provider id:
 
 - `packages/shared/src/providers.ts` — URL level (hosts, content-id parsing,
   watch URLs). Imported by the server too, so it is DOM-free. The manifest's
-  host permissions, the content script's `matches` and the service worker's
-  navigation filter are all derived from it.
+  optional host permissions, the player script's `matches` and the service
+  worker's navigation filter are all derived from it.
 - `apps/extension/lib/providers/` — DOM level (`PlayerAdapter`: how to find the
   `<video>`, the up-next panel selectors, and whether the player is `embedded`,
   a widget other sites put in an iframe, as Wix Video is).
 
 Adding a provider means one entry in each and a rebuild; nothing else knows
-which provider it is running on. An embedded provider's content script runs in
+which provider it is running on. Every service is an optional host permission
+the user grants from the popup the first time they watch there, so the
+manifest has no required hosts and no `content_scripts` entry for the player:
+the service worker registers the script at runtime for the granted services
+(`lib/player-access.ts`). Adding a service therefore asks nothing of existing
+users until they use it. An embedded provider's content script runs in
 its widget's frame, and a frame gets a player only when it is itself a watch
 page of an embedded provider (`adapterForDocument`).
 

@@ -8,8 +8,9 @@
  * extension's PlayerAdapter for the same provider id.
  *
  * Adding a provider: add an entry to PROVIDERS here and a PlayerAdapter in
- * `apps/extension/lib/providers/`. Manifest matches and host permissions are
- * derived from PROVIDERS at build time, so the extension still needs a rebuild.
+ * `apps/extension/lib/providers/`. Optional host permissions and the content
+ * script's matches are derived from PROVIDERS, so the extension still needs a
+ * rebuild.
  */
 export type ContentProvider = {
   readonly id: string;
@@ -17,7 +18,7 @@ export type ContentProvider = {
   readonly name: string;
   /** Exact hostnames of the player. Drives webNavigation filters and adapter lookup. */
   readonly hosts: readonly string[];
-  /** Manifest match patterns for the content script and host permissions. */
+  /** Match patterns for the content script, and the host permission a user grants to watch here. */
   readonly matches: readonly string[];
   /** Content id for one of this provider's page URLs, or null if it is not a watch page. */
   parseContentId(url: URL): string | null;
@@ -215,7 +216,10 @@ export const harness: ContentProvider = {
 /** Every provider, in lookup order. */
 export const PROVIDERS: readonly ContentProvider[] = [hbomax, gdrive, youtube, wixvideo, harness];
 
-/** All manifest match patterns, for the content script and host permissions. */
+/** The providers a user can watch on, each an optional host permission. The harness is not one. */
+export const SERVICES: readonly ContentProvider[] = PROVIDERS.filter((p) => p !== harness);
+
+/** All player match patterns, harness included. */
 export const PLAYER_MATCHES: readonly string[] = PROVIDERS.flatMap((p) => p.matches);
 
 /** All player hostnames, for webNavigation filters. */

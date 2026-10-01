@@ -1,16 +1,22 @@
 import { defineConfig } from 'wxt';
 import { resolve } from 'node:path';
-import { PLAYER_MATCHES, harness } from '@gj/shared';
+import { SERVICES, harness } from '@gj/shared';
 
 // GJ_TEST=1 enables the in-page test hook + sabotage flags. It is a build-time
 // gate so neither can ship in a normal build.
 const TEST_BUILD = process.env.GJ_TEST === '1';
 
-// One pattern per provider in packages/shared/src/providers.ts. The harness
-// (localhost fake player) is a provider too, but only test builds may match it:
-// a production manifest with localhost hosts reads as an unexplained permission.
-const isHarness = (m: string) => harness.matches.includes(m);
-const MATCHES = TEST_BUILD ? [...PLAYER_MATCHES] : PLAYER_MATCHES.filter((m) => !isHarness(m));
+// Every streaming service is an optional host permission, granted by the user
+// the first time they watch there (lib/player-access.ts registers the player
+// script for the granted ones). Nothing is asked at install, and adding a
+// service does not disable the extension for everyone until they accept it.
+const SERVICE_MATCHES = SERVICES.flatMap((p) => p.matches);
+// The harness (localhost fake player) is a provider too, but only test builds
+// may match it, and there it is required: an unpacked build under Playwright has
+// nobody to click through a permission prompt. A production manifest with
+// localhost hosts reads as an unexplained permission.
+const REQUIRED_MATCHES = TEST_BUILD ? [...harness.matches] : [];
+const MATCHES = [...SERVICE_MATCHES, ...REQUIRED_MATCHES];
 
 // web_accessible_resources match patterns must have a path of exactly `/*`:
 // Chrome rejects anything narrower with "Invalid match pattern", unlike
@@ -36,18 +42,18 @@ export default defineConfig({
   filterEntrypoints: TEST_BUILD ? undefined : ['background', 'player', 'offscreen', 'popup', 'options'],
   manifest: {
     name: TEST_BUILD ? 'Gather & Join (test build)' : 'Gather & Join',
-    description: 'Watch together in sync, with voice and video, on HBO Max, YouTube, Google Drive and Wix Video. Everyone plays from their own account.',
+    description: 'Watch together in sync, with voice and video, on HBO Max, YouTube, Google Drive and Wix. Everyone plays from their own account.',
     permissions: ['offscreen', 'storage', 'tabs', 'webNavigation', 'scripting'],
-    host_permissions: MATCHES,
+    ...(REQUIRED_MATCHES.length ? { host_permissions: REQUIRED_MATCHES } : {}),
+    optional_host_permissions: SERVICE_MATCHES,
     // The participant HUD declares Quicksand in the host document (a shadow root cannot), so the font files must be fetchable from player pages.
     web_accessible_resources: [{ resources: ['fonts/*'], matches: WAR_MATCHES }],
   },
   hooks: {
-    // The content script declares the shared PLAYER_MATCHES; strip the harness from production.
     'build:manifestGenerated': (_wxt, manifest) => {
-      if (!TEST_BUILD) {
-        for (const cs of manifest.content_scripts ?? []) cs.matches = cs.matches?.filter((m) => !isHarness(m));
-      }
+      // The Web Store rejects a description over 132 characters at upload; Chrome itself loads it fine.
+      if ((manifest.description?.length ?? 0) > 132)
+        throw new Error(`manifest description is ${manifest.description!.length} characters; the Chrome Web Store allows 132`);
       // Chrome rejects a web_accessible_resources pattern whose path is
       // narrower than `/*` ("Invalid value for 'web_accessible_resources[0]'.
       // Invalid match pattern."), and refuses to load the extension at all.
