@@ -25,6 +25,6 @@ You only do this once, unless the host's address changes.
 
 ## Building it yourself
 
-The repository builds the extension with one command; the README's Quick start
-has the details. Load the built folder unpacked from `chrome://extensions` with
+The repository builds the extension with one command; the
+[quick start](/docs/development#quick-start) has the details. Load the built folder unpacked from `chrome://extensions` with
 Developer mode on.
