@@ -14,9 +14,18 @@ const sidebars: SidebarsConfig = {
         'host-on-your-network',
       ],
     },
-    'watch-together',
+    {
+      type: 'category',
+      label: 'Watch together',
+      link: {type: 'doc', id: 'watch-together'},
+      items: [
+        'watch-together/hbo-max',
+        'watch-together/youtube',
+        'watch-together/google-drive',
+        'watch-together/wix-video',
+      ],
+    },
     'how-it-stays-in-sync',
-    'troubleshooting',
     {
       type: 'category',
       label: 'Development',
@@ -28,6 +37,7 @@ const sidebars: SidebarsConfig = {
         'development/diagnostics',
       ],
     },
+    'troubleshooting',
   ],
 };
 
