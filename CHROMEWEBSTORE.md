@@ -139,7 +139,8 @@ the extension's core functionality, and not used for creditworthiness or lending
 ## Notes for reviewers
 
 > This extension needs a running companion server, and for the HBO Max flow a subscription. The Google Drive flow needs neither: any video file in the reviewer's own Drive works. Neither does Wix Video: any video in a Wix site's video widget works, on the site or opened on its own at its embed.wix.com address.
-> Test server: wss://[fill in before submitting; keep it up for the review window]
+> Test server: wss://[fill in at submit time, in the dashboard only; this file is public, and an address committed here becomes everyone's server]
+> It runs on a free Render instance, which sleeps after 15 minutes with nobody connected. **If it has been idle, the first connection takes about 12 seconds while it wakes** — this is Render waking the container, not the extension failing. Opening the same address with `https://` and `/health` on the end in a tab first wakes it and returns `{"status":"ok",...}`; after that everything is immediate. It cannot fall asleep mid-session, because a connected extension pings once a minute.
 > Steps: install (the setup page opens by itself; it is also reachable from the extension) → allow the microphone → paste the server address → Save. Open any episode on play.hbomax.com, any video file at drive.google.com/file/d/<id>/view, or any page with a Wix Video widget → click the extension → Allow on that service (Chrome asks once, for that site only) → Create room. A second browser profile can Join with the six-character code; play/pause on one follows on the other. For the Drive flow the file must be shared with the second profile's Google account.
 > Without a subscription, the same flow can be seen on the demo video: [link]
 > Microphone and camera are requested only when the user clicks Allow on the setup page; they are never recorded and never touch a server.
