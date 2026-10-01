@@ -63,3 +63,5 @@ h1, h2, h3 { letter-spacing: -.025em; }
 @media (prefers-reduced-motion: reduce) {
   .button, .button:hover, .button:active { transition: none; transform: none; }
 }
+/* An image given width and height keeps its proportions when the column is narrower. */
+.markdown img { height: auto; }
