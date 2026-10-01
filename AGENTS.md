@@ -106,3 +106,8 @@ Technical ones, each of which has already cost someone a day:
 6. Changed something the website describes (a module's ownership, a wire
    frame, a sabotage row, a server event or setting, what a user sees) → update
    that page on the `docs` branch in a companion pull request.
+7. Every website page, the privacy policy included, has a Brazilian Portuguese
+   copy under `i18n/pt-BR/` on the `docs` branch. Change it in the same pull
+   request as the English: the build fails on a missing page or anchor, but not
+   on a stale translation. The extension's own labels stay in English there,
+   and translated headings keep the English anchor as `{/* #slug */}`.
