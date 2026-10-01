@@ -138,6 +138,17 @@ room code land on different ones and never see each other. Nothing reports this
 — it simply looks as though your friends never arrived. Turn off anything that
 adds copies automatically.
 
+None of the server's settings need changing, but these are the ones a host can
+set as environment variables:
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `PORT` | `8080` | The port it listens on |
+| `ROOM_TTL_MS` | 6 hours | How long a room is kept after the last person leaves |
+| `LEADER_GRACE_MS` | 60 seconds | How long a disconnected leader keeps the lead, so a network blip does not hand the room to someone else |
+| `HEARTBEAT_MS` | 30 seconds | How often it checks each connection is still alive; one that stops answering is dropped |
+| `GJ_LOG` | on | Set to `0` to silence the event log |
+
 ## About Render
 
 Render is an unaffiliated third-party company. Gather & Join is not associated

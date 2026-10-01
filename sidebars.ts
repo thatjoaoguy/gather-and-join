@@ -17,6 +17,17 @@ const sidebars: SidebarsConfig = {
     'watch-together',
     'how-it-stays-in-sync',
     'troubleshooting',
+    {
+      type: 'category',
+      label: 'Development',
+      link: {type: 'doc', id: 'development/index'},
+      items: [
+        'development/architecture',
+        'development/sync-and-protocol',
+        'development/testing',
+        'development/diagnostics',
+      ],
+    },
   ],
 };
 

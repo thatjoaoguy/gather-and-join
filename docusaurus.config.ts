@@ -57,6 +57,7 @@ const config: Config = {
           {label: 'Watch together', to: '/docs/watch-together'},
         ]},
         {title: 'Project', items: [
+          {label: 'Development', to: '/docs/development'},
           {label: 'Privacy policy', to: '/privacy'},
           {label: 'Changelog', href: `https://github.com/${OWNER}/${REPO}/blob/main/CHANGELOG.md`},
           {label: 'Report a bug', href: `https://github.com/${OWNER}/${REPO}/issues/new/choose`},
