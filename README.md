@@ -14,6 +14,7 @@
 
 <p align="center">
   <a href="https://github.com/thatjoaoguy/gather-and-join/actions/workflows/release.yml"><img src="https://github.com/thatjoaoguy/gather-and-join/actions/workflows/release.yml/badge.svg" alt="Release"></a>
+  <a href="https://github.com/thatjoaoguy/gather-and-join/releases/latest"><img src="https://img.shields.io/github/v/release/thatjoaoguy/gather-and-join?sort=semver&label=version&color=b9a0ff" alt="Latest version"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-b9a0ff" alt="License: MIT"></a>
 </p>
 
