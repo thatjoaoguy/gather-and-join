@@ -12,6 +12,15 @@ One person opens an episode or a video, clicks the extension, and presses
 extension, types the code, and presses **Join room**. If they are on a different
 episode, the popup offers one button that takes them to the right one.
 
+The first time you use the extension on a service, the popup asks you to
+**Allow** it there. The extension has access to no site until you do, and it
+asks for that one service only. The setup page lists every service with a
+switch, so you can see what you allowed and take it back.
+
+Before you join, the popup shows whether your microphone, camera and server
+are ready. The eye next to the server address hides it, for when you are
+sharing your screen.
+
 ## During the show
 
 - **Anyone can play, pause, or seek.** Everyone follows.
@@ -24,6 +33,25 @@ episode, the popup offers one button that takes them to the right one.
 - **Mic** is on when you join. **Camera** is off until you turn it on.
 - **Voice ducking** lowers the show while you speak. It is off by default and
   lives on the setup page; with speakers, the show itself keeps triggering it.
+- **The gear** at the top of the participant rail opens the room's settings
+  without leaving the player: the room code, your mic and camera, the service
+  and episode (with a link there if you are somewhere else), how much a longer
+  copy skips, and the server.
+- **The toolbar icon** carries a dot while you are in a room: green once you
+  are connected, amber while a join or a reconnect is in progress. No dot means
+  you are not in a room.
+
+## When copies differ
+
+In some regions a service puts extras in front of an episode, such as a promo
+or a "stay tuned" card, so the same episode runs longer for some people than
+for others. When the copies in the room differ, the participant rail says by
+how much and suggests that as how much the longer copy skips. Anyone can press
+**Align**, and change it later from the gear, typed as minutes and seconds to
+the hundredth.
+
+The longer copy then skips its extras and nobody watches them. The next episode
+starts with no skip, since it may have no extras at all.
 
 ## How many people?
 
@@ -51,6 +79,21 @@ roughly 0.6 Mbps each way.
 These figures come from a test of up to 10 people with every camera on and
 no network limits, so they show what the call asks for, not what a slow
 connection can deliver.
+
+## YouTube
+
+- **Each viewer's ads are their own.** While an ad plays for someone, they
+  neither drive the room nor get corrected by it, and they rejoin the room's
+  position when the ad ends. Ads are never skipped, hidden or counted:
+  different people simply get different ones, and the room waits for nobody.
+- **Short links work.** A `youtu.be` or `/live/` link counts as the same video
+  as its `/watch?v=` form.
+- **Shorts are not supported.** The Shorts feed scrolls on to the next video by
+  itself, which would take a viewer away from what the room is watching.
+- **The related videos on the right are slightly cut off** while the
+  participant rail is open. YouTube sizes that column from the whole window, and
+  an extension cannot change that without breaking on YouTube's next update, so
+  it is left alone.
 
 ## Google Drive
 
