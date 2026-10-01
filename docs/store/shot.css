@@ -1,0 +1,156 @@
+/* Chrome Web Store screenshots: 1280x800 compositions built from the design
+   system's own surfaces. Additive to system.css and screens.css; no approved
+   token is overridden. Rendered by render.mjs; not shipped in the ZIP. */
+
+html, body { width: 1280px; height: 800px; margin: 0; overflow: hidden; }
+
+.shot {
+  position: relative;
+  width: 1280px;
+  height: 800px;
+  padding: 44px 48px 46px;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(1100px 600px at 12% -10%, #2a1f3a 0, transparent 62%),
+    radial-gradient(900px 520px at 105% 108%, #33202c 0, transparent 58%),
+    var(--bg);
+}
+
+/* Headline block */
+.shot-head { flex: none; margin-bottom: 24px; max-width: 1100px; }
+.shot-head h1 {
+  font-size: 37px;
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  line-height: 1.12;
+  margin: 0 0 8px;
+}
+.shot-head h1 em { font-style: normal; color: var(--purple); }
+.shot-head h1 span { color: var(--red); }
+.shot-head p { margin: 0; font-size: 16px; color: var(--muted); max-width: 1000px; }
+
+/* Stage: the player panel, with the popup floating over its right edge */
+.stage { position: relative; flex: 1; min-height: 0; }
+
+.stage .player {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  border-radius: var(--r-panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 32px 70px -28px #000000d9;
+}
+
+/* Photographic frame replaces the placeholder gradient and its decorative arcs */
+.film.photo { background: #000; }
+.film.photo::before, .film.photo::after { display: none; }
+.film.photo > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.film.photo .fsbar { z-index: 2; }
+
+/* Player transport bar, so the frame reads as a video that is actually playing */
+.transport {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 62px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  color: #e8e2f2;
+  font-size: 12px;
+  font-weight: 600;
+  background: linear-gradient(to top, #000000e6, #00000080 46%, transparent);
+}
+.transport .glyph { flex: none; font-size: 15px; line-height: 1; }
+/* The elapsed time sits left of the bar, so the bar can run the full width of
+   the frame and simply pass behind the popup the way a real overlay would. */
+.transport .time { flex: none; }
+.transport .bar { flex: 1; height: 4px; border-radius: 2px; background: #ffffff33; position: relative; }
+.transport .bar b { position: absolute; inset: 0 auto 0 0; width: 41%; border-radius: 2px; background: var(--purple); }
+.transport .bar i {
+  position: absolute; top: 50%; left: 41%;
+  width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px;
+  border-radius: 50%; background: var(--purple);
+}
+
+/* Photographic webcam tiles in the participant rail */
+.tile.video.photo > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.tile.video.photo.mirrored > img { transform: scaleX(-1); }
+/* The design system annotates mirrored tiles with a caption; not wanted here. */
+.tile.mirrored::after { display: none; }
+.tile.video .name { z-index: 2; }
+.tile.video .badge-muted { z-index: 2; }
+
+/* The popup, floating as it appears when anchored under the toolbar. It is
+   inset past the rail's width so the participant tiles stay visible beside it;
+   the tiles are the feature this shot exists to show. */
+.stage .frame {
+  position: absolute;
+  top: -22px;
+  right: 274px;
+  width: 360px;
+  z-index: 5;
+}
+/* A popup carrying a callout runs taller than the frame; lift it so the whole
+   surface stays on the canvas rather than being cropped by the bottom edge. */
+.stage .frame.tall { top: -74px; }
+.stage .frame .popup {
+  box-shadow: 0 36px 80px -22px #000000f2, 0 0 0 1px #ffffff0f;
+}
+
+/* Setup shot: the options tab centred on the canvas. The page is a full 720px
+   tab and runs taller than 800px at its natural rhythm, so the vertical spacing
+   is compressed here to fit the frame. Nothing is removed and no type size
+   changes; only the gaps close up. */
+.shot.setup-shot { padding-top: 36px; }
+.shot.setup-shot .shot-head { margin-bottom: 18px; }
+.shot.setup-shot .stage { display: grid; place-items: start center; }
+.shot.setup-shot .setup-frame {
+  width: 720px;
+  box-shadow: 0 32px 70px -28px #000000d9;
+  border-radius: var(--r-panel);
+}
+.shot.setup-shot .setup-frame .card { padding: 26px 32px 24px; }
+.shot.setup-shot .setup .brand-lockup-small { margin-bottom: 2px; }
+.shot.setup-shot .setup h3 { margin: 14px 0 6px; }
+.shot.setup-shot .setup > .muted { margin-bottom: 4px; }
+.shot.setup-shot .setting { padding: 13px 0; }
+.shot.setup-shot .setup details { padding: 10px 0 0; }
+.shot.setup-shot .setup summary { padding: 6px 0; min-height: 0; }
+.shot.setup-shot .setup details > p { margin-bottom: 12px; }
+.shot.setup-shot .setup label { margin-top: 10px; }
+.shot.setup-shot .setup .save { margin-top: 10px; }
+
+/* Caption strip along the foot of the frame */
+.shot-foot {
+  flex: none;
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.shot-foot img { width: 150px; height: auto; display: block; }
+.shot-foot span::before { content: '·'; margin-right: 14px; color: var(--line); }
+
+/* Website copy (render.mjs `stageOnly`): the stage alone on a transparent
+   background, so the shadows fall on the page itself. The body stops clipping
+   at 800px so the shadows can paint into the taller viewport. */
+.stage-only body { height: auto; overflow: visible; background: none; }
+.stage-only .shot { background: none; }
+.stage-only .shot-head, .stage-only .shot-foot { visibility: hidden; }

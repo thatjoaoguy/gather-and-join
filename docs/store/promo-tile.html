@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Gather &amp; Join · Small promo tile</title>
+<link rel="stylesheet" href="../design-system/system.css">
+<style>
+html, body { width: 440px; height: 280px; margin: 0; overflow: hidden; }
+.tile-promo {
+  width: 440px;
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 0 34px;
+  text-align: center;
+  background:
+    radial-gradient(360px 220px at 18% -18%, #2f2342 0, transparent 66%),
+    radial-gradient(320px 200px at 112% 118%, #3a2330 0, transparent 60%),
+    #101014;
+}
+.tile-promo img { width: 268px; height: auto; display: block; }
+.tile-promo p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.tile-promo p em { font-style: normal; color: var(--purple); }
+.tile-promo p span { color: var(--red); }
+</style>
+</head>
+<body>
+<div class="tile-promo">
+<img src="../design-system/brand/lockup.svg" alt="Gather &amp; Join">
+<p>Watch in <em>sync</em>, talk in <span>real time</span>.<br>Everyone on their own subscription.</p>
+</div>
+</body>
+</html>

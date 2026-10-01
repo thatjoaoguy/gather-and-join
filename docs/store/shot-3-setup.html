@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Gather &amp; Join · Store screenshot 3</title>
+<link rel="stylesheet" href="../design-system/system.css">
+<link rel="stylesheet" href="../design-system/screens/screens.css">
+<link rel="stylesheet" href="shot.css">
+</head>
+<body>
+<!--#icons-->
+
+<div class="shot setup-shot">
+
+<div class="shot-head">
+<h1>Set it up <em>once</em>.</h1>
+<p>Two permissions, one optional volume setting, and the address of the server your group hosts.</p>
+</div>
+
+<div class="stage">
+<div class="setup-frame"><div class="card setup">
+<img class="brand-lockup-small" src="../design-system/brand/lockup.svg" alt="Gather &amp; Join">
+<h3>A few things before movie night.</h3>
+<p class="muted">Your camera is optional. Headphones help everyone hear the conversation clearly.</p>
+<div class="setting"><div><strong>Microphone</strong><p>Let your friends hear you. Chrome asks once; the room reuses your answer.</p></div><span class="allowed"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span>Allowed</span></div>
+<div class="setting"><div><strong>Camera</strong><p>Say hello face to face, if you like. Off until you turn it on in a room.</p></div><span class="allowed"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span>Allowed</span></div>
+<div class="setting switch-row"><div><strong>Lower the show’s volume while I speak</strong><p>Off by default. With speakers, the show’s own audio can trigger this too.</p></div><button class="switch" role="switch" aria-checked="true" type="button" aria-label="Lower the show’s volume while I speak"><span class="thumb"></span></button></div>
+<details open>
+<summary>Connection settings</summary>
+<p>Use the connection address shared by the person hosting your server.</p>
+<form novalidate>
+<label for="s1-url">Connection address</label>
+<div class="field-wrap"><input type="text" id="s1-url" value="wss://watch.example.com" spellcheck="false" autocomplete="off" aria-describedby="s1-status"><button class="iconbtn infield" type="button" aria-pressed="true" aria-label="Hide address"><svg aria-hidden="true"><use href="#i-eye"/></svg></button></div>
+<p id="s1-status" class="field-status ok" role="status"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-ok"/></svg></span>Reachable · answered just now</p>
+<button class="save" type="submit">Save address</button>
+</form>
+</details>
+</div></div>
+</div>
+
+
+</div>
+</body>
+</html>
