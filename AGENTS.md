@@ -96,7 +96,8 @@ Technical ones, each of which has already cost someone a day:
    a sabotage row now needs to expect it (`tools/harness/src/sabotage-matrix.ts`).
 3. One change per commit, Conventional Commits subject (`feat:`, `fix:`,
    `chore:`…) — it decides the release and becomes the changelog entry.
-4. A new host permission disables the extension for existing users until they
-   accept it: say so in the commit subject.
+4. A new required permission disables the extension for existing users until
+   they accept it: say so in the commit subject. A service's host is optional
+   and granted on first use, so adding one does not.
 5. Store listing, permissions or data handling changed → update
    `CHROMEWEBSTORE.md` and the privacy page on the `docs` branch.

@@ -4,6 +4,7 @@
  * Opened with ?grant=1 or ?grant=camera it prompts at once, then stays open on
  * whatever is still outstanding: granting one permission is not being set up.
  */
+import { SERVICES } from '@gj/shared';
 import { DEFAULT_SERVER_URL, HOST_GUIDE_URL } from '../../lib/constants';
 import type { PeerStats, ServerStatus, Snapshot } from '../../lib/messages';
 import { nextStep, setupComplete, setupSteps, setupSummary, type DevicePermission, type SetupStep } from '../../lib/setup-state';
@@ -111,6 +112,30 @@ ducking.onclick = async () => {
   await chrome.storage.local.set({ ducking: enabled });
   await toOffscreen({ type: 'setDucking', enabled });
 };
+
+// ---- streaming services -----------------------------------------------------------------
+
+// One switch per service, each its own optional host permission. A grant from the
+// popup or chrome://extensions lands here too.
+const servicesList = $('services');
+servicesList.innerHTML = SERVICES.map((p) => `<li><span id="svc-${p.id}">${p.name}</span><button class="switch" id="svc-${p.id}-switch" role="switch" aria-checked="false" type="button" aria-labelledby="svc-${p.id}"><span class="thumb"></span></button></li>`).join('');
+async function showServices() {
+  for (const p of SERVICES) {
+    const on = await chrome.permissions.contains({ origins: [...p.matches] });
+    $(`svc-${p.id}-switch`).setAttribute('aria-checked', String(on));
+  }
+}
+for (const p of SERVICES) {
+  $(`svc-${p.id}-switch`).onclick = (e) => {
+    const origins = [...p.matches];
+    // request() needs the click's user gesture, so it goes first, before anything awaits.
+    const on = (e.currentTarget as HTMLElement).getAttribute('aria-checked') === 'true';
+    void (on ? chrome.permissions.remove({ origins }) : chrome.permissions.request({ origins })).catch(() => {}).then(showServices);
+  };
+}
+chrome.permissions.onAdded.addListener(() => { void showServices(); });
+chrome.permissions.onRemoved.addListener(() => { void showServices(); });
+void showServices();
 
 // ---- connection address -----------------------------------------------------------------
 

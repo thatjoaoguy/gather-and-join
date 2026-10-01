@@ -7,7 +7,7 @@ split exists so the voice call survives an episode change. Root `AGENTS.md` firs
 
 ```
 entrypoints/        wiring only — no behaviour lives here
-  background.ts       service worker: offscreen keep-alive, navigation detection, storage proxy, toolbar badge
+  background.ts       service worker: offscreen keep-alive, navigation detection, storage proxy, toolbar badge, player script registration
   offscreen/          the long-lived context: RoomSession, WebSocket, every RTCPeerConnection, mic, remote audio
   player.content.ts   dies on every navigation: <video> binding, drift correction, the sidebar
   popup/ options/     UI, built fresh on every open
@@ -49,10 +49,17 @@ test/               vitest; fakes.ts has the RTCPeerConnection / WebSocket / tra
 One entry in `packages/shared/src/providers.ts` (URL-level, DOM-free) and one
 adapter in `lib/providers/` implementing `PlayerAdapter` (find the `<video>`, the
 up-next panel). Register the adapter in `lib/providers/index.ts`. Nothing else in
-the extension should learn which provider it is on — manifest matches, the content
-script's `matches` and the worker's navigation filter are all derived. A player
+the extension should learn which provider it is on — the optional host permissions,
+the player script's matches and the worker's navigation filter are all derived. A player
 that other sites embed as an iframe (Wix Video) sets `embedded` on its adapter;
 the content script then runs in that frame, and never in anyone else's.
+
+Every service is an **optional** host permission, so the player script has no
+manifest entry: `lib/player-access.ts` registers it at runtime for the granted
+services, injects it into open pages on a grant, and tells them to stand down on
+a revocation. Test builds keep localhost as a required host, since nobody can
+click through a prompt under Playwright; the harness waits for that registration
+before it opens a page.
 
 ## Verifying
 

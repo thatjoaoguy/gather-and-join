@@ -29,6 +29,8 @@
     @media (max-width: 600px) { .card { padding: 20px; } .setting { gap: 12px; flex-wrap: wrap; } }
     pre.diag { background: var(--field); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 8px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); max-height: 360px; overflow: auto; white-space: pre-wrap; word-break: break-all; }
     details.preview { padding: 6px 0 0; } details.preview summary { font-weight: 600; font-size: 13px; }
+    .services { list-style: none; margin: 0 0 12px; padding: 0; }
+    .services li { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 8px 0; font-weight: 600; }
     .diag-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
   </style>
 </head>
@@ -61,6 +63,10 @@
         <div class="form-actions"><button class="save" id="save" type="submit">Save address</button><button id="server-retry" type="button" hidden>Try again</button></div>
         <p id="save-status" class="status" role="status"></p>
       </form>
+    </div>
+    <div class="setting-block" id="services-block">
+      <div class="setting"><div><strong>Where it works</strong><p>Gather &amp; Join runs only on the services you allow here. Chrome asks once for each, and turning one off takes it back.</p></div></div>
+      <ul class="services" id="services" aria-label="Streaming services"></ul>
     </div>
     <div class="setting">
       <div><strong id="ducking-label">Lower the show’s volume while I speak</strong><p>Off by default. With speakers, the show’s own audio can trigger this too.</p></div>

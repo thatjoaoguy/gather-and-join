@@ -2,15 +2,17 @@
  * Service worker. Holds no state that matters — Chrome kills it at will.
  * Responsibilities: keep the offscreen document alive, detect navigations in
  * player tabs (both history-state and full loads), relay them, open pages on
- * behalf of contexts that cannot (offscreen, popup), and paint the toolbar
- * badge, which is the one chrome.action the offscreen document cannot reach.
+ * behalf of contexts that cannot (offscreen, popup), paint the toolbar badge,
+ * which is the one chrome.action the offscreen document cannot reach, and keep
+ * the player script registered for the services the user has granted.
  */
 import { defineBackground } from 'wxt/utils/define-background';
-import { parseContentId, PLAYER_HOSTS } from '@gj/shared';
+import { parseContentId, PLAYER_HOSTS, PROVIDERS, SERVICES } from '@gj/shared';
 import { applyBadge, badgeStateFrom, type BadgeState, type IconDeps } from '../lib/badge';
 import { readTestConfig, type Snapshot, type ToBackground, type ToOffscreen } from '../lib/messages';
 import { log } from '../lib/log';
 import { adapterForDocument, playerUrlOf } from '../lib/providers';
+import { PlayerAccess } from '../lib/player-access';
 
 const OFFSCREEN_URL = 'offscreen.html';
 let creating: Promise<void> | null = null;
@@ -90,6 +92,16 @@ async function activePlayerUrl(): Promise<string | null> {
   return playerUrlOf(tab.url, frames.map((f) => f.url));
 }
 
+// The harness is a required host of test builds, so it goes through the same registration as a granted service.
+const access = new PlayerAccess(__GJ_TEST__ ? PROVIDERS : SERVICES, {
+  permissions: chrome.permissions,
+  scripting: chrome.scripting,
+  tabIds: async () => (await chrome.tabs.query({})).flatMap((t) => (t.id === undefined ? [] : [t.id])),
+  frames: async (tabId) => (await chrome.webNavigation.getAllFrames({ tabId })) ?? [],
+  sendToFrame: (tabId, frameId, msg) => chrome.tabs.sendMessage(tabId, msg, { frameId }),
+  log,
+});
+
 export default defineBackground(() => {
   chrome.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
     if (!msg || msg.target !== 'background') return;
@@ -135,6 +147,8 @@ export default defineBackground(() => {
   const onNav = async (d: { tabId: number; url: string; frameId: number }) => {
     // An embedded player's frame is the player; any other frame is not.
     if (d.frameId !== 0 && !adapterForDocument(d.url, false)) return;
+    // The filter is static, but a service the user has not granted has no player script to follow it.
+    if (!(await access.grantedFor(d.url))) return;
     log('background', 'navigation', d.url);
     if (__GJ_TEST__ && (await readTestConfig()).sabotage === 'offscreen') {
       // Sabotage: pretend long-lived state lived in a context that dies on navigation.
@@ -154,36 +168,24 @@ export default defineBackground(() => {
   // make sure it exists so the connection has somewhere to land.
   chrome.runtime.onConnect.addListener(() => { void ensureOffscreen(); });
   // refreshBadge goes through the offscreen document, so these two still bring it up.
-  chrome.runtime.onStartup.addListener(() => { void refreshBadge(); });
+  chrome.runtime.onStartup.addListener(() => { void refreshBadge(); void access.sync(); });
   chrome.runtime.onInstalled.addListener(({ reason }) => {
     void refreshBadge();
     // Chrome does not re-inject content scripts into tabs that were open before an
     // install/update/reload; the copy in those pages is orphaned. Inject fresh ones.
-    void reinjectPlayerScripts();
+    void access.sync().then(async () => access.inject(await access.granted()));
     // A fresh profile has no microphone, no camera and no server address, so the popup
     // has nothing to offer but setup. Test builds skip it: the harness loads unpacked,
     // and an extra tab per peer is noise.
     if (!__GJ_TEST__ && reason === 'install') void chrome.tabs.create({ url: chrome.runtime.getURL('options.html') });
   });
 
-  async function reinjectPlayerScripts() {
-    const manifest = chrome.runtime.getManifest();
-    const cs = manifest.content_scripts?.find((c) => c.js?.some((f) => f.includes('player')));
-    if (!cs?.js) return;
-    const files = cs.js;
-    const inject = async (target: chrome.scripting.InjectionTarget, url: string) => {
-      try { await chrome.scripting.executeScript({ target, files }); log('background', 'reinjected into tab', target.tabId, url); }
-      catch (e) { log('background', 'reinject failed', target.tabId, String(e)); }
-    };
-    for (const tab of await chrome.tabs.query({ url: cs.matches })) {
-      if (tab.id !== undefined) await inject({ tabId: tab.id }, tab.url ?? '');
-    }
-    // An embedded player's page is on a domain the manifest does not match, so that query misses its tab.
-    for (const tab of await chrome.tabs.query({})) {
-      if (tab.id === undefined) continue;
-      const frames = (await chrome.webNavigation.getAllFrames({ tabId: tab.id }).catch(() => null)) ?? [];
-      const players = frames.filter((f) => f.frameId !== 0 && adapterForDocument(f.url, false));
-      if (players.length) await inject({ tabId: tab.id, frameIds: players.map((f) => f.frameId) }, players[0]!.url);
-    }
-  }
+  // A grant from the popup, the setup page or chrome://extensions. The page that asked is already loaded, so it gets a script now.
+  chrome.permissions.onAdded.addListener(({ origins }) => {
+    void access.sync().then(() => access.inject(access.providersIn(origins)));
+  });
+  // A revocation: new pages stop getting the script, and the copies already running stand down.
+  chrome.permissions.onRemoved.addListener(({ origins }) => {
+    void access.sync().then(() => access.standDown(access.providersIn(origins)));
+  });
 });

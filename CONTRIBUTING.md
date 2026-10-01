@@ -62,9 +62,11 @@ the `<video>`, the autoplay panel, and so on). The harness's fake player mirrors
 the DOM hazards a real service has; extend it when a new service introduces a
 new one, so the behaviour stays testable without a subscription.
 
-Adding a service adds a host permission. Chrome disables the extension for
-existing users until they accept it, so say so in the commit subject; it lands
-in the release notes.
+Adding a service adds an optional host permission, which existing users are
+only asked for when they first watch on that service. Nothing is disabled on
+update. A new *required* permission is different: Chrome disables the extension
+for existing users until they accept it, so say so in the commit subject; it
+lands in the release notes.
 
 ## Design
 

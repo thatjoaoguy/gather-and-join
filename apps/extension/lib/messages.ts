@@ -7,6 +7,7 @@
  *  - Popup ⇄ offscreen: a Port named PORT_POPUP.
  *  - Anyone → background: `chrome.runtime.sendMessage({target: 'background', ...})`.
  *  - Background → offscreen: `chrome.runtime.sendMessage({target: 'offscreen', ...})`.
+ *  - Background → one player frame: `chrome.tabs.sendMessage({target: 'player', ...})`.
  */
 import type { EpisodeStart, PeerId, PeerInfo, RoomState } from '@gj/shared';
 import type { BadgeState } from './badge';
@@ -110,6 +111,9 @@ export type PopupToOffscreen =
 export type OffscreenToPopup = { type: 'snapshot'; snapshot: Snapshot };
 
 // ---- runtime.sendMessage envelopes -----------------------------------------
+/** The user revoked this service's permission; the page's player script stops. */
+export type ToPlayer = { target: 'player'; type: 'standDown' };
+
 export type ToBackground =
   | { target: 'background'; type: 'ensureOffscreen' }
   | { target: 'background'; type: 'openPage'; url: string }

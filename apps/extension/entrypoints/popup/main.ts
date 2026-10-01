@@ -3,7 +3,7 @@
  * readiness) and room (code, participants, media, recovery). Screens follow
  * docs/design-system/screens/index.html.
  */
-import { parseContentId, isValidRoomCode, normalizeRoomCode, trustedWatchUrl, ROOM_CODE_LENGTH } from '@gj/shared';
+import { parseContentId, isValidRoomCode, normalizeRoomCode, providerForHost, trustedWatchUrl, ROOM_CODE_LENGTH, SERVICES, type ContentProvider } from '@gj/shared';
 import { PORT_POPUP, type OffscreenToPopup, type PopupToOffscreen, type Snapshot } from '../../lib/messages';
 import { participantsFrom, type Participant } from '../../lib/participants';
 import { cameraProblem, connectionLabel, serverState } from '../../lib/room-labels';
@@ -17,6 +17,8 @@ ensureQuicksand();
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 let snapshot: Snapshot | null = null;
 let activePlayerUrl: string | null = null;
+/** The service the active tab plays on, while the user has not let the extension onto it. */
+let ungranted: ContentProvider | null = null;
 let tab: 'join' | 'create' = 'join';
 let showServer = true;
 let probed = false;
@@ -74,6 +76,8 @@ function renderLobby(s: Snapshot) {
   const joining = s.joining;
   const err = s.lastError;
   const fresh = firstRun(setupInput(s));
+  // Before setup the lobby is only the invitation; the service can wait until there is a room to bring it to.
+  $('lobby-access').innerHTML = ungranted && !fresh ? accessNotice(ungranted) : '';
   const unreachable = !fresh && (s.server.state === 'unreachable' || err?.code === 'SERVER_UNREACHABLE');
   $('tab-join').toggleAttribute('disabled', joining);
   $('tab-create').toggleAttribute('disabled', joining);
@@ -146,6 +150,23 @@ function renderLobby(s: Snapshot) {
   $('lobby-foot').textContent = micDenied ? 'You can still join without a microphone; nobody will hear you until it’s allowed.' : 'Headphones on. Make yourself at home.';
 }
 
+// ---- site access ------------------------------------------------------------------------
+
+async function checkAccess() {
+  let host: string | null = null;
+  try { host = activePlayerUrl ? new URL(activePlayerUrl).hostname : null; } catch { /* not a URL */ }
+  const p = host ? providerForHost(host) : null;
+  ungranted = p && SERVICES.includes(p) && !(await chrome.permissions.contains({ origins: [...p.matches] })) ? p : null;
+  render();
+}
+
+/** Every service is an optional permission, asked for here, on its own page, the first time. */
+function accessNotice(p: ContentProvider): string {
+  const name = esc(p.name);
+  return `<div class="notice info" role="status"><strong>${ic('info')} Allow Gather &amp; Join on ${name}</strong><p>It can’t keep this video in step with your room until you do. Chrome asks once, for ${name} only.</p></div>`
+    + `<button class="primary full" id="grant-site" type="button">Allow on ${name}</button>`;
+}
+
 // ---- room ------------------------------------------------------------------------------
 
 function peerRow(p: Participant, s: Snapshot): string {
@@ -174,6 +195,7 @@ function renderRoom(s: Snapshot) {
 
   // Notices above the code, actions beneath them on the surface
   let notice = ''; let actions = '';
+  if (ungranted) actions += accessNotice(ungranted);
   if (!connected) notice += `<div class="notice warning" role="status"><strong>${ic('warn')} Reconnecting to your room…</strong><p>Your connection dropped. We’re trying again. Your friends stay where they are.</p></div>`;
   if (s.stalledBy) notice += `<div class="notice warning" role="status"><strong>${ic('warn')} ${esc(s.stalledBy.name === 'you' ? 'You are' : s.stalledBy.name + ' is')} buffering</strong><p>The show is paused. Press play when everyone is ready.</p></div>`;
   const here = activePlayerUrl ? parseContentId(activePlayerUrl) : null;
@@ -246,6 +268,8 @@ document.addEventListener('click', (e) => {
     case 'retry-probe': send({ type: 'probeServer' }); return;
     case 'grant-mic': e.preventDefault(); void toBackground('grantMic'); return;
     case 'grant-cam': case 'grant-cam-room': e.preventDefault(); void toBackground('grantCamera'); return;
+    // The worker registers and injects the script on the grant; the popup may already be gone by then.
+    case 'grant-site': if (ungranted) void chrome.permissions.request({ origins: [...ungranted.matches] }).then(checkAccess, () => {}); return;
     case 'goto': {
       const room = snapshot?.room;
       const url = room?.contentId ? trustedWatchUrl(room.contentId, room.watchUrl) : null;
@@ -289,6 +313,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
 for (const [key, name] of [['mic', 'microphone'], ['cam', 'camera']] as const) {
   navigator.permissions?.query({ name: name as PermissionName }).then((p) => { perms[key] = p.state; p.onchange = () => { perms[key] = p.state; render(); }; render(); }).catch(() => {});
 }
-void toBackground('getActivePlayerUrl').then((u) => { activePlayerUrl = u as string | null; render(); });
+void toBackground('getActivePlayerUrl').then((u) => { activePlayerUrl = u as string | null; void checkAccess(); });
+chrome.permissions.onAdded.addListener(() => { void checkAccess(); });
+chrome.permissions.onRemoved.addListener(() => { void checkAccess(); });
 setTab('join');
 void port.open();
