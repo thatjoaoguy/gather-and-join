@@ -1,0 +1,89 @@
+{
+  "home.feature.inStep.title": {
+    "message": "Todo mundo no mesmo ritmo"
+  },
+  "home.feature.inStep.body": {
+    "message": "Dê play, pause ou pule para outro ponto, e a sala inteira acompanha. Se alguém travar carregando, a sala pausa e diz quem foi."
+  },
+  "home.feature.call.title": {
+    "message": "Uma chamada junto com o programa"
+  },
+  "home.feature.call.body": {
+    "message": "A voz já vem ligada quando você entra; a câmera é opcional. A mídia vai direto entre você e seus amigos, nunca passa por um servidor."
+  },
+  "home.feature.accounts.title": {
+    "message": "Cada um na sua conta"
+  },
+  "home.feature.accounts.body": {
+    "message": "Cada pessoa assiste pelo player do próprio serviço, conectada à própria conta — no Google Drive, o mesmo arquivo compartilhado com cada uma. Nada é capturado, retransmitido ou alterado."
+  },
+  "home.description": {
+    "message": "Assista junto e em sincronia, com voz e vídeo. Cada um assiste pela própria conta."
+  },
+  "home.hero.line1": {
+    "message": "Um pouco mais {closer}."
+  },
+  "home.hero.closer": {
+    "message": "perto"
+  },
+  "home.hero.line2": {
+    "message": "Mesmo de {afar}."
+  },
+  "home.hero.afar": {
+    "message": "longe"
+  },
+  "home.hero.lead": {
+    "message": "O Gather & Join mantém um grupo pequeno em sincronia enquanto todos assistem à mesma coisa, e adiciona uma chamada de voz para parecer que estão na mesma sala. Funciona com HBO Max, YouTube, vídeos no Google Drive e o player de vídeo dos sites Wix; mais serviços estão a caminho."
+  },
+  "home.cta.install": {
+    "message": "Instalar"
+  },
+  "home.cta.host": {
+    "message": "Hospedar um servidor"
+  },
+  "home.glance.label": {
+    "message": "Em resumo"
+  },
+  "home.glance.worksWith": {
+    "message": "Funciona com"
+  },
+  "home.glance.roomSize": {
+    "message": "Tamanho da sala"
+  },
+  "home.glance.roomSize.value": {
+    "message": "Ideal até 6 com câmera, mais só com voz"
+  },
+  "home.glance.server": {
+    "message": "Servidor"
+  },
+  "home.glance.server.value": {
+    "message": "Você mesmo hospeda: um arquivo, sem contas"
+  },
+  "home.glance.cost": {
+    "message": "Custo"
+  },
+  "home.glance.cost.value": {
+    "message": "Gratuito e de código aberto (MIT)"
+  },
+  "home.shot.alt": {
+    "message": "Uma sala em andamento: o episódio passando, o pop-up da sala com o código de convite e três pessoas conectadas, e os quadros de câmera da chamada ao lado do player."
+  },
+  "home.steps.title": {
+    "message": "Três passos para uma boa noite"
+  },
+  "home.steps.server": {
+    "message": "Alguém do grupo roda o pequeno servidor complementar e compartilha o endereço dele. Veja {link}."
+  },
+  "home.steps.server.link": {
+    "message": "Hospedar um servidor"
+  },
+  "home.steps.install": {
+    "message": "Todo mundo instala a extensão e informa esse endereço uma vez na página de configuração."
+  },
+  "home.steps.room": {
+    "message": "Uma pessoa abre o episódio ou vídeo, pressiona {create} e lê em voz alta o código de seis caracteres. Os outros pressionam {join}."
+  },
+  "home.steps.headphones": {
+    "message": "Use fones de ouvido. O cancelamento de eco é ajustado para a chamada, não para um programa tocando nos seus alto-falantes."
+  }
+}
