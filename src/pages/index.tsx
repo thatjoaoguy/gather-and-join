@@ -34,7 +34,7 @@ export default function Home(): ReactNode {
         <div className="container">
           <img
             className={styles.shot}
-            src={useBaseUrl('/img/room.jpg')}
+            src={useBaseUrl('/img/room.webp')}
             width={1280}
             height={729}
             alt="A room in progress: the episode playing, the room popup with its invite code and three people connected, and webcam tiles for the call beside the player."
