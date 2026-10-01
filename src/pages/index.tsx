@@ -2,6 +2,7 @@ import type {ReactNode} from 'react';
 import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './index.module.css';
 
 const FEATURES: Array<{title: string; body: string}> = [
@@ -29,6 +30,15 @@ export default function Home(): ReactNode {
             <div><strong>Server</strong><span>Self-hosted, one file, no accounts</span></div>
             <div><strong>Cost</strong><span>Free, open source (MIT)</span></div>
           </aside>
+        </div>
+        <div className="container">
+          <img
+            className={styles.shot}
+            src={useBaseUrl('/img/room.webp')}
+            width={1280}
+            height={729}
+            alt="A room in progress: the episode playing, the room popup with its invite code and three people connected, and webcam tiles for the call beside the player."
+          />
         </div>
       </header>
       <main>
