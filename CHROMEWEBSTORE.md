@@ -24,7 +24,7 @@ they stay in step with it. Copy from here at submit time. Not shipped in the ZIP
 Gather & Join
 
 **Short description**
-Watch together in sync, with voice and video, on HBO Max, YouTube, Google Drive and Wix Video. Everyone plays from their own account.
+Watch together in sync, with voice and video, on HBO Max, YouTube, Google Drive and Wix. Everyone plays from their own account.
 
 **Detailed description**
 

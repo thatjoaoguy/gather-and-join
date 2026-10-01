@@ -36,7 +36,7 @@ export default defineConfig({
   filterEntrypoints: TEST_BUILD ? undefined : ['background', 'player', 'offscreen', 'popup', 'options'],
   manifest: {
     name: TEST_BUILD ? 'Gather & Join (test build)' : 'Gather & Join',
-    description: 'Watch together in sync, with voice and video, on HBO Max, YouTube, Google Drive and Wix Video. Everyone plays from their own account.',
+    description: 'Watch together in sync, with voice and video, on HBO Max, YouTube, Google Drive and Wix. Everyone plays from their own account.',
     permissions: ['offscreen', 'storage', 'tabs', 'webNavigation', 'scripting'],
     host_permissions: MATCHES,
     // The participant HUD declares Quicksand in the host document (a shadow root cannot), so the font files must be fetchable from player pages.
@@ -45,6 +45,9 @@ export default defineConfig({
   hooks: {
     // The content script declares the shared PLAYER_MATCHES; strip the harness from production.
     'build:manifestGenerated': (_wxt, manifest) => {
+      // The Web Store rejects a description over 132 characters at upload; Chrome itself loads it fine.
+      if ((manifest.description?.length ?? 0) > 132)
+        throw new Error(`manifest description is ${manifest.description!.length} characters; the Chrome Web Store allows 132`);
       if (!TEST_BUILD) {
         for (const cs of manifest.content_scripts ?? []) cs.matches = cs.matches?.filter((m) => !isHarness(m));
       }
