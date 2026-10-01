@@ -18,7 +18,14 @@ const config: Config = {
   trailingSlash: false,
   onBrokenLinks: 'throw',
   onBrokenAnchors: 'throw',
-  i18n: {defaultLocale: 'en', locales: ['en']},
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en', 'pt-BR'],
+    localeConfigs: {
+      en: {label: 'English'},
+      'pt-BR': {label: 'Português (Brasil)'},
+    },
+  },
 
   presets: [
     [
@@ -28,6 +35,8 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           routeBasePath: 'docs',
           editUrl: `https://github.com/${OWNER}/${REPO}/edit/docs/`,
+          // A translated page's edit link opens the translation, not the English source.
+          editLocalizedFiles: true,
         },
         blog: false,
         theme: {customCss: './src/css/custom.css'},
@@ -45,6 +54,7 @@ const config: Config = {
       items: [
         {type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Guide'},
         {to: '/privacy', label: 'Privacy', position: 'left'},
+        {type: 'localeDropdown', position: 'right'},
         {href: `https://github.com/${OWNER}/${REPO}`, label: 'GitHub', position: 'right'},
       ],
     },

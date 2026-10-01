@@ -1,0 +1,18 @@
+{
+  "version.label": {
+    "message": "Próxima",
+    "description": "The label for version current"
+  },
+  "sidebar.docs.category.Hosting a server": {
+    "message": "Hospedando um servidor",
+    "description": "The label for category 'Hosting a server' in sidebar 'docs'"
+  },
+  "sidebar.docs.category.Watch together": {
+    "message": "Assistir juntos",
+    "description": "The label for category 'Watch together' in sidebar 'docs'"
+  },
+  "sidebar.docs.category.Development": {
+    "message": "Desenvolvimento",
+    "description": "The label for category 'Development' in sidebar 'docs'"
+  }
+}
