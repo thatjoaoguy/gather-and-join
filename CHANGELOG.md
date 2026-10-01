@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.10.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.9.0...v0.10.0) (2026-10-01)
+
+
+### Features
+
+* every streaming service is an optional host permission, granted on first use ([#51](https://github.com/thatjoaoguy/gather-and-join/issues/51)) ([ece7911](https://github.com/thatjoaoguy/gather-and-join/commit/ece791157db4ba68dc076c37ea9e10a4560bb83c))
+
 # [0.9.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.8.1...v0.9.0) (2026-09-30)
 
 
