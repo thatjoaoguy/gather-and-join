@@ -36,22 +36,23 @@ sharing your screen.
 - **The gear** at the top of the participant rail opens the room's settings
   without leaving the player: the room code, your mic and camera, the service
   and episode (with a link there if you are somewhere else), how much a longer
-  copy skips, and the server.
+  copy skips ([when copies differ](/docs/watch-together/when-copies-differ)),
+  and the server.
 - **The toolbar icon** carries a dot while you are in a room: green once you
   are connected, amber while a join or a reconnect is in progress. No dot means
   you are not in a room.
 
-## When copies differ
+## Services
 
-In some regions a service puts extras in front of an episode, such as a promo
-or a "stay tuned" card, so the same episode runs longer for some people than
-for others. When the copies in the room differ, the participant rail says by
-how much and suggests that as how much the longer copy skips. Anyone can press
-**Align**, and change it later from the gear, typed as minutes and seconds to
-the hundredth.
+Each service has its own quirks, so each has a page:
 
-The longer copy then skips its extras and nobody watches them. The next episode
-starts with no skip, since it may have no extras at all.
+- [HBO Max](/docs/watch-together/hbo-max)
+- [YouTube](/docs/watch-together/youtube)
+- [Google Drive](/docs/watch-together/google-drive)
+- [Wix Video](/docs/watch-together/wix-video)
+
+If the room says its copies of an episode differ, see
+[when copies differ](/docs/watch-together/when-copies-differ).
 
 ## How many people?
 
@@ -79,59 +80,6 @@ roughly 0.6 Mbps each way.
 These figures come from a test of up to 10 people with every camera on and
 no network limits, so they show what the call asks for, not what a slow
 connection can deliver.
-
-## YouTube
-
-- **Each viewer's ads are their own.** While an ad plays for someone, they
-  neither drive the room nor get corrected by it, and they rejoin the room's
-  position when the ad ends. Ads are never skipped, hidden or counted:
-  different people simply get different ones, and the room waits for nobody.
-- **Short links work.** A `youtu.be` or `/live/` link counts as the same video
-  as its `/watch?v=` form.
-- **Shorts are not supported.** The Shorts feed scrolls on to the next video by
-  itself, which would take a viewer away from what the room is watching.
-- **The related videos on the right are slightly cut off** while the
-  participant rail is open. YouTube sizes that column from the whole window, and
-  an extension cannot change that without breaking on YouTube's next update, so
-  it is left alone.
-
-## Google Drive
-
-Drive works a little differently from a subscription service, because there is
-no subscription: there is one file, and everyone opens it from their own Google
-account.
-
-- **Share the file with everyone first.** View access is enough. Someone the
-  file was never shared with cannot open it, and the room cannot help them.
-- **Drive limits how many people can stream one file at once.** If someone sees
-  *"Sorry, you can't view or download this file at this time"*, that is Drive's
-  own quota, not the extension and not your connection. It clears by itself,
-  but there is no way to hurry it — worth knowing before a big night rather
-  than during one.
-- **If someone lands on "Unable to load video"**, they are probably signed in
-  to more than one Google account, and Chrome opened the link under the wrong
-  one. A Drive link with no account in it always opens under the *first*
-  account. Opening the file's own URL directly fixes it. The **Go to episode**
-  button in the popup has the same limitation, for the same reason: the account
-  order is different on every computer, so there is no single link the room can
-  hand out that is right for everyone in it.
-- **Nothing plays next.** Drive plays one file and stops, so a room on Drive
-  never wanders off on its own the way an autoplaying episode can.
-
-## Wix Video
-
-Wix sites show video in a player that Wix serves from its own address and
-embeds in the site's page. The extension works inside that player and never
-touches the rest of the site.
-
-- **The participant rail sits inside the video player**, beside the video,
-  rather than beside the whole page. The site around it is left as it is.
-- **Go to episode opens the video player on its own**, full-window, rather than
-  the site's page it came from.
-- **Everyone needs access to the video on the site**, just as they would to
-  watch it alone.
-- **Nothing plays next.** At the end the player goes back to its cover and stays
-  on the same video.
 
 ## Leaving
 

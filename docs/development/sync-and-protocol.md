@@ -44,7 +44,7 @@ is only broadcast if the element is still current a second later (players swap
 the element right after an ad).
 
 Ads stitched into the episode's own timeline, rather than played in a separate
-element, would lengthen it for good at every break. The [episode start](/docs/watch-together#when-copies-differ) cannot help: it describes extras before the episode, not in it.
+element, would lengthen it for good at every break. The [episode start](/docs/watch-together/when-copies-differ) cannot help: it describes extras before the episode, not in it.
 
 ## Wire protocol
 
