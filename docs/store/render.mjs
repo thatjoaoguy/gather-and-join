@@ -35,6 +35,9 @@ const SHOTS = [
   // fall on the page itself, at 2x for high-density screens. The viewport runs
   // taller than the 800px composition so the shadows below it are not cut off.
   { file: 'shot-1-room.html', out: 'site-room.webp', width: 1280, height: 960, scale: 2, stageOnly: true, omitBackground: true },
+  // Close-ups of the rail for the guide's "When copies differ" page.
+  { file: 'site-copies-notice.html', out: 'site-copies-notice.webp', width: 700, height: 760, scale: 2, stageOnly: true, omitBackground: true },
+  { file: 'site-copies-settings.html', out: 'site-copies-settings.webp', width: 700, height: 760, scale: 2, stageOnly: true, omitBackground: true },
 ]
 
 const icons = await readFile(resolve(here, '_icons.html'), 'utf8')
@@ -84,18 +87,18 @@ for (const shot of SHOTS) {
     )
   }
 
-  // The popup overhangs the player at both ends, so the crop follows it. The
-  // bottom margin is the popup's shadow, which fades out about 94px below it;
-  // cutting it short leaves a visible edge on the page.
+  // A popup overhangs the player at both ends, so the crop follows it. The
+  // bottom margin is the lowest shadow: the popup's fades out about 94px below
+  // it, the player's about 74px; cutting it short leaves a visible edge.
   // The headline and caption are hidden rather than removed so the stage keeps
   // the size it has in the store shot.
   const clip = shot.stageOnly
     ? await page.evaluate(() => {
         document.documentElement.classList.add('stage-only')
         const stage = document.querySelector('.stage').getBoundingClientRect()
-        const popup = document.querySelector('.stage .frame').getBoundingClientRect()
-        const top = Math.floor(Math.min(stage.top, popup.top) - 24)
-        const bottom = Math.ceil(Math.max(stage.bottom, popup.bottom) + 100)
+        const popup = document.querySelector('.stage .frame')?.getBoundingClientRect()
+        const top = Math.floor(Math.min(stage.top, popup?.top ?? stage.top) - 24)
+        const bottom = Math.ceil(popup ? Math.max(stage.bottom, popup.bottom) + 100 : stage.bottom + 80)
         return { x: 0, y: top, width: document.body.clientWidth, height: bottom - top }
       })
     : { x: 0, y: 0, width: shot.width, height: shot.height }

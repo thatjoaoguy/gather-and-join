@@ -154,3 +154,10 @@ html, body { width: 1280px; height: 800px; margin: 0; overflow: hidden; }
 .stage-only body { height: auto; overflow: visible; background: none; }
 .stage-only .shot { background: none; }
 .stage-only .shot-head, .stage-only .shot-foot { visibility: hidden; }
+
+/* Website close-ups of the rail: the rail and a slice of the player, narrow
+   enough to show at full size in a docs page, so the rail's small type reads as
+   it does in the product. 700px stays above screens.css's 680px breakpoint,
+   below which the rail narrows to its compact width. */
+.close, .close body { width: 700px; height: 640px; }
+.close .shot { width: 700px; height: 640px; padding: 32px 48px; }
