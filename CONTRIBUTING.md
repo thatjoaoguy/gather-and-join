@@ -23,7 +23,8 @@ pnpm --filter @gj/extension build                    # → apps/extension/.outpu
 ```
 
 Load `apps/extension/.output/chrome-mv3` unpacked in Chrome (`chrome://extensions`
-→ Developer mode → Load unpacked). The README's "Quick start" has the rest.
+→ Developer mode → Load unpacked). The
+[quick start](https://gatherandjoin.com/docs/development#quick-start) has the rest.
 
 ## Before you open a pull request
 
