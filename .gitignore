@@ -20,6 +20,9 @@ tools/harness/test-results/
 tools/harness/playwright-report/
 tools/harness/observer-logs/
 
+# store graphics, rendered from docs/store by `node docs/store/render.mjs`
+docs/store/out/
+
 # local machine
 .env
 .env.*

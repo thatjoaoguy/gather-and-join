@@ -74,17 +74,24 @@ on the `docs` branch; it covers peer IP visibility, the Google STUN server, and 
 
 ## Graphics
 
+All built and rendered by [`docs/store/`](docs/store/README.md); run
+`node docs/store/render.mjs` to rebuild them after any design-system change.
+
 | Asset | Dimensions | Source |
 |-------|-----------|--------|
-| Store icon (required) | 128×128 PNG | `docs/design-system/brand/icon-128.png` (512 px also available) |
-| Screenshot 1 (required) | 1280×800 | the popup open over a playing episode: peer list, mic and camera buttons, video tiles over the player |
-| Screenshot 2 | 1280×800 | the join flow: name, code, and the "watching another episode, go there" prompt |
-| Screenshot 3 | 1280×800 | the setup page: microphone and camera grants, ducking, server address |
-| Small promo tile | 440×280 | `docs/design-system/brand/lockup.svg` on `#101014` |
+| Store icon (required) | 128×128 PNG | `docs/store/out/store-icon-128.png` — branded rounded square with a crop-safe mark and transparent padding |
+| Screenshot 1 (required) | 1280×800 | `docs/store/out/screenshot-1-room.png` — popup over a playing video: peer list, mic and camera buttons, video tiles in the rail |
+| Screenshot 2 | 1280×800 | `docs/store/out/screenshot-3-setup.png` — the setup page: microphone and camera grants, ducking, server address |
+| Small promo tile | 440×280 | `docs/store/out/promo-tile-440x280.png` |
+| Marquee promo tile | 1400×560 | `docs/store/out/promo-marquee-1400x560.png` — brand message alongside the fictional fantasy scene |
 
-Screenshots may show the extension over a real HBO Max page. Blur or crop episode
-artwork, show the tiles rather than the show, and never use the HBO Max logo as a
-standalone element or anything that looks like an official HBO screen.
+The screenshots show the extension's real surfaces — the same markup and
+`system.css` as `docs/design-system/screens/index.html` — over a **fictional**
+fantasy series: generated stills that match no real title and no real person,
+carrying no text or logos. Nothing resembling HBO Max's or Drive's player, artwork or
+logo appears, and no browser chrome or address bar is drawn, so none of it can
+be read as an official screen of either service. Keep it that way if you
+re-shoot them.
 
 ## Permission justifications
 
@@ -132,7 +139,8 @@ the extension's core functionality, and not used for creditworthiness or lending
 ## Notes for reviewers
 
 > This extension needs a running companion server, and for the HBO Max flow a subscription. The Google Drive flow needs neither: any video file in the reviewer's own Drive works. Neither does Wix Video: any video in a Wix site's video widget works, on the site or opened on its own at its embed.wix.com address.
-> Test server: wss://[fill in before submitting; keep it up for the review window]
+> Test server: wss://[fill in at submit time, in the dashboard only; this file is public, and an address committed here becomes everyone's server]
+> It runs on a free Render instance, which sleeps after 15 minutes with nobody connected. **If it has been idle, the first connection takes about 12 seconds while it wakes** — this is Render waking the container, not the extension failing. Opening the same address with `https://` and `/health` on the end in a tab first wakes it and returns `{"status":"ok",...}`; after that everything is immediate. It cannot fall asleep mid-session, because a connected extension pings once a minute.
 > Steps: install (the setup page opens by itself; it is also reachable from the extension) → allow the microphone → paste the server address → Save. Open any episode on play.hbomax.com, any video file at drive.google.com/file/d/<id>/view, or any page with a Wix Video widget → click the extension → Allow on that service (Chrome asks once, for that site only) → Create room. A second browser profile can Join with the six-character code; play/pause on one follows on the other. For the Drive flow the file must be shared with the second profile's Google account.
 > Without a subscription, the same flow can be seen on the demo video: [link]
 > Microphone and camera are requested only when the user clicks Allow on the setup page; they are never recorded and never touch a server.

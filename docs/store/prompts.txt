@@ -1,0 +1,16 @@
+Generate 6 raster images with the built-in image_gen tool and save them into docs/store/assets/ in this repo. Use one built-in call per asset. No text, captions, watermarks, logos, or UI elements in any image. No resemblance to real public figures or to any existing TV show or film.
+
+Two fictional fantasy "TV show" frames, cinematic 16:9, size 2048x1152. They should look like candid frames from a photographed live-action fantasy film, not posed character art, a poster, an illustration, or a game render. Use worn practical costumes and sets, imperfect movement, restrained grain, an oblique camera, and motivated low-key lighting. They must look like different scenes from the same original story. Keep the same two traveling companions and the violet crystal in both frames. Place the characters and main action in the left half so the store screenshot's popup does not hide them:
+
+1. docs/store/assets/show-frame-a.png - During a stormy escape on an ancient stone causeway above a misty chasm, a dark-haired woman in a wet, battered teal cloak drops to one knee to retrieve a small violet crystal. Its light exposes paths beneath the stones. Her Black companion in a worn oxblood cloak turns toward a colossal winged shadow passing through the rain above a distant cliffside fortress. A tense split second of action, with wet stone, one torch, cold storm light, and wind-torn cloaks. Nobody looks at the camera.
+
+2. docs/store/assets/show-frame-b.png - Use frame A as a character and photographic-world reference. Inside a dark ruined observatory, the same exhausted, rain-soaked woman presses the crystal toward a sealed stone door, splitting its seams with violet light. Her companion shields her from falling dust and masonry; a vast star-filled space is barely visible through the opening. Shoot from an oblique shoulder-height angle. Candle and broken-roof daylight provide the only other light. It is a decisive story beat, not a posed tableau.
+
+Four webcam self-view portraits, 4:3, size 1024x768. Each is what a laptop webcam actually captures during an evening video call at home: slightly soft, lit mainly by the screen plus one warm lamp, sitting at normal webcam distance (head and upper shoulders), looking toward the camera, relaxed and mid-conversation, casual clothes, a softly out-of-focus domestic room behind. Four visibly different people, varied ages, ethnicities and genders, four visibly different rooms:
+
+3. docs/store/assets/cam-you.png - person in their thirties, faint smile, bookshelf blurred behind.
+4. docs/store/assets/cam-alex.png - a different person, listening, head slightly tilted, blurred kitchen behind.
+5. docs/store/assets/cam-sam.png - a different person, laughing, blurred living room with a lamp behind.
+6. docs/store/assets/cam-priya.png - a different person, speaking, blurred bedroom wall with framed art behind.
+
+After saving all six, run `file docs/store/assets/*.png` and report the dimensions.
