@@ -13,13 +13,13 @@
   },
   "dependencies": {
     "@gj/shared": "workspace:*",
-    "ws": "^8.21.3"
+    "ws": "^8.22.0"
   },
   "devDependencies": {
-    "@types/node": "^26.5.1",
+    "@types/node": "^26.6.3",
     "@types/ws": "^8.18.0",
     "esbuild": "^0.28.2",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.2"
   }
 }

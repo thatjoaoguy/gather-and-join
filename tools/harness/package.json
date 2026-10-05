@@ -15,11 +15,11 @@
   },
   "dependencies": {
     "@gj/shared": "workspace:*",
-    "ws": "^8.21.3"
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
-    "@types/node": "^26.5.1",
+    "@types/node": "^26.6.3",
     "@types/ws": "^8.18.0",
     "typescript": "^6.0.3",
     "@types/chrome": "^0.3.0"
