@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.12.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.11.0...v0.12.0) (2026-10-11)
+
+
+### Features
+
+* wait for a sleeping server to wake instead of reporting it unreachable ([#67](https://github.com/thatjoaoguy/gather-and-join/issues/67)) ([4aff59f](https://github.com/thatjoaoguy/gather-and-join/commit/4aff59fd98471a166081b34d261aeafd3ddca595))
+
 # [0.11.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.10.0...v0.11.0) (2026-10-11)
 
 
