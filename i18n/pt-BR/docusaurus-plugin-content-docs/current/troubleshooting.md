@@ -7,6 +7,11 @@ title: Solução de problemas
 
 ## "Can't reach the server" {/* #cant-reach-the-server */}
 
+- "Waking your server up…" é outra mensagem, e não é um problema: um servidor
+  em um provedor gratuito hiberna entre uma sessão e outra, e a extensão espera
+  por ele e entra sozinha, em geral em menos de um minuto. "Can't reach" só
+  aparece quando nada respondeu no endereço, ou quando algo respondeu por um
+  minuto e meio sem que o servidor chegasse a acordar.
 - Pergunte a quem hospeda se o servidor ainda está rodando e, no caso de um
   túnel a partir de um notebook, se o endereço mudou. O endereço de um túnel é
   novo a cada execução.

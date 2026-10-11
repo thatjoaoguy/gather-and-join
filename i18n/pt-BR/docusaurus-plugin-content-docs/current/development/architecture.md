@@ -86,7 +86,7 @@ em classes com colaboradores injetados, então cada uma roda no vitest com fakes
 
 | Módulo | Responsável por | Injetado |
 |---|---|---|
-| `room-session.ts` | o `Snapshot`, entrada/reentrada/recuperação de erros, ligação da malha, botões de mídia, persistência | cliente, fábrica da malha, mídia local/remota, armazenamento |
+| `room-session.ts` | o `Snapshot`, entrada/reentrada/recuperação de erros, o alcance do servidor (sondagem, conexão lenta e vigília de despertar via `/health`), ligação da malha, botões de mídia, persistência | cliente, fábrica da malha, sondagens de socket e de saúde, mídia local/remota, armazenamento |
 | `room-client.ts` | o WebSocket: reconexão/backoff, sincronização de relógio, reentrada | `WebSocket` global |
 | `mesh.ts` + `perfect-peer.ts` | uma `RTCPeerConnection` negociada por peer | um callback de envio de sinalização |
 | `loopback-sender.ts` / `sidebar/loopback-receiver.ts` | as duas pontas do loopback da página | callbacks de sinalização |
