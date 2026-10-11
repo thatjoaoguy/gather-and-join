@@ -92,6 +92,7 @@ export default defineContentScript({
     const toBackground = (type: string) => { void chrome.runtime.sendMessage({ target: 'background', type }).catch(() => {}); };
     const sidebar = new PartySidebar(port, adapter.findAnchor ?? adapter.findVideo, {
       allowCamera: () => toBackground('grantCamera'),
+      openSetup: () => { void chrome.runtime.sendMessage({ target: 'background', type: 'openPage', url: chrome.runtime.getURL('options.html') }).catch(() => {}); },
     });
     // The setup page's eye also hides the server address here, for screen sharing.
     let showServer = true;
@@ -113,7 +114,7 @@ export default defineContentScript({
         connection: s.socket === 'connected' ? 'connected' : 'reconnecting',
         offEpisode: offEpisode(room),
         copies: onRoomEpisode ? { contentId: room.contentId!, durationsMs: own === null ? others : [own, ...others], start: room.episodeStart } : null,
-        settings: settingsModel(s, showServer, { contentId: contentId(), title: document.title }),
+        settings: settingsModel(s, showServer, { contentId: contentId(), title: document.title }, chrome.runtime.getManifest().version),
       });
     }
     void chrome.storage.local.get('showServerAddress').then((v) => { showServer = v.showServerAddress !== false; renderSidebar(); });

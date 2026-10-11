@@ -8,12 +8,14 @@ import { SERVICES } from '@gj/shared';
 import { DEFAULT_SERVER_URL, HOST_GUIDE_URL } from '../../lib/constants';
 import type { PeerStats, ServerStatus, Snapshot } from '../../lib/messages';
 import { nextStep, setupComplete, setupSteps, setupSummary, type DevicePermission, type SetupStep } from '../../lib/setup-state';
+import { updateNotice } from '../../lib/room-labels';
 import { ic } from '../../lib/ui/icons';
 import { ensureQuicksand } from '../../lib/ui/fonts';
 
 ensureQuicksand();
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+const VERSION = chrome.runtime.getManifest().version;
 const wanted = new URLSearchParams(location.search).get('grant'); // "1" = mic, "camera" = camera
 const urlInput = $<HTMLInputElement>('server-url');
 const eye = $<HTMLButtonElement>('eye');
@@ -154,9 +156,17 @@ function showProbe(st: ServerStatus | undefined) {
   // the first time. Offer the retry here rather than making them save again to re-probe.
   retryBtn.hidden = st.state !== 'unreachable';
   if (st.state === 'checking') setFieldStatus('busy', 'warn', 'Checking…');
-  else if (st.state === 'reachable') setFieldStatus('ok', 'ok', `Reachable${st.rttMs != null ? ` · answered in ${st.rttMs} ms` : ' · you’re connected to it'}`);
+  else if (st.state === 'reachable') setFieldStatus('ok', 'ok', `Reachable${st.version ? ` · version ${st.version}` : ''}${st.rttMs != null ? ` · answered in ${st.rttMs} ms` : ' · you’re connected to it'}`);
   else if (st.state === 'unreachable') setFieldStatus('err', 'err', 'Can’t reach it. Check the address, or that the host machine is awake.');
   else setFieldStatus('', null, '');
+  showUpdate(st);
+}
+
+/** One side a release behind the other: the server's side comes with the host guide, the extension's with Chrome's own way. */
+function showUpdate(st: ServerStatus) {
+  const u = updateNotice(st, VERSION);
+  const how = u?.side === 'server' ? ` <a href="${HOST_GUIDE_URL}#updating-the-server" target="_blank" rel="noreferrer">How to update it</a>` : '';
+  $('server-notice').innerHTML = u ? `<div class="notice warning" role="status"><strong>${ic('warn')} ${u.title}</strong><p>${u.body}${how}</p></div>` : '';
 }
 
 async function probe() {
@@ -204,6 +214,7 @@ $('server-form').onsubmit = async (e) => {
 // ---- boot --------------------------------------------------------------------------------
 
 $<HTMLAnchorElement>('host-guide').href = HOST_GUIDE_URL;
+$('about').textContent = `Gather & Join ${VERSION}`;
 
 void chrome.storage.local.get(['serverUrl', 'ducking', 'showServerAddress']).then(async (v) => {
   // An address nobody saved is not an address: the field starts empty on a fresh
@@ -244,7 +255,7 @@ async function buildReport(): Promise<{ text: string; summary: string }> {
     'Gather & Join diagnostics',
     `generated: ${new Date().toISOString()}`,
     `extension: ${manifest.name} ${manifest.version}   chrome: ${chromeVersion}   platform: ${navigator.platform}`,
-    `server: ${(prefs.serverUrl as string) ?? DEFAULT_SERVER_URL}   ducking: ${prefs.ducking === true ? 'on' : 'off'}`,
+    `server: ${(prefs.serverUrl as string) ?? DEFAULT_SERVER_URL}   server version: ${snapshot?.server.version ?? '?'}   ducking: ${prefs.ducking === true ? 'on' : 'off'}`,
   ];
   let summary: string;
   if (!snapshot) {

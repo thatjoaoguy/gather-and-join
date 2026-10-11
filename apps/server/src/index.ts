@@ -293,6 +293,8 @@ export function startServer(port = PORT): GjServer {
   const alive = new WeakMap<WebSocket, boolean>();
   wss.on('connection', (socket) => {
     alive.set(socket, true);
+    // The extension compares this with its own version and tells the user which side to update.
+    send(socket, { type: 'welcome', version: VERSION });
     socket.on('pong', () => alive.set(socket, true));
     socket.on('message', (raw) => { alive.set(socket, true); handleMessage(socket, raw); });
     socket.on('close', () => leave(socket, killed.has(socket) ? 'heartbeat' : 'close'));

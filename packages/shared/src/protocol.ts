@@ -60,6 +60,8 @@ export type ErrorCode =
   | 'NO_SUCH_PEER';
 
 export type S2C =
+  /** First frame on every socket, so a client can tell whether the two sides are the same release. */
+  | { type: 'welcome'; version: string }
   | { type: 'room'; state: RoomState; peers: PeerInfo[]; yourPeerId: PeerId; isLeader: boolean }
   | { type: 'peerJoined'; peerId: PeerId; name: string }
   | { type: 'peerLeft'; peerId: PeerId; leaderId: PeerId }

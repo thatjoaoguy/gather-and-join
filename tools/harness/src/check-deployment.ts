@@ -84,6 +84,8 @@ check('/ survives the round trip as utf-8', rootBody.includes('—'));
 const a = new Client('a');
 await a.open();
 check('WebSocket upgrade accepted', true, wsBase);
+const hello = await a.next('welcome', 5_000).catch(() => null);
+check('the server greets with its version', hello?.version === health.version, hello ? `version=${hello.version}` : 'no welcome frame; the extension cannot tell this server is behind');
 
 a.send({ type: 'join', code, peerId: 'a', name: 'A', create: true });
 const room = await a.next('room');

@@ -45,7 +45,7 @@
 <div>
 <div class="surface-label"><span>Lobby / First run, nothing set up</span><span>360px</span></div>
 <div class="frame"><div class="card popup">
-<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<div class="tophead"><img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join"><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></div>
 <h3>A little closer.<br>Even from afar.</h3>
 <div class="notice info" role="status"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-info"/></svg></span> Let’s get you set up</strong>
 <p>Your microphone, your camera if you want one, and the address of the server someone in your group is hosting. Once, and you’re done.</p></div>
@@ -58,7 +58,7 @@
 <div>
 <div class="surface-label"><span>Lobby / Join, code not yet complete</span><span>360px</span></div>
 <div class="frame"><div class="card popup">
-<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<div class="tophead"><img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join"><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></div>
 <h3>A little closer.<br>Even from afar.</h3>
 <div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="true" class="seg-join" type="button">Join a room</button><button role="tab" aria-selected="false" class="seg-create" type="button">Create a room</button></div>
 <form novalidate>
@@ -76,13 +76,13 @@
 </ul>
 <p class="small muted footnote">Headphones on. Make yourself at home.</p>
 </div></div>
-<p class="drives">Drives: <code>room === null</code>. The tab switch is popup state, not room state. Join stays disabled until <code>isValidRoomCode(normalizeRoomCode(code))</code>; the count shows progress. Readiness rows: <code>micPermission</code>, <code>camPermission</code>, and the server host from <code>serverUrl</code>. The camera row is a warning only because it is optional; a blocked microphone is an error. The server row shows only the host; its state is the icon colour, success when reachable, warning while connecting, error when it cannot be reached, with the word kept for screen readers. The eye hides the address everywhere in the popup (row and callouts) behind a spoiler block, for screen sharing; it is a local preference, <code>showServerAddress</code>, shown by default.</p>
+<p class="drives">Drives: <code>room === null</code>. The tab switch is popup state, not room state. Join stays disabled until <code>isValidRoomCode(normalizeRoomCode(code))</code>; the count shows progress. The gear beside the lockup opens the setup page from either view, so devices, the address and services are always one press away; the readiness rows keep their own shortcuts for the step at hand. Readiness rows: <code>micPermission</code>, <code>camPermission</code>, and the server host from <code>serverUrl</code>. The camera row is a warning only because it is optional; a blocked microphone is an error. The server row shows only the host; its state is the icon colour, success when reachable, warning while connecting, error when it cannot be reached, with the word kept for screen readers. The eye hides the address everywhere in the popup (row and callouts) behind a spoiler block, for screen sharing; it is a local preference, <code>showServerAddress</code>, shown by default.</p>
 </div>
 
 <div>
 <div class="surface-label"><span>Lobby / Join, ready</span><span>code valid</span></div>
 <div class="frame"><div class="card popup">
-<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<div class="tophead"><img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join"><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></div>
 <h3>A little closer.<br>Even from afar.</h3>
 <div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="true" class="seg-join" type="button">Join a room</button><button role="tab" aria-selected="false" class="seg-create" type="button">Create a room</button></div>
 <form novalidate>
@@ -106,7 +106,7 @@
 <div>
 <div class="surface-label"><span>Lobby / Create</span><span>create tab</span></div>
 <div class="frame"><div class="card popup">
-<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<div class="tophead"><img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join"><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></div>
 <h3>A little closer.<br>Even from afar.</h3>
 <div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="false" class="seg-join" type="button">Join a room</button><button role="tab" aria-selected="true" class="seg-create" type="button">Create a room</button></div>
 <form novalidate>
@@ -130,7 +130,7 @@
 <div>
 <div class="surface-label"><span>Lobby / Joining</span><span>joining: true</span></div>
 <div class="frame"><div class="card popup">
-<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<div class="tophead"><img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join"><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></div>
 <h3>A little closer.<br>Even from afar.</h3>
 <div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="true" class="seg-join" type="button" disabled>Join a room</button><button role="tab" aria-selected="false" class="seg-create" type="button" disabled>Create a room</button></div>
 <form novalidate>
@@ -153,7 +153,7 @@
 <div>
 <div class="surface-label"><span>Lobby / Room not found</span><span>lastError.code</span></div>
 <div class="frame"><div class="card popup">
-<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<div class="tophead"><img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join"><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></div>
 <h3>A little closer.<br>Even from afar.</h3>
 <div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="true" class="seg-join" type="button">Join a room</button><button role="tab" aria-selected="false" class="seg-create" type="button">Create a room</button></div>
 <form novalidate>
@@ -178,7 +178,7 @@
 <div>
 <div class="surface-label"><span>Lobby / Server unreachable</span><span>SERVER_UNREACHABLE</span></div>
 <div class="frame"><div class="card popup">
-<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<div class="tophead"><img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join"><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></div>
 <h3>A little closer.<br>Even from afar.</h3>
 <div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="true" class="seg-join" type="button">Join a room</button><button role="tab" aria-selected="false" class="seg-create" type="button">Create a room</button></div>
 <form novalidate>
@@ -202,9 +202,35 @@
 </div>
 
 <div>
+<div class="surface-label"><span>Lobby / Server a release behind</span><span>updateNeeded() === 'server'</span></div>
+<div class="frame"><div class="card popup">
+<div class="tophead"><img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join"><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></div>
+<h3>A little closer.<br>Even from afar.</h3>
+<div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="true" class="seg-join" type="button">Join a room</button><button role="tab" aria-selected="false" class="seg-create" type="button">Create a room</button></div>
+<form novalidate>
+<label for="l8-name">Your name</label>
+<input id="l8-name" type="text" value="Jamie">
+<label for="l8-code">Room code <span class="count ok">6 of 6</span></label>
+<input id="l8-code" type="text" value="G7K2MX">
+<div class="notice warning" role="status"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-warn"/></svg></span> Your server needs an update</strong>
+<p>The server runs 0.9.0 and this extension runs 0.10.0. Ask whoever hosts it to update it; until then the two may not get along. <a href="#setup">How to update it</a></p></div>
+<button class="primary full" type="submit">Join room</button>
+</form>
+<div class="divider"></div>
+<ul class="readiness" aria-label="Ready to join">
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic"/></svg></span><span>Microphone allowed</span></li>
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam"/></svg></span><span>Camera allowed · off until you turn it on</span></li>
+<li class="warn"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-server"/></svg></span><span>watch.example.com<span class="sr"> · Reachable · needs an update</span></span><button class="iconbtn" type="button" aria-pressed="true" aria-label="Hide server address"><svg aria-hidden="true"><use href="#i-eye"/></svg></button><a href="#setup">Change</a></li>
+</ul>
+<p class="small muted footnote">Headphones on. Make yourself at home.</p>
+</div></div>
+<p class="drives">Drives: the server answered its <code>welcome</code> frame with a version that is not this extension's — <code>updateNeeded()</code> in <code>lib/room-labels.ts</code>. A warning, not an error: the room may still work, so Join stays enabled and nothing is hidden. The server row turns amber with the word kept for screen readers; the callout carries both versions and, for the server's side, the host guide. When it is the extension that is behind, the title is "Gather &amp; Join needs an update" and the body says Chrome does it on its own. A server run from source reports <code>dev</code> and is never compared. The same callout appears in the room, and the setup page shows both numbers under the address.</p>
+</div>
+
+<div>
 <div class="surface-label"><span>Lobby / Microphone blocked</span><span>micPermission: denied</span></div>
 <div class="frame"><div class="card popup">
-<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<div class="tophead"><img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join"><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></div>
 <h3>A little closer.<br>Even from afar.</h3>
 <div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="true" class="seg-join" type="button">Join a room</button><button role="tab" aria-selected="false" class="seg-create" type="button">Create a room</button></div>
 <form novalidate>
@@ -238,7 +264,7 @@
 <div>
 <div class="surface-label"><span>Room / Host, everyone connected</span><span>isLeader: true</span></div>
 <div class="frame"><div class="card popup">
-<div class="roomhead"><strong>Your room</strong><span class="chip host">Host</span></div>
+<div class="roomhead"><strong>Your room</strong><span class="right"><span class="chip host">Host</span><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></span></div>
 <p class="conn connected"><i></i>Connected · 3 in the room</p>
 <p class="small muted" style="margin:0 0 4px">Invite someone with this code.</p>
 <div class="row between"><span class="code">G7K2MX</span><button type="button">Copy</button></div>
@@ -257,7 +283,7 @@
 <div>
 <div class="surface-label"><span>Room / Guest, a peer still connecting</span><span>isLeader: false</span></div>
 <div class="frame"><div class="card popup">
-<div class="roomhead"><strong>Your room</strong><span class="chip">Guest</span></div>
+<div class="roomhead"><strong>Your room</strong><span class="right"><span class="chip">Guest</span><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></span></div>
 <p class="conn connected"><i></i>Connected · 3 in the room</p>
 <p class="small muted" style="margin:0 0 4px">Invite someone with this code.</p>
 <div class="row between"><span class="code">G7K2MX</span><button type="button">Copy</button></div>
@@ -276,7 +302,7 @@
 <div>
 <div class="surface-label"><span>Room / Someone is buffering</span><span>stalledBy</span></div>
 <div class="frame"><div class="card popup">
-<div class="roomhead"><strong>Your room</strong><span class="chip host">Host</span></div>
+<div class="roomhead"><strong>Your room</strong><span class="right"><span class="chip host">Host</span><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></span></div>
 <p class="conn connected"><i></i>Connected · 3 in the room</p>
 <div class="notice warning" role="status"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-warn"/></svg></span> Alex is buffering</strong>
 <p>The show is paused. Press play when everyone is ready.</p></div>
@@ -295,7 +321,7 @@
 <div>
 <div class="surface-label"><span>Room / Reconnecting</span><span>socket ≠ connected</span></div>
 <div class="frame"><div class="card popup">
-<div class="roomhead"><strong>Your room</strong><span class="chip">Guest</span></div>
+<div class="roomhead"><strong>Your room</strong><span class="right"><span class="chip">Guest</span><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></span></div>
 <p class="conn connecting"><i></i>Reconnecting…</p>
 <div class="notice warning" role="status"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-warn"/></svg></span> Reconnecting to your room…</strong>
 <p>Your connection dropped. We’re trying again. Your friends stay where they are.</p></div>
@@ -314,7 +340,7 @@
 <div>
 <div class="surface-label"><span>Room / Different episode</span><span>room.contentId ≠ this tab</span></div>
 <div class="frame"><div class="card popup">
-<div class="roomhead"><strong>Your room</strong><span class="chip">Guest</span></div>
+<div class="roomhead"><strong>Your room</strong><span class="right"><span class="chip">Guest</span><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></span></div>
 <p class="conn connected"><i></i>Connected · 3 in the room</p>
 <div class="notice info" role="status"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-info"/></svg></span> Your room is watching another episode</strong>
 <p>Open the room’s episode to catch up with your friends.</p></div>
@@ -334,7 +360,7 @@
 <div>
 <div class="surface-label"><span>Room / First one here</span><span>peers.length === 1</span></div>
 <div class="frame"><div class="card popup">
-<div class="roomhead"><strong>Your room</strong><span class="chip host">Host</span></div>
+<div class="roomhead"><strong>Your room</strong><span class="right"><span class="chip host">Host</span><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></span></div>
 <p class="conn connected"><i></i>Connected · just you so far</p>
 <h3 style="margin:8px 0 6px">You’re the first one here.</h3>
 <p class="small muted" style="margin:0 0 4px">Share the code and settle in.</p>
@@ -352,7 +378,7 @@
 <div>
 <div class="surface-label"><span>Room / Camera blocked</span><span>CAMERA_NOT_ALLOWED</span></div>
 <div class="frame"><div class="card popup">
-<div class="roomhead"><strong>Your room</strong><span class="chip">Guest</span></div>
+<div class="roomhead"><strong>Your room</strong><span class="right"><span class="chip">Guest</span><button class="iconbtn" type="button" aria-label="Setup" title="Setup"><svg aria-hidden="true"><use href="#i-settings"/></svg></button></span></div>
 <p class="conn connected"><i></i>Connected · 3 in the room</p>
 <div class="row between"><span class="code">G7K2MX</span><button type="button">Copy</button></div>
 <p class="status" role="status"></p>
@@ -549,10 +575,13 @@
 <div class="toggles"><button type="button" aria-pressed="true"><svg aria-hidden="true"><use href="#i-mic"/></svg>Mic on</button><button type="button" aria-pressed="false"><svg aria-hidden="true"><use href="#i-cam-off"/></svg>Camera off</button></div>
 <h3>Server</h3>
 <div class="server"><svg aria-hidden="true"><use href="#i-server"/></svg><span class="dot ok" role="img" aria-label="Reachable"></span><span class="host">party.example.com</span></div>
+<h3>Setup</h3>
+<p class="meta">Microphone, camera, connection address and services.</p>
+<button type="button" class="setup">Open setup page</button>
 </div>
 </aside>
 </div></div>
-<p class="drives">Drives: the gear at the top right of the rail, in a room. A popover over the rail, so Escape, a click outside and focus return come from the browser, and it stays above the player in fullscreen. Room code and role; the episode: its service, this tab’s title for it when you are on it, or “You’re not on the room’s episode” with a <strong>Go to episode</strong> link when you are not (only a URL that parses back to the room’s content id); a warning with how much the longer copy skips, only when the copies differ — with equal lengths the section is not there at all (a typed value is sent on Enter or leaving the field, to the hundredth; <strong>Clear</strong>, beside the field, removes it); your mic and camera; and the server the room is on, read-only (a room stays on the server it joined; the setup page saves a new one for the next join), blurred while the setup page’s eye hides the address. When the copies match, the Episode section has no offset at all.</p>
+<p class="drives">Drives: the gear at the top right of the rail, in a room. A popover over the rail, so Escape, a click outside and focus return come from the browser, and it stays above the player in fullscreen. Room code and role; the episode: its service, this tab’s title for it when you are on it, or “You’re not on the room’s episode” with a <strong>Go to episode</strong> link when you are not (only a URL that parses back to the room’s content id); a warning with how much the longer copy skips, only when the copies differ — with equal lengths the section is not there at all (a typed value is sent on Enter or leaving the field, to the hundredth; <strong>Clear</strong>, beside the field, removes it); your mic and camera; and the server the room is on, read-only (a room stays on the server it joined; the setup page saves a new one for the next join), blurred while the setup page’s eye hides the address. When the copies match, the Episode section has no offset at all. Last, <strong>Open setup page</strong>: everything that is not room state (devices, address, services) lives on the setup page, and it is reachable from here without leaving the show.</p>
 </div>
 <div>
 <div class="surface-label"><span>HUD / Your tile, hovered</span><span>:hover, :focus-within</span></div>

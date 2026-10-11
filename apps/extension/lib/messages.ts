@@ -37,6 +37,8 @@ export type ServerStatus = {
   state: 'unknown' | 'checking' | 'reachable' | 'unreachable';
   rttMs: number | null;
   checkedAt: number | null;
+  /** The server's release, from its `welcome` frame; null until it says (servers from before the frame never do). */
+  version: string | null;
 };
 
 /** Everything the UI or a content script needs to know, owned by the offscreen document. */

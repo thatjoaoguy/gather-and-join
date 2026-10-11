@@ -38,7 +38,11 @@
     .readiness li.err.server > span:nth-child(2) { color: var(--text); }
     .readiness a { font-size: 11px; font-weight: 700; flex: none; }
     .footnote { margin: 10px 0 0; font-size: 11px; }
+    /* The setup page is one press away in both views: the gear sits where the eye lands first. */
+    .tophead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .tophead .iconbtn { margin: -4px -4px 0 0; }
     .roomhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 4px; }
+    .roomhead .right { display: flex; align-items: center; gap: 6px; }
     .roomhead strong { font-size: 14px; }
     .conn { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted); margin: 0 0 12px; }
     .conn i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
@@ -64,7 +68,7 @@
 </head>
 <body>
   <div id="view-lobby">
-    <img class="lockup" src="/brand/lockup.svg" alt="Gather &amp; Join">
+    <div class="tophead"><img class="lockup" src="/brand/lockup.svg" alt="Gather &amp; Join"><button class="iconbtn" id="setup-lobby" type="button" aria-label="Setup" title="Setup"></button></div>
     <h3 class="hero">A little closer.<br>Even from afar.</h3>
     <div id="lobby-access"></div>
     <div class="seg" id="tabs" role="tablist" aria-label="Join or create">
@@ -89,7 +93,7 @@
   </div>
 
   <div id="view-room" hidden>
-    <div class="roomhead"><strong>Your room</strong><span class="chip" id="role">Guest</span></div>
+    <div class="roomhead"><strong>Your room</strong><span class="right"><span class="chip" id="role">Guest</span><button class="iconbtn" id="setup-room" type="button" aria-label="Setup" title="Setup"></button></span></div>
     <p class="conn" id="conn"><i></i><span id="conn-label"></span></p>
     <div id="room-notice"></div>
     <div id="room-actions"></div>

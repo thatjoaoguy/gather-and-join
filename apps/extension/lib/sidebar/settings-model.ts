@@ -1,7 +1,7 @@
 /** What the sidebar's settings panel shows, from the offscreen document's snapshot. */
 import { providerForContentId, trustedWatchUrl } from '@gj/shared';
 import type { Snapshot } from '../messages';
-import { cameraProblem, connectionLabel, serverState, type ServerTone } from '../room-labels';
+import { cameraProblem, connectionLabel, serverState, updateNeeded, type ServerTone } from '../room-labels';
 
 export type SettingsModel = {
   code: string;
@@ -10,8 +10,8 @@ export type SettingsModel = {
   micOn: boolean;
   camOn: boolean;
   camProblem: 'blocked' | 'missing' | null;
-  /** `hidden` follows the setup page's eye, so a screen share does not show the address. */
-  server: { host: string; tone: ServerTone; word: string; hidden: boolean };
+  /** `hidden` follows the setup page's eye, so a screen share does not show the address. `update` names the side a release behind, if any. */
+  server: { host: string; tone: ServerTone; word: string; hidden: boolean; update: 'server' | 'extension' | null };
   /**
    * What the room is watching. The title is this tab's own, so it is known only
    * here, on the room's episode; elsewhere there is the way there instead.
@@ -22,7 +22,7 @@ export type SettingsModel = {
 /** This tab: which content it is on, and what the page calls it. */
 export type PageInfo = { contentId: string | null; title: string };
 
-export function settingsModel(s: Snapshot, showServer: boolean, page: PageInfo): SettingsModel | null {
+export function settingsModel(s: Snapshot, showServer: boolean, page: PageInfo, extensionVersion: string): SettingsModel | null {
   if (!s.room) return null;
   return {
     code: s.room.code,
@@ -31,7 +31,7 @@ export function settingsModel(s: Snapshot, showServer: boolean, page: PageInfo):
     micOn: s.micOn,
     camOn: s.camOn,
     camProblem: cameraProblem(s),
-    server: { host: s.server.host, ...serverState(s.server), hidden: !showServer },
+    server: { host: s.server.host, ...serverState(s.server, extensionVersion), hidden: !showServer, update: updateNeeded(s.server, extensionVersion) },
     episode: episodeOf(s.room.contentId, s.room.watchUrl, page),
   };
 }

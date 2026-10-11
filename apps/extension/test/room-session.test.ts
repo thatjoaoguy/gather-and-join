@@ -79,7 +79,7 @@ function setup(opts: { local?: ReturnType<typeof fakeLocal>; kvStore?: ReturnTyp
     duck: vi.fn<SessionEvents['duck']>(), videoAdded: vi.fn<SessionEvents['videoAdded']>(), videoRemoved: vi.fn<SessionEvents['videoRemoved']>(),
   };
   const codes = [...(opts.codes ?? ['RM0001', 'RM0002', 'RM0003', 'RM0004', 'RM0005', 'RM0006', 'RM0007'])];
-  const probe = vi.fn<ServerProbe>(async () => ({ ok: true, rttMs: 12 }));
+  const probe = vi.fn<ServerProbe>(async () => ({ ok: true, rttMs: 12, version: '0.10.0' }));
   const session = new RoomSession({
     createClient: c.create, createMesh: m.create, probe, local: l.local as never, remote, kv: storage,
     readTestConfig: async () => ({ sabotage: null, testPeerId: opts.testPeerId ?? null, serverUrl: null, iceServers: null }),
@@ -497,13 +497,15 @@ describe('RoomSession', () => {
     const p = session.probeServer();
     expect(session.snapshot.server.state).toBe('checking');
     await p;
-    expect(session.snapshot.server).toMatchObject({ state: 'reachable', rttMs: 12 });
-    probe.mockResolvedValueOnce({ ok: false, rttMs: null });
+    expect(session.snapshot.server).toMatchObject({ state: 'reachable', rttMs: 12, version: '0.10.0' });
+    probe.mockResolvedValueOnce({ ok: false, rttMs: null, version: null });
     await session.setServerUrl('wss://house.example');
     expect(session.snapshot.server).toMatchObject({ url: 'wss://house.example', host: 'house.example', state: 'unreachable' });
     await session.joinRoom('RM0001', 'Ana');
     client.connect();
-    expect(session.snapshot.server.state).toBe('reachable'); // the socket opened
+    expect(session.snapshot.server).toMatchObject({ state: 'reachable', version: null }); // the socket opened; nothing said yet
+    client.frame({ type: 'welcome', version: '0.9.0' });
+    expect(session.snapshot.server.version).toBe('0.9.0');
     client.frame(roomFrame());
     probe.mockClear();
     await session.probeServer();

@@ -260,6 +260,19 @@ describe('server', () => {
   });
 });
 
+describe('greeting', () => {
+  it('greets every socket with the version /health reports, before the client sends anything', async () => {
+    const c = new Client();
+    const greeted = c.next('welcome'); // can land in the same tick as `open`, so listen first
+    await c.open();
+    const hello = await greeted;
+    expect(c.inbox[0]).toBe(hello);
+    const health = await (await fetch(`http://localhost:${PORT}/health`)).json();
+    expect(hello.version).toBe(health.version);
+    c.close();
+  });
+});
+
 describe('http surface', () => {
   const get = async (path: string, init?: RequestInit) => {
     const res = await fetch(`http://localhost:${PORT}${path}`, init);

@@ -14,7 +14,7 @@ import {
 } from '../../lib/messages';
 import { BadgeReporter, type BadgeState } from '../../lib/badge';
 import { RoomClient } from '../../lib/room-client';
-import { RoomSession } from '../../lib/room-session';
+import { RoomSession, type ProbeResult } from '../../lib/room-session';
 import { Mesh } from '../../lib/mesh';
 import { LocalMedia } from '../../lib/local-media';
 import { RemoteMedia } from '../../lib/remote-media';
@@ -51,6 +51,7 @@ function traceFrame(m: S2C) {
     case 'navigate': log('room', '← navigate', m.contentId, 'from', m.originPeerId); return;
     case 'playback': if (m.reason === 'stall') log('room', '← stall from', m.originPeerId, 'at', Math.round(m.positionMs)); return;
     case 'error': log('room', '← error', m.code, m.message); return;
+    case 'welcome': log('room', '← welcome', `server=${m.version}`); return;
     case 'signal': case 'pong': return;
   }
 }
@@ -130,16 +131,23 @@ const session = new RoomSession(
   },
 );
 
-/** Reachability probe: open a socket, exchange one ping, close. */
-function probeServer(url: string): Promise<{ ok: boolean; rttMs: number | null }> {
+/**
+ * Reachability probe: open a socket, send a ping, close on the first frame back. A
+ * current server greets with its version before the pong; an older one only pongs.
+ */
+function probeServer(url: string): Promise<ProbeResult> {
   return new Promise((resolve) => {
     let ws: WebSocket;
-    try { ws = new WebSocket(url); } catch { resolve({ ok: false, rttMs: null }); return; }
+    try { ws = new WebSocket(url); } catch { resolve({ ok: false, rttMs: null, version: null }); return; }
     const t0 = Date.now();
-    const done = (ok: boolean) => { clearTimeout(timer); try { ws.close(); } catch { /* closed */ } resolve({ ok, rttMs: ok ? Date.now() - t0 : null }); };
+    const done = (ok: boolean, version: string | null = null) => { clearTimeout(timer); try { ws.close(); } catch { /* closed */ } resolve({ ok, rttMs: ok ? Date.now() - t0 : null, version }); };
     const timer = setTimeout(() => done(false), 4000);
     ws.onopen = () => ws.send(JSON.stringify({ type: 'ping', clientTime: t0 }));
-    ws.onmessage = () => done(true);
+    ws.onmessage = (ev) => {
+      let msg: S2C | null = null;
+      try { msg = JSON.parse(ev.data); } catch { /* not ours; still an answer */ }
+      done(true, msg?.type === 'welcome' ? msg.version : null);
+    };
     ws.onerror = () => done(false);
     ws.onclose = () => done(false);
   });
