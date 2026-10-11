@@ -32,4 +32,6 @@ jobs:
       # the GHCR push at the bottom needs it. Without it GitHub rejects the run
       # before any job starts (startup_failure), so the release never happens.
       packages: write
+      # Same chain: the Chrome Web Store upload authenticates to Google with an OIDC token.
+      id-token: write
     secrets: inherit
