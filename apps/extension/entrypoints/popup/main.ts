@@ -6,7 +6,8 @@
 import { parseContentId, isValidRoomCode, normalizeRoomCode, providerForHost, trustedWatchUrl, ROOM_CODE_LENGTH, SERVICES, type ContentProvider } from '@gj/shared';
 import { PORT_POPUP, type OffscreenToPopup, type PopupToOffscreen, type Snapshot } from '../../lib/messages';
 import { participantsFrom, type Participant } from '../../lib/participants';
-import { cameraProblem, connectionLabel, serverState } from '../../lib/room-labels';
+import { cameraProblem, connectionLabel, serverState, updateNotice } from '../../lib/room-labels';
+import { HOST_GUIDE_URL } from '../../lib/constants';
 import { firstRun, type SetupInput } from '../../lib/setup-state';
 import { ReconnectingPort } from '../../lib/port';
 import { ic, escapeHtml as esc } from '../../lib/ui/icons';
@@ -15,6 +16,7 @@ import { ensureQuicksand } from '../../lib/ui/fonts';
 ensureQuicksand();
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+const VERSION = chrome.runtime.getManifest().version;
 let snapshot: Snapshot | null = null;
 let activePlayerUrl: string | null = null;
 /** The service the active tab plays on, while the user has not let the extension onto it. */
@@ -39,6 +41,14 @@ const port = new ReconnectingPort<PopupToOffscreen, OffscreenToPopup>(
 const send = (m: PopupToOffscreen) => port.send(m);
 const toBackground = (type: string, extra: Record<string, unknown> = {}) => chrome.runtime.sendMessage({ target: 'background', type, ...extra });
 
+/** One side is a release behind the other. Shown in the lobby and the room alike; it may be why a join or a room misbehaves. */
+function updateRow(s: Snapshot): string {
+  const u = updateNotice(s.server, VERSION);
+  if (!u) return '';
+  const how = u.side === 'server' ? ` <a href="${HOST_GUIDE_URL}#updating-the-server" target="_blank" rel="noreferrer">How to update it</a>` : '';
+  return `<div class="notice warning" role="status"><strong>${ic('warn')} ${esc(u.title)}</strong><p>${esc(u.body)}${how}</p></div>`;
+}
+
 // ---- lobby ----------------------------------------------------------------------------
 
 const nameInput = $<HTMLInputElement>('name');
@@ -60,7 +70,7 @@ function serverRow(s: Snapshot): string {
   const st = s.server;
   // Nothing was ever saved: there is no address to report on, only a step to take.
   if (!serverConfigured && st.state !== 'reachable') return `<li class="server warn">${ic('server')}<span>Server not set up</span><a href="#" id="change-server">Set up</a></li>`;
-  const { tone: cls, word } = serverState(st);
+  const { tone: cls, word } = serverState(st, VERSION);
   const host = showServer ? esc(st.host) : `<span class="spoiler" tabindex="0" title="Hidden · hover or press to reveal">${esc(st.host)}</span>`;
   const eye = `<button class="iconbtn" id="eye" type="button" aria-pressed="${showServer}" aria-label="${showServer ? 'Hide' : 'Show'} server address">${showServer ? ic('eye') : ic('eyeOff')}</button>`;
   return `<li class="server ${cls}">${ic('server')}<span>${host}<span class="sr"> · ${word}</span></span>${eye}<a href="#" id="change-server">Change</a></li>`;
@@ -129,6 +139,7 @@ function renderLobby(s: Snapshot) {
     notice = `<div class="notice error" role="alert"><strong>${ic('err')} Can’t reach your server</strong><p>Nothing answered at ${addr}. Check the address with the person hosting it, or make sure their machine is awake.</p></div>`;
     recovery = `<div class="media-controls"><button class="primary" id="open-setup" type="button">Open setup</button><button id="retry-probe" type="button">Try again</button></div>`;
   }
+  if (!fresh && !joining) notice += updateRow(s);
   $('lobby-notice').innerHTML = notice;
   $('lobby-recovery').innerHTML = recovery;
   submit.hidden = unreachable || fresh;
@@ -204,6 +215,7 @@ function renderRoom(s: Snapshot) {
     notice += `<div class="notice info" role="status"><strong>${ic('info')} Your room is watching another episode</strong><p>Open the room’s episode to catch up with your friends.</p></div>`;
     actions += `<button class="primary full" id="goto" type="button">Go to episode</button>`;
   }
+  notice += updateRow(s);
   $('room-notice').innerHTML = notice;
   $('room-actions').innerHTML = actions;
 

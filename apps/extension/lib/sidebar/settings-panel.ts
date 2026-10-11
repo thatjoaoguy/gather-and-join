@@ -65,7 +65,8 @@ export const SETTINGS_STYLE = `
   .settings .server .address.hidden { filter: blur(4px); }
   .settings .server .address.hidden:hover, .settings .server .address.hidden:focus { filter: none; }
   .settings .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--muted); }
-  .settings .dot.ok { background: var(--success); } .settings .dot.busy { background: var(--warning); } .settings .dot.err { background: var(--red); }
+  .settings .dot.ok { background: var(--success); } .settings .dot.busy, .settings .dot.warn { background: var(--warning); } .settings .dot.err { background: var(--red); }
+  .settings .update { margin: 6px 0 0; font-size: 11px; color: var(--warning); }
 `;
 
 export class SettingsPanel {
@@ -112,7 +113,8 @@ export class SettingsPanel {
       <div class="toggles"><button type="button" class="mic"></button><button type="button" class="cam"></button></div>
       <div class="problem" role="alert" hidden><span class="problem-text"></span><button type="button" class="primary allow">Allow camera</button></div>
       <h3>Server</h3>
-      <div class="server">${ICONS.server}<span class="dot"></span><span class="address" tabindex="0"></span></div>`;
+      <div class="server">${ICONS.server}<span class="dot"></span><span class="address" tabindex="0"></span></div>
+      <p class="update" role="status" hidden></p>`;
 
     const q = <T extends HTMLElement>(sel: string) => this.panel.querySelector<T>(sel)!;
     q('.copy').onclick = async () => {
@@ -186,5 +188,9 @@ export class SettingsPanel {
     q('.dot').className = `dot ${model.server.tone}`;
     q('.dot').setAttribute('aria-label', model.server.word);
     q('.dot').setAttribute('role', 'img');
+    // One line, no versions: the setup page has the numbers and the way to update.
+    const update = q('.update');
+    update.hidden = !model.server.update;
+    update.textContent = model.server.update === 'server' ? 'The server needs an update. Ask whoever hosts it.' : model.server.update === 'extension' ? 'Gather & Join needs an update. Chrome does it on its own within a few hours.' : '';
   }
 }

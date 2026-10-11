@@ -113,7 +113,7 @@ export default defineContentScript({
         connection: s.socket === 'connected' ? 'connected' : 'reconnecting',
         offEpisode: offEpisode(room),
         copies: onRoomEpisode ? { contentId: room.contentId!, durationsMs: own === null ? others : [own, ...others], start: room.episodeStart } : null,
-        settings: settingsModel(s, showServer, { contentId: contentId(), title: document.title }),
+        settings: settingsModel(s, showServer, { contentId: contentId(), title: document.title }, chrome.runtime.getManifest().version),
       });
     }
     void chrome.storage.local.get('showServerAddress').then((v) => { showServer = v.showServerAddress !== false; renderSidebar(); });

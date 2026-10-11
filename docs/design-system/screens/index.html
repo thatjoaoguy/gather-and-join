@@ -202,6 +202,32 @@
 </div>
 
 <div>
+<div class="surface-label"><span>Lobby / Server a release behind</span><span>updateNeeded() === 'server'</span></div>
+<div class="frame"><div class="card popup">
+<img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">
+<h3>A little closer.<br>Even from afar.</h3>
+<div class="seg" role="tablist" aria-label="Join or create"><button role="tab" aria-selected="true" class="seg-join" type="button">Join a room</button><button role="tab" aria-selected="false" class="seg-create" type="button">Create a room</button></div>
+<form novalidate>
+<label for="l8-name">Your name</label>
+<input id="l8-name" type="text" value="Jamie">
+<label for="l8-code">Room code <span class="count ok">6 of 6</span></label>
+<input id="l8-code" type="text" value="G7K2MX">
+<div class="notice warning" role="status"><strong><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-warn"/></svg></span> Your server needs an update</strong>
+<p>The server runs 0.9.0 and this extension runs 0.10.0. Ask whoever hosts it to update it; until then the two may not get along. <a href="#setup">How to update it</a></p></div>
+<button class="primary full" type="submit">Join room</button>
+</form>
+<div class="divider"></div>
+<ul class="readiness" aria-label="Ready to join">
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-mic"/></svg></span><span>Microphone allowed</span></li>
+<li class="ok"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-cam"/></svg></span><span>Camera allowed · off until you turn it on</span></li>
+<li class="warn"><span class="semantic-icon" aria-hidden="true"><svg><use href="#i-server"/></svg></span><span>watch.example.com<span class="sr"> · Reachable · needs an update</span></span><button class="iconbtn" type="button" aria-pressed="true" aria-label="Hide server address"><svg aria-hidden="true"><use href="#i-eye"/></svg></button><a href="#setup">Change</a></li>
+</ul>
+<p class="small muted footnote">Headphones on. Make yourself at home.</p>
+</div></div>
+<p class="drives">Drives: the server answered its <code>welcome</code> frame with a version that is not this extension's — <code>updateNeeded()</code> in <code>lib/room-labels.ts</code>. A warning, not an error: the room may still work, so Join stays enabled and nothing is hidden. The server row turns amber with the word kept for screen readers; the callout carries both versions and, for the server's side, the host guide. When it is the extension that is behind, the title is "Gather &amp; Join needs an update" and the body says Chrome does it on its own. A server run from source reports <code>dev</code> and is never compared. The same callout appears in the room, and the setup page shows both numbers under the address.</p>
+</div>
+
+<div>
 <div class="surface-label"><span>Lobby / Microphone blocked</span><span>micPermission: denied</span></div>
 <div class="frame"><div class="card popup">
 <img class="brand-lockup-small" src="../brand/lockup.svg" alt="Gather &amp; Join">

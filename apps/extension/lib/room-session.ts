@@ -64,8 +64,9 @@ export type SessionKv = {
 };
 export type TestConfig = { sabotage: Sabotage; testPeerId: string | null; serverUrl: string | null; iceServers: RTCIceServer[] | null };
 
-/** Reachability probe: open a socket to `url`, exchange one ping, close. Rejects or resolves ok:false when unreachable. */
-export type ServerProbe = (url: string) => Promise<{ ok: boolean; rttMs: number | null }>;
+/** Reachability probe: open a socket to `url`, wait for its first frame, close. Rejects or resolves ok:false when unreachable. */
+export type ServerProbe = (url: string) => Promise<ProbeResult>;
+export type ProbeResult = { ok: boolean; rttMs: number | null; version: string | null };
 
 export type SessionDeps = {
   createClient(url: string, handlers: ClientHandlers): SessionClient;
@@ -437,10 +438,10 @@ export class RoomSession {
       this.broadcast();
       return;
     }
-    let result: { ok: boolean; rttMs: number | null };
-    try { result = await this.deps.probe(url); } catch { result = { ok: false, rttMs: null }; }
+    let result: ProbeResult;
+    try { result = await this.deps.probe(url); } catch { result = { ok: false, rttMs: null, version: null }; }
     if (seq !== this.probeSeq || this.snapshot.server.url !== url) return; // superseded
-    this.snapshot.server = { ...this.snapshot.server, state: result.ok ? 'reachable' : 'unreachable', rttMs: result.rttMs, checkedAt: this.now() };
+    this.snapshot.server = { ...this.snapshot.server, state: result.ok ? 'reachable' : 'unreachable', rttMs: result.rttMs, version: result.version, checkedAt: this.now() };
     this.broadcast();
   }
 
@@ -584,6 +585,10 @@ export class RoomSession {
       case 'error':
         this.onError(msg.code, msg.message);
         return;
+      case 'welcome':
+        // The socket's server, which is the one the snapshot describes unless a probe elsewhere is mid-flight.
+        if (s.server.url === this.client.url) { s.server = { ...s.server, version: msg.version }; this.broadcast(); }
+        return;
       case 'pong':
         return;
     }
@@ -634,5 +639,5 @@ export class RoomSession {
 function serverStatus(url: string): ServerStatus {
   let host = url;
   try { host = new URL(url).host; } catch { /* keep the raw string */ }
-  return { url, host, state: 'unknown', rttMs: null, checkedAt: null };
+  return { url, host, state: 'unknown', rttMs: null, checkedAt: null, version: null };
 }
