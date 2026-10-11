@@ -28,6 +28,26 @@ title: Solução de problemas
 - Use fones de ouvido. Com alto-falantes, o cancelamento de eco remove a sua
   voz junto com o som do programa.
 
+## O programa fica mais baixo quando entro na sala {/* #the-show-gets-quieter-when-i-join-a-room */}
+
+A chamada mantém o seu microfone aberto enquanto você estiver na sala, e o
+Windows trata um microfone aberto como uma ligação: tanto o próprio Windows
+quanto o processamento de som do notebook podem abaixar todo o resto. Se o
+programa volta ao volume normal quando você sai, mude as duas configurações e
+entre na sala de novo:
+
+- Pressione **Win + R**, digite `mmsys.cpl` e pressione Enter. Na aba
+  **Comunicações**, escolha **Não fazer nada**.
+- Abra **Configurações → Sistema → Som**, escolha os seus alto-falantes e
+  coloque **Melhorias de áudio** em **Desativado**. Um aplicativo da Dolby,
+  Realtek ou Waves que veio com o notebook pode ter o próprio modo de voz ou de
+  chamada, que também precisa ser desligado.
+
+Só uma das duas pode não bastar. Silenciar o seu microfone não resolve, porque
+ele continua aberto. Confira também se **Lower the show’s volume while I
+speak** está desligado na página de configuração: com alto-falantes, o próprio
+som do programa o aciona.
+
 ## A voz de uma pessoa nunca conecta {/* #one-persons-voice-never-connects */}
 
 Dois participantes atrás de NATs muito restritivos podem não encontrar um

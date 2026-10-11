@@ -27,6 +27,24 @@ title: Troubleshooting
 - Use headphones. With speakers, echo cancellation removes your voice along with
   the show.
 
+## The show gets quieter when I join a room
+
+The call keeps your microphone open for as long as you are in the room, and
+Windows treats an open microphone as a phone call: both Windows itself and the
+laptop's own sound processing can turn everything else down. If the show goes
+back to full volume when you leave, change both settings, then rejoin the room:
+
+- Press **Win + R**, type `mmsys.cpl` and press Enter. On the
+  **Communications** tab, choose **Do nothing**.
+- Open **Settings → System → Sound**, choose your speakers, and set **Audio
+  enhancements** to **Off**. A Dolby, Realtek or Waves app that came with the
+  laptop may have its own voice or call mode to turn off as well.
+
+Either one alone can leave the show quieter. Muting yourself does not help,
+because the microphone stays open. Also check that **Lower the show’s volume
+while I speak** is off on the setup page: with speakers, the show's own audio
+triggers it.
+
 ## One person's voice never connects
 
 Two participants behind very strict NATs may not find a direct path, because
