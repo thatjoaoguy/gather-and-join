@@ -92,6 +92,7 @@ export default defineContentScript({
     const toBackground = (type: string) => { void chrome.runtime.sendMessage({ target: 'background', type }).catch(() => {}); };
     const sidebar = new PartySidebar(port, adapter.findAnchor ?? adapter.findVideo, {
       allowCamera: () => toBackground('grantCamera'),
+      openSetup: () => { void chrome.runtime.sendMessage({ target: 'background', type: 'openPage', url: chrome.runtime.getURL('options.html') }).catch(() => {}); },
     });
     // The setup page's eye also hides the server address here, for screen sharing.
     let showServer = true;

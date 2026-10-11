@@ -276,7 +276,7 @@ document.addEventListener('click', (e) => {
   if (!t) return;
   switch (t.id) {
     case 'eye': showServer = !showServer; void chrome.storage.local.set({ showServerAddress: showServer }); render(); return;
-    case 'change-server': case 'open-setup': e.preventDefault(); void chrome.runtime.openOptionsPage(); return;
+    case 'change-server': case 'open-setup': case 'setup-lobby': case 'setup-room': e.preventDefault(); void chrome.runtime.openOptionsPage(); return;
     case 'retry-probe': send({ type: 'probeServer' }); return;
     case 'grant-mic': e.preventDefault(); void toBackground('grantMic'); return;
     case 'grant-cam': case 'grant-cam-room': e.preventDefault(); void toBackground('grantCamera'); return;
@@ -328,5 +328,6 @@ for (const [key, name] of [['mic', 'microphone'], ['cam', 'camera']] as const) {
 void toBackground('getActivePlayerUrl').then((u) => { activePlayerUrl = u as string | null; void checkAccess(); });
 chrome.permissions.onAdded.addListener(() => { void checkAccess(); });
 chrome.permissions.onRemoved.addListener(() => { void checkAccess(); });
+for (const id of ['setup-lobby', 'setup-room']) $(id).innerHTML = ic('settings');
 setTab('join');
 void port.open();

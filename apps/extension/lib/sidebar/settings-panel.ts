@@ -19,6 +19,8 @@ export type SettingsActions = {
   setMic(on: boolean): void;
   setCamera(on: boolean): void;
   allowCamera(): void;
+  /** Microphone, camera, address and services live on the setup page, which opens in a tab of its own. */
+  openSetup(): void;
   copyCode(code: string): Promise<boolean>;
   enterStart(ms: number): void;
   alignStart(): void;
@@ -67,6 +69,7 @@ export const SETTINGS_STYLE = `
   .settings .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--muted); }
   .settings .dot.ok { background: var(--success); } .settings .dot.busy, .settings .dot.warn { background: var(--warning); } .settings .dot.err { background: var(--red); }
   .settings .update { margin: 6px 0 0; font-size: 11px; color: var(--warning); }
+  .settings .setup { margin: 8px 0 0; }
 `;
 
 export class SettingsPanel {
@@ -114,7 +117,10 @@ export class SettingsPanel {
       <div class="problem" role="alert" hidden><span class="problem-text"></span><button type="button" class="primary allow">Allow camera</button></div>
       <h3>Server</h3>
       <div class="server">${ICONS.server}<span class="dot"></span><span class="address" tabindex="0"></span></div>
-      <p class="update" role="status" hidden></p>`;
+      <p class="update" role="status" hidden></p>
+      <h3>Setup</h3>
+      <p class="meta">Microphone, camera, connection address and services.</p>
+      <button type="button" class="setup">Open setup page</button>`;
 
     const q = <T extends HTMLElement>(sel: string) => this.panel.querySelector<T>(sel)!;
     q('.copy').onclick = async () => {
@@ -129,6 +135,7 @@ export class SettingsPanel {
     q('.mic').onclick = () => { if (this.model) this.actions.setMic(!this.model.micOn); };
     q('.cam').onclick = () => { if (this.model) this.actions.setCamera(!this.model.camOn); };
     q('.allow').onclick = () => this.actions.allowCamera();
+    q('.setup').onclick = () => this.actions.openSetup();
     this.field = new StartField(doc, (ms) => this.actions.enterStart(ms));
     q('.copies').insertBefore(this.field.el, q('.align'));
     q('.align').onclick = () => { if (this.field.commit() !== null) this.actions.alignStart(); };

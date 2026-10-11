@@ -13,8 +13,8 @@ import type { SettingsModel } from './settings-panel';
 
 export type SidebarModel = { inRoom: boolean; participants: Participant[]; connection: SidebarConnection; offEpisode?: OffEpisode; copies?: CopiesInput | null; settings?: SettingsModel | null };
 type Sender = { send(m: PlayerToOffscreen): void };
-/** What the page cannot do itself: the camera grant opens in a tab of its own. */
-export type SidebarOpeners = { allowCamera(): void };
+/** What the page cannot do itself: the camera grant and the setup page each open in a tab of their own. */
+export type SidebarOpeners = { allowCamera(): void; openSetup(): void };
 
 const REMOUNT_POLL_MS = 500;
 
