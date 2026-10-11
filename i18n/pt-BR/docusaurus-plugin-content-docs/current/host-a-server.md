@@ -124,6 +124,13 @@ Para esse tipo de serviço, o Render não pega versões novas sozinho. Quando sa
 uma versão nova, abra o serviço no dashboard e escolha **Manual
 Deploy → Deploy latest reference**. Depois, confira a versão em `/health`.
 
+Você vai saber quando chegou a hora. A extensão e o servidor são lançados
+juntos, com um único número de versão, e o servidor informa a sua versão a
+cada extensão que se conecta. Quando o servidor está atrasado, o pop-up de
+todo mundo diz **Your server needs an update**, com os dois números, e a página
+de configuração mostra a versão do servidor abaixo do endereço. Quando é a
+extensão que está atrasada, o aviso diz isso, e o Chrome a atualiza sozinho.
+
 ## Outros lugares onde ele roda {/* #other-places-it-can-run */}
 
 Nada aqui é específico do Render. O servidor é um pequeno programa Node, sem

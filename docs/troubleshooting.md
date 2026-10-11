@@ -19,6 +19,20 @@ title: Troubleshooting
 - For a same-network setup, check that the host allowed the server through
   their firewall and that nobody is on a guest network.
 
+## "Your server needs an update"
+
+The server is a release behind the extension; the notice shows both versions.
+Rooms may still work, but anything the newer release changed between the two
+will not. Ask whoever hosts the server to update it — on Render, that is
+[one click in the dashboard](/docs/host-a-server#updating-the-server). The
+setup page shows the server's version under the address once it is done.
+
+## "Gather & Join needs an update"
+
+The other way round: the server is ahead of your extension. Chrome updates
+extensions on its own within a few hours. To do it now, open
+`chrome://extensions`, turn on Developer mode, and press **Update**.
+
 ## Nobody can hear me
 
 - Open the setup page and check that the microphone shows as allowed. Chrome's

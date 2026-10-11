@@ -117,6 +117,13 @@ Render does not pick up new versions on its own for this kind of service. When a
 new release comes out, open the service in the dashboard and choose **Manual
 Deploy → Deploy latest reference**. Check the version afterwards at `/health`.
 
+You will know when it is time. The extension and the server are released
+together under one version number, and the server tells every extension its
+version when it connects. When the server is behind, everyone's popup says
+**Your server needs an update**, with both numbers, and the setup page shows
+the server's version under the address. When the extension is the one behind,
+it says so instead and Chrome updates it on its own.
+
 ## Other places it can run
 
 Nothing here is specific to Render. The server is a small Node program with no
