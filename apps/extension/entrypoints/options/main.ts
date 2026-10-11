@@ -148,6 +148,7 @@ function setFieldStatus(cls: '' | 'ok' | 'err' | 'busy', icon: 'ok' | 'err' | 'w
   serverStatus.className = `field-status ${cls}`;
   serverStatus.innerHTML = `${icon ? ic(icon, 'sm') : ''}${text}`;
 }
+let wakeTimer: ReturnType<typeof setTimeout> | null = null;
 function showProbe(st: ServerStatus | undefined) {
   if (!st) return;
   if (st.url === lastSaved) { state.serverState = st.state; showProgress(); }
@@ -156,10 +157,16 @@ function showProbe(st: ServerStatus | undefined) {
   // the first time. Offer the retry here rather than making them save again to re-probe.
   retryBtn.hidden = st.state !== 'unreachable';
   if (st.state === 'checking') setFieldStatus('busy', 'warn', 'Checking…');
+  else if (st.state === 'waking') setFieldStatus('busy', 'warn', 'Waking it up… a free host puts the server to sleep between parties, and it takes up to a minute to come back.');
   else if (st.state === 'reachable') setFieldStatus('ok', 'ok', `Reachable${st.version ? ` · version ${st.version}` : ''}${st.rttMs != null ? ` · answered in ${st.rttMs} ms` : ' · you’re connected to it'}`);
   else if (st.state === 'unreachable') setFieldStatus('err', 'err', 'Can’t reach it. Check the address, or that the host machine is awake.');
   else setFieldStatus('', null, '');
   showUpdate(st);
+  // This page has no live feed from the offscreen document, so while the server wakes it
+  // reads the state again every few seconds. Reads, not probes: the watch over there
+  // settles on its own, and a probe after it gave up would only start it over.
+  if (wakeTimer) { clearTimeout(wakeTimer); wakeTimer = null; }
+  if (st.state === 'waking') wakeTimer = setTimeout(async () => { wakeTimer = null; showProbe((await toOffscreen<Snapshot>({ type: 'getSnapshot' }))?.server); }, 3000);
 }
 
 /** One side a release behind the other: the server's side comes with the host guide, the extension's with Chrome's own way. */

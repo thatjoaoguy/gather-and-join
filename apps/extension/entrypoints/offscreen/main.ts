@@ -14,7 +14,7 @@ import {
 } from '../../lib/messages';
 import { BadgeReporter, type BadgeState } from '../../lib/badge';
 import { RoomClient } from '../../lib/room-client';
-import { RoomSession, type ProbeResult } from '../../lib/room-session';
+import { RoomSession, type HealthResult, type ProbeResult } from '../../lib/room-session';
 import { Mesh } from '../../lib/mesh';
 import { LocalMedia } from '../../lib/local-media';
 import { RemoteMedia } from '../../lib/remote-media';
@@ -110,6 +110,7 @@ const session = new RoomSession(
       return mesh;
     },
     probe: probeServer,
+    health: checkHealth,
     local, remote,
     // This document has no chrome.storage of its own, so every read and write is a
     // round-trip to the service worker. The session stays free of logging and of
@@ -151,6 +152,40 @@ function probeServer(url: string): Promise<ProbeResult> {
     ws.onerror = () => done(false);
     ws.onclose = () => done(false);
   });
+}
+
+// Long enough for a request Render holds while it boots the server (~12 s) to come back as `up`.
+const HEALTH_TIMEOUT_MS = 20_000;
+
+/**
+ * `GET /health` at the socket's address, from this document's own origin. The server lets
+ * any origin read it, so a 200 saying `status: ok` is the server itself. Anything else
+ * that answers only proves the address is alive: a free host's holding page while it
+ * boots the server, or an older server without the header, which the browser hides
+ * behind an opaque response (the second, `no-cors` request tells that apart from a
+ * dead address). A request a proxy holds open until the server is up counts as alive too.
+ */
+async function checkHealth(url: string): Promise<HealthResult> {
+  let target: string;
+  try {
+    const u = new URL(url);
+    target = `${u.protocol === 'wss:' ? 'https:' : 'http:'}//${u.host}${u.pathname.replace(/\/$/, '')}/health`;
+  } catch { return 'down'; }
+  const timedOut = (e: unknown) => e instanceof DOMException && (e.name === 'TimeoutError' || e.name === 'AbortError');
+  try {
+    const res = await fetch(target, { cache: 'no-store', signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS) });
+    if (!res.ok) return 'answered';
+    const body = await res.json().catch(() => null) as { status?: unknown } | null;
+    return body?.status === 'ok' ? 'up' : 'answered';
+  } catch (e) {
+    if (timedOut(e)) return 'answered';
+  }
+  try {
+    await fetch(target, { cache: 'no-store', mode: 'no-cors', signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS) });
+    return 'answered';
+  } catch (e) {
+    return timedOut(e) ? 'answered' : 'down';
+  }
 }
 
 // ---- loopbacks: one per player port -------------------------------------------------------

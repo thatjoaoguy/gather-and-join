@@ -31,6 +31,7 @@ describe('versions', () => {
     expect(serverState(reachable('0.9.0'), '0.10.0').tone).toBe('warn');
     expect(serverState(reachable('0.11.0'), '0.10.0').tone).toBe('warn');
     expect(serverState(reachable('0.9.0')).tone).toBe('ok'); // nothing to compare with
+    expect(serverState({ ...reachable(null), state: 'waking' })).toEqual({ tone: 'busy', word: 'Waking up' });
   });
 
   it('words the notice for the side that has to act, with both versions in it', () => {

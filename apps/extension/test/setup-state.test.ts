@@ -31,6 +31,7 @@ describe('setupSteps', () => {
   it('separates an address nobody saved from one that stopped answering', () => {
     expect(setupSteps(fresh)[2]!.state).toBe('todo');
     expect(setupSteps({ ...ready, serverState: 'unreachable' })[2]!.state).toBe('blocked');
+    expect(setupSteps({ ...ready, serverState: 'waking' })[2]!.state).toBe('done'); // asleep, not broken
     // Mid-probe, an address that has been saved is not suddenly a step again.
     expect(setupSteps({ ...ready, serverState: 'checking' })[2]!.state).toBe('done');
   });

@@ -25,6 +25,8 @@ export type SessionClient = {
   join(desired: DesiredRoom): void;
   rejoin(create?: boolean): void;
   leave(): void;
+  /** Skip the backoff: the server is known to be up. */
+  connectNow(): void;
   send(msg: C2S): void;
   syncClock(): Promise<void>;
   dropForTest(): void;
@@ -67,10 +69,19 @@ export type TestConfig = { sabotage: Sabotage; testPeerId: string | null; server
 /** Reachability probe: open a socket to `url`, wait for its first frame, close. Rejects or resolves ok:false when unreachable. */
 export type ServerProbe = (url: string) => Promise<ProbeResult>;
 export type ProbeResult = { ok: boolean; rttMs: number | null; version: string | null };
+/**
+ * `GET /health` at the socket's address, for when the socket itself was refused. `up`:
+ * the server answered `status: ok`. `answered`: something answered that was not the
+ * server — a free host's proxy while it boots the server, or a server too old to let
+ * the extension read the body. `down`: nothing answered at all.
+ */
+export type HealthProbe = (url: string) => Promise<HealthResult>;
+export type HealthResult = 'up' | 'answered' | 'down';
 
 export type SessionDeps = {
   createClient(url: string, handlers: ClientHandlers): SessionClient;
   probe: ServerProbe;
+  health: HealthProbe;
   createMesh(myId: PeerId, handlers: MeshHandlers, opts?: { iceServers?: RTCIceServer[] }): SessionMesh;
   local: SessionLocalMedia;
   remote: SessionRemoteMedia;
@@ -104,6 +115,15 @@ const REJOIN_NOT_FOUND_MS = 3000;
 const MAX_TAKEN_RETRIES = 10;
 const MAX_NOT_FOUND_RETRIES = 40;
 const CREATE_RETRIES = 5;
+/** How often `/health` is asked while a server wakes, and how long before that counts as down. */
+const WAKE_POLL_MS = 2000;
+const WAKE_GIVE_UP_MS = 90_000;
+/**
+ * A connection still pending after this long is being held, not answered: Render holds
+ * the upgrade (and every request) for the ~12 s its free tier takes to boot a sleeping
+ * server, and only then lets it through. A reachable server opens in well under a second.
+ */
+const SLOW_CONNECT_MS = 2500;
 
 export class RoomSession {
   readonly snapshot: Snapshot;
@@ -124,6 +144,10 @@ export class RoomSession {
   private readonly speakingPeers = new Set<PeerId>();
   private readonly peerFlags = new Map<PeerId, MediaFlags>();
   private probeSeq = 0;
+  /** The address a wake-up watch is on, if any; its sequence number cancels a stale loop. */
+  private waking: string | null = null;
+  private wakeSeq = 0;
+  private slowTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly now: () => number;
   private readonly newPeerId: () => string;
   private readonly newRoomCode: () => string;
@@ -141,10 +165,9 @@ export class RoomSession {
     this.client = deps.createClient(deps.defaultServerUrl, {
       onFrame: (m) => this.onFrame(m),
       onStatus: (s) => this.onStatus(s),
-      onConnectFailed: (url) => {
-        this.snapshot.server = { ...serverStatus(url), state: 'unreachable', checkedAt: this.now() };
-        this.fail('SERVER_UNREACHABLE', `Can't reach the server at ${url}. Check the server URL on the setup page.`);
-      },
+      // Refused before it opened. The client keeps retrying on its own; what the user is
+      // told depends on whether the address is asleep or dead, which only /health can say.
+      onConnectFailed: (url) => { void this.awaitWake(url); },
     });
   }
 
@@ -424,25 +447,108 @@ export class RoomSession {
     return cfg.serverUrl ?? (stored.serverUrl as string | undefined) ?? this.deps.defaultServerUrl;
   }
 
-  /** Connect, ping once, close: is the configured server there? Skipped while our own socket already answers. */
+  /**
+   * Connect, ping once, close: is the configured server there? Skipped while our own
+   * socket already answers. A refused socket is not yet "unreachable": the method
+   * resolves once /health has sorted it into waking or down, and a waking server is
+   * then watched in the background until it answers or 90 seconds pass.
+   */
   async probeServer() {
     const seq = ++this.probeSeq;
-    this.snapshot.server = { ...this.snapshot.server, state: 'checking' };
-    this.broadcast();
+    // A watch in progress already describes its address; don't flash "checking" over it.
+    if (!this.waking) { this.snapshot.server = { ...this.snapshot.server, state: 'checking' }; this.broadcast(); }
     // In a room, the server worth checking is the one the room is on, not a newly saved one.
     const url = this.snapshot.room ? this.client.url : await this.configuredServerUrl();
     if (seq !== this.probeSeq) return; // superseded while resolving
+    if (this.waking === url) return; // the watch settles the state itself
+    if (this.waking) this.endWake(); // a watch on another address is stale
     if (this.snapshot.server.url !== url) { this.snapshot.server = { ...serverStatus(url), state: 'checking' }; this.broadcast(); }
     if (this.snapshot.room && this.client.status === 'connected' && this.client.url === url) {
       this.snapshot.server = { ...this.snapshot.server, state: 'reachable', rttMs: null, checkedAt: this.now() };
       this.broadcast();
       return;
     }
+    this.markWakingIfSlow(url);
     let result: ProbeResult;
     try { result = await this.deps.probe(url); } catch { result = { ok: false, rttMs: null, version: null }; }
+    this.clearSlow();
     if (seq !== this.probeSeq || this.snapshot.server.url !== url) return; // superseded
-    this.snapshot.server = { ...this.snapshot.server, state: result.ok ? 'reachable' : 'unreachable', rttMs: result.rttMs, version: result.version, checkedAt: this.now() };
+    if (!result.ok) { await this.awaitWake(url); return; }
+    this.snapshot.server = { ...this.snapshot.server, state: 'reachable', rttMs: result.rttMs, version: result.version, checkedAt: this.now() };
     this.broadcast();
+  }
+
+  /**
+   * The socket at `url` was refused, which on a free host is what a sleeping server looks
+   * like: the host's proxy answers HTTP while it boots the server and refuses the upgrade
+   * until it is up. Watch /health until the server answers properly, then connect at once
+   * instead of waiting out the backoff; an address that answers nothing at all is down.
+   * Resolves after the first answer, when the state is known; the watch carries on alone.
+   */
+  private async awaitWake(url: string): Promise<void> {
+    if (this.waking === url) return; // one watch per address; the client's own retries are not news
+    const seq = ++this.wakeSeq;
+    this.waking = url;
+    const startedAt = this.now();
+    const s = this.snapshot.server;
+    if (s.url !== url || (s.state !== 'checking' && s.state !== 'waking')) { this.snapshot.server = { ...serverStatus(url), state: 'checking' }; this.broadcast(); }
+    const wantsRoom = () => this.snapshot.joining || !!this.snapshot.room;
+    let settled = () => {};
+    const first = new Promise<void>((resolve) => { settled = resolve; });
+    const loop = async () => {
+      for (;;) {
+        const health = await this.deps.health(url).catch((): HealthResult => 'down');
+        if (seq !== this.wakeSeq) return;
+        if (health === 'down' || this.now() - startedAt >= WAKE_GIVE_UP_MS) {
+          this.waking = null;
+          this.snapshot.server = { ...serverStatus(url), state: 'unreachable', checkedAt: this.now() };
+          if (wantsRoom()) this.fail('SERVER_UNREACHABLE', `Can't reach the server at ${url}. Check the server URL on the setup page.`);
+          else this.broadcast();
+          return;
+        }
+        if (health === 'up') {
+          // Up by HTTP; only a socket proves it. With a room wanted the client's open ends
+          // the watch (see onStatus); otherwise one more probe does.
+          if (wantsRoom()) this.client.connectNow();
+          else {
+            let result: ProbeResult;
+            try { result = await this.deps.probe(url); } catch { result = { ok: false, rttMs: null, version: null }; }
+            if (seq !== this.wakeSeq) return;
+            if (result.ok) {
+              this.waking = null;
+              this.snapshot.server = { ...serverStatus(url), state: 'reachable', rttMs: result.rttMs, version: result.version, checkedAt: this.now() };
+              this.broadcast();
+              return;
+            }
+          }
+        }
+        if (this.snapshot.server.state !== 'waking') { this.snapshot.server = { ...serverStatus(url), state: 'waking' }; this.broadcast(); }
+        settled();
+        await new Promise((r) => setTimeout(r, WAKE_POLL_MS));
+        if (seq !== this.wakeSeq) return;
+      }
+    };
+    void loop().finally(() => settled());
+    await first;
+  }
+
+  private endWake() {
+    this.wakeSeq++;
+    this.waking = null;
+  }
+
+  /** Call it waking once a connection attempt at `url` has been pending for SLOW_CONNECT_MS. */
+  private markWakingIfSlow(url: string) {
+    this.clearSlow();
+    this.slowTimer = setTimeout(() => {
+      this.slowTimer = null;
+      if (this.waking || this.snapshot.server.url !== url || this.snapshot.server.state === 'waking') return;
+      this.snapshot.server = { ...serverStatus(url), state: 'waking' };
+      this.broadcast();
+    }, SLOW_CONNECT_MS);
+  }
+  private clearSlow() {
+    if (this.slowTimer) { clearTimeout(this.slowTimer); this.slowTimer = null; }
   }
 
   /** The options page granted the mic after we tried and failed. */
@@ -502,9 +608,10 @@ export class RoomSession {
   private onStatus(status: SocketStatus) {
     const s = this.snapshot;
     s.socket = status;
+    if (status === 'connecting') this.markWakingIfSlow(this.client.url); else this.clearSlow();
     if (status !== 'connected' && s.room) s.lastError = { code: 'RECONNECTING', message: 'Connection lost — reconnecting…' };
     if (status === 'connected' && s.lastError?.code === 'RECONNECTING') s.lastError = null;
-    if (status === 'connected') s.server = { ...serverStatus(this.client.url), state: 'reachable', rttMs: null, checkedAt: this.now() };
+    if (status === 'connected') { this.endWake(); s.server = { ...serverStatus(this.client.url), state: 'reachable', rttMs: null, checkedAt: this.now() }; }
     s.socketReconnects = this.client.reconnects + this.bootReconnects;
     void this.persist();
     this.broadcast();

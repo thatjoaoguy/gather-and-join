@@ -30,11 +30,15 @@ export type PeerMediaState = {
   camOn: boolean | null;
 };
 
-/** Reachability of the configured server, from a probe (connect + one ping) or the live socket. */
+/**
+ * Reachability of the configured server, from a probe (connect + one ping) or the live
+ * socket. `waking`: the address answers over HTTP but refuses the socket, which is a
+ * free host booting a server that fell asleep; the extension keeps trying on its own.
+ */
 export type ServerStatus = {
   url: string;
   host: string;
-  state: 'unknown' | 'checking' | 'reachable' | 'unreachable';
+  state: 'unknown' | 'checking' | 'waking' | 'reachable' | 'unreachable';
   rttMs: number | null;
   checkedAt: number | null;
   /** The server's release, from its `welcome` frame; null until it says (servers from before the frame never do). */
