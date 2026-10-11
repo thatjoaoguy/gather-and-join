@@ -84,7 +84,7 @@ media-track stand-ins):
 
 | Module | Owns | Injected |
 |---|---|---|
-| `room-session.ts` | the `Snapshot`, join/rejoin/error recovery, mesh wiring, media toggles, persistence | client, mesh factory, local/remote media, storage |
+| `room-session.ts` | the `Snapshot`, join/rejoin/error recovery, the server's reachability (probe, slow-connect and wake-up watch on `/health`), mesh wiring, media toggles, persistence | client, mesh factory, socket and health probes, local/remote media, storage |
 | `room-client.ts` | the WebSocket: reconnect/backoff, clock sync, rejoin | `WebSocket` global |
 | `mesh.ts` + `perfect-peer.ts` | one negotiated `RTCPeerConnection` per peer | a send-signal callback |
 | `loopback-sender.ts` / `sidebar/loopback-receiver.ts` | the two ends of the page loopback | signal callbacks |

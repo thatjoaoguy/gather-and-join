@@ -77,6 +77,9 @@ long it has been up, and how many rooms and people are on it right now:
 {"status":"ok","version":"0.3.1","uptimeSec":412,"rooms":1,"peers":3}
 ```
 
+The extension asks this page too, whenever its own connection is refused, to
+tell a server that is still waking up from one that is down.
+
 Those two are the only things served over the normal web. The extension itself
 connects with `wss://`, which is why the address you share is not the `https://`
 one.
@@ -100,8 +103,13 @@ someone connects. In practice:
 
 - **It cannot fall asleep during a party.** Every connected extension checks the
   clock once a minute, which counts as traffic.
-- **The first person to arrive waits about 12 seconds** while it wakes. They see
-  a Render holding page rather than the server, which is normal:
+- **The first person to arrive waits about 12 seconds** while it wakes. Render
+  holds their connection open for that long and lets it through once the server
+  is up; the extension can tell a held connection from a quick one, so after a
+  couple of seconds it says "Waking your server up…" instead of that it can't
+  be reached, and joins on its own the moment the server answers. Anyone opening
+  the address in a browser meanwhile sees a Render holding page rather than the
+  server, which is normal:
 
 ![Render's holding page, showing its own logo and a line reading "incoming HTTP request detected"](/img/hosting/render-waking-up.png)
 

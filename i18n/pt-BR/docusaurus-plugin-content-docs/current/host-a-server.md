@@ -82,6 +82,9 @@ agora:
 {"status":"ok","version":"0.3.1","uptimeSec":412,"rooms":1,"peers":3}
 ```
 
+A extensão também consulta essa página sempre que a própria conexão é recusada,
+para distinguir um servidor que ainda está acordando de um que caiu.
+
 Essas duas são as únicas coisas servidas pela web comum. A extensão em si se
 conecta com `wss://`, e é por isso que o endereço que você compartilha não é o
 de `https://`.
@@ -106,8 +109,13 @@ alguém se conecta. Na prática:
 
 - **Ele não consegue hibernar durante uma sessão.** Cada extensão conectada
   confere o relógio uma vez por minuto, e isso conta como tráfego.
-- **A primeira pessoa a chegar espera uns 12 segundos** enquanto ele acorda.
-  Ela vê uma página de espera do Render em vez do servidor, o que é normal:
+- **A primeira pessoa a chegar espera uns 12 segundos** enquanto ele acorda. O
+  Render segura a conexão dela por esse tempo e a deixa passar quando o servidor
+  está de pé; a extensão distingue uma conexão segurada de uma rápida, e por
+  isso, depois de uns dois segundos, diz "Waking your server up…" em vez de que
+  não consegue alcançá-lo, e entra sozinha assim que o servidor responde. Quem
+  abrir o endereço no navegador nesse meio-tempo vê uma página de espera do
+  Render em vez do servidor, o que é normal:
 
 ![A página de espera do Render, com o logotipo dele e uma linha dizendo "incoming HTTP request detected"](/img/hosting/render-waking-up.png)
 

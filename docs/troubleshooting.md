@@ -7,6 +7,11 @@ title: Troubleshooting
 
 ## "Can't reach the server"
 
+- "Waking your server up…" is a different message, and not a problem: a server
+  on a free host sleeps between parties, and the extension waits for it and
+  joins on its own, usually within a minute. "Can't reach" only appears once
+  nothing has answered at the address at all, or something answered for a
+  minute and a half without the server ever coming up.
 - Ask the host whether the server is still running and, for a laptop tunnel,
   whether the address changed. A tunnel address is new every run.
 - The host can check in a browser: the same address with `https://` instead of
