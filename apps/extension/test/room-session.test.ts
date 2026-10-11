@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { S2C, C2S } from '@gj/shared';
-import { RoomSession, type ClientHandlers, type MeshHandlers, type SessionClient, type SessionMesh, type SessionEvents, type ServerProbe } from '../lib/room-session';
+import { RoomSession, type ClientHandlers, type MeshHandlers, type SessionClient, type SessionMesh, type SessionEvents, type ServerProbe, type HealthProbe } from '../lib/room-session';
 import { FakeTrack, FakeStream, FakePeerConnection, installFakeRtc } from './fakes';
 
 /** A room client that records what the session sends and lets the test play the server. */
@@ -12,10 +12,12 @@ function fakeClient() {
     join(d: { code: string; peerId: string; name: string; create: boolean }) { this.joins.push(d); },
     rejoin(create = false) { this.rejoins.push(create); },
     leave() { this.leaves++; this.status = 'disconnected'; },
+    connectNow: vi.fn(),
     send(m: C2S) { this.sent.push(m); },
     syncClock: vi.fn(async () => {}),
     dropForTest: vi.fn(),
     // test controls
+    connecting() { this.status = 'connecting'; handlers.onStatus('connecting'); },
     connect() { this.status = 'connected'; handlers.onStatus('connected'); },
     disconnect() { this.status = 'disconnected'; handlers.onStatus('disconnected'); },
     frame(m: S2C) { handlers.onFrame(m); },
@@ -80,12 +82,13 @@ function setup(opts: { local?: ReturnType<typeof fakeLocal>; kvStore?: ReturnTyp
   };
   const codes = [...(opts.codes ?? ['RM0001', 'RM0002', 'RM0003', 'RM0004', 'RM0005', 'RM0006', 'RM0007'])];
   const probe = vi.fn<ServerProbe>(async () => ({ ok: true, rttMs: 12, version: '0.10.0' }));
+  const health = vi.fn<HealthProbe>(async () => 'down');
   const session = new RoomSession({
-    createClient: c.create, createMesh: m.create, probe, local: l.local as never, remote, kv: storage,
+    createClient: c.create, createMesh: m.create, probe, health, local: l.local as never, remote, kv: storage,
     readTestConfig: async () => ({ sabotage: null, testPeerId: opts.testPeerId ?? null, serverUrl: null, iceServers: null }),
     defaultServerUrl: 'ws://default', now: () => Date.now(), newPeerId: () => 'me', newRoomCode: () => codes.shift()!,
   }, events);
-  return { session, client: c.client, mesh: m.mesh, local: l, remote, events, kv: storage, probe };
+  return { session, client: c.client, mesh: m.mesh, local: l, remote, events, kv: storage, probe, health };
 }
 
 type RoomFrame = Extract<S2C, { type: 'room' }>;
@@ -409,11 +412,132 @@ describe('RoomSession', () => {
     expect(client.rejoins).toEqual([]); // lastRoom was cleared
   });
 
-  it('an unreachable server is reported with the URL', async () => {
-    const { session, client } = setup();
+  it('an unreachable server is reported with the URL, once /health has answered nothing either', async () => {
+    const { session, client, health } = setup();
     await session.joinRoom('RM0001', 'Ana');
     client.fail('ws://default');
+    expect(session.snapshot.server.state).toBe('checking');
+    expect(session.snapshot.lastError).toBeNull();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(health).toHaveBeenCalledWith('ws://default');
+    expect(session.snapshot.server).toMatchObject({ url: 'ws://default', state: 'unreachable' });
     expect(session.snapshot.lastError).toEqual({ code: 'SERVER_UNREACHABLE', message: expect.stringContaining('ws://default') });
+  });
+
+  it('a sleeping server (HTTP answers, socket refused) is "waking", and connects the moment /health says ok', async () => {
+    const { session, client, health } = setup();
+    health.mockResolvedValue('answered');
+    await session.joinRoom('RM0001', 'Ana');
+    client.fail('ws://default');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(session.snapshot.server.state).toBe('waking');
+    expect(session.snapshot.lastError).toBeNull();
+    client.fail('ws://default'); // the client's own retries while it wakes: not news
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(health).toHaveBeenCalledTimes(2);
+    expect(session.snapshot.server.state).toBe('waking');
+    expect(client.connectNow).not.toHaveBeenCalled();
+    health.mockResolvedValue('up');
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(client.connectNow).toHaveBeenCalledTimes(1);
+    expect(session.snapshot.server.state).toBe('waking'); // only a socket proves it
+    client.connect();
+    expect(session.snapshot.server.state).toBe('reachable');
+    health.mockClear();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(health).not.toHaveBeenCalled(); // the watch ended with the socket
+  });
+
+  it('a connection held open for 2.5s is "waking" (Render boots behind it); the open, or a refusal, ends that', async () => {
+    const { session, client, health } = setup();
+    await session.joinRoom('RM0001', 'Ana');
+    client.connecting();
+    await vi.advanceTimersByTimeAsync(2499);
+    expect(session.snapshot.server.state).toBe('unknown');
+    await vi.advanceTimersByTimeAsync(1);
+    expect(session.snapshot.server).toMatchObject({ url: 'ws://default', state: 'waking' });
+    expect(health).not.toHaveBeenCalled(); // nothing to ask: the socket itself is on its way
+    client.connect();
+    expect(session.snapshot.server.state).toBe('reachable');
+    // Quick opens never show it.
+    client.disconnect();
+    client.connecting();
+    await vi.advanceTimersByTimeAsync(500);
+    client.connect();
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(session.snapshot.server.state).toBe('reachable');
+    // Held, then refused: the watch takes over without flashing "checking".
+    client.disconnect();
+    client.connecting();
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(session.snapshot.server.state).toBe('waking');
+    client.fail('ws://default');
+    expect(session.snapshot.server.state).toBe('waking');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(session.snapshot.server.state).toBe('unreachable');
+  });
+
+  it('a probe that is slow to answer shows "waking" meanwhile', async () => {
+    const { session, probe } = setup();
+    await session.boot();
+    probe.mockImplementation(() => new Promise((r) => setTimeout(() => r({ ok: true, rttMs: 4000, version: '0.11.0' }), 4000)));
+    const p = session.probeServer();
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(session.snapshot.server.state).toBe('waking');
+    await vi.advanceTimersByTimeAsync(1500);
+    await p;
+    expect(session.snapshot.server).toMatchObject({ state: 'reachable', version: '0.11.0' });
+  });
+
+  it('gives up on a server that keeps answering without ever coming up', async () => {
+    const { session, client, health } = setup();
+    health.mockResolvedValue('answered');
+    await session.joinRoom('RM0001', 'Ana');
+    client.fail('ws://default');
+    await vi.advanceTimersByTimeAsync(89_000);
+    expect(session.snapshot.server.state).toBe('waking');
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(session.snapshot.server.state).toBe('unreachable');
+    expect(session.snapshot.lastError?.code).toBe('SERVER_UNREACHABLE');
+    health.mockClear();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(health).not.toHaveBeenCalled();
+  });
+
+  it('a probe of a sleeping server reports "waking" and settles on its own, with no join wanted', async () => {
+    const { session, client, probe, health } = setup();
+    await session.boot();
+    probe.mockResolvedValue({ ok: false, rttMs: null, version: null });
+    health.mockResolvedValue('answered');
+    await session.probeServer(); // resolves once /health has sorted it
+    expect(session.snapshot.server.state).toBe('waking');
+    await session.probeServer(); // the setup page asking again: no second watch, no "checking" flash
+    expect(session.snapshot.server.state).toBe('waking');
+    expect(probe).toHaveBeenCalledTimes(1);
+    health.mockResolvedValue('up');
+    probe.mockResolvedValue({ ok: true, rttMs: 30, version: '0.11.0' });
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(client.connectNow).not.toHaveBeenCalled();
+    expect(session.snapshot.server).toMatchObject({ state: 'reachable', rttMs: 30, version: '0.11.0' });
+    health.mockClear();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(health).not.toHaveBeenCalled();
+  });
+
+  it('a new address supersedes a watch on the old one', async () => {
+    const { session, probe, health } = setup();
+    await session.boot();
+    probe.mockResolvedValue({ ok: false, rttMs: null, version: null });
+    health.mockResolvedValue('answered');
+    await session.probeServer();
+    expect(session.snapshot.server).toMatchObject({ url: 'ws://default', state: 'waking' });
+    probe.mockResolvedValue({ ok: true, rttMs: 9, version: '0.11.0' });
+    await session.setServerUrl('wss://house.example');
+    expect(session.snapshot.server).toMatchObject({ url: 'wss://house.example', state: 'reachable' });
+    health.mockClear();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(health).not.toHaveBeenCalled();
+    expect(session.snapshot.server).toMatchObject({ url: 'wss://house.example', state: 'reachable' });
   });
 
   it('announces mic/camera over the wire and mirrors what peers report, including late-join state', async () => {
@@ -511,6 +635,7 @@ describe('RoomSession', () => {
     await session.probeServer();
     expect(probe).not.toHaveBeenCalled(); // in a room on that server: no need to probe
     client.fail('wss://house.example');
+    await vi.advanceTimersByTimeAsync(0);
     expect(session.snapshot.server.state).toBe('unreachable');
   });
 

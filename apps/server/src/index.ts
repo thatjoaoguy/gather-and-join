@@ -246,12 +246,12 @@ const VERSION = typeof __GJ_VERSION__ === 'string' ? __GJ_VERSION__ : (process.e
 
 const startedAt = now();
 
-function respond(res: ServerResponse, status: number, type: string, body: string) {
+function respond(res: ServerResponse, status: number, type: string, body: string, headers: Record<string, string> = {}) {
   // The charset is not optional: a browser decodes an unlabelled text/plain as
   // windows-1252, which turns the em dash in the page below into mojibake.
   // content-length is a byte count, not a character count, hence Buffer.byteLength.
   const contentType = type.startsWith('text/') ? `${type}; charset=utf-8` : type;
-  res.writeHead(status, { 'content-type': contentType, 'content-length': Buffer.byteLength(body), 'cache-control': 'no-store' });
+  res.writeHead(status, { 'content-type': contentType, 'content-length': Buffer.byteLength(body), 'cache-control': 'no-store', ...headers });
   res.end(body); // Node drops the body itself on HEAD.
 }
 
@@ -266,10 +266,13 @@ function handleHttp(req: IncomingMessage, res: ServerResponse) {
   if (path === '/health') {
     let peers = 0;
     for (const room of rooms.values()) peers += room.peers.size;
+    // Readable from any origin: the extension fetches it from its own to tell a server
+    // that is still booting (its host's proxy answers, the socket is refused) from one
+    // that is down. Nothing here is secret, and the socket needs no header at all.
     return respond(res, 200, 'application/json', JSON.stringify({
       status: 'ok', version: VERSION, uptimeSec: Math.floor((now() - startedAt) / 1000),
       rooms: rooms.size, peers,
-    }) + '\n');
+    }) + '\n', { 'access-control-allow-origin': '*' });
   }
   if (path === '/') {
     return respond(res, 200, 'text/plain',

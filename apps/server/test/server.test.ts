@@ -276,7 +276,7 @@ describe('greeting', () => {
 describe('http surface', () => {
   const get = async (path: string, init?: RequestInit) => {
     const res = await fetch(`http://localhost:${PORT}${path}`, init);
-    return { status: res.status, type: res.headers.get('content-type'), body: await res.text() };
+    return { status: res.status, type: res.headers.get('content-type'), cors: res.headers.get('access-control-allow-origin'), body: await res.text() };
   };
 
   it('answers / with plain text instead of the 426 ws sends, so a host checking the address sees it working', async () => {
@@ -286,8 +286,11 @@ describe('http surface', () => {
     expect(res.body).toContain('running');
   });
 
-  it('reports health as JSON, counting live rooms and peers', async () => {
-    const before = JSON.parse((await get('/health')).body);
+  it('reports health as JSON, counting live rooms and peers, readable from any origin', async () => {
+    const first = await get('/health');
+    expect(first.cors).toBe('*'); // the extension reads it cross-origin to tell "booting" from "down"
+    expect((await get('/')).cors).toBeNull();
+    const before = JSON.parse(first.body);
     expect(before).toMatchObject({ status: 'ok' });
     expect(typeof before.version).toBe('string');
     expect(before.uptimeSec).toBeGreaterThanOrEqual(0);

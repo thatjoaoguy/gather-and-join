@@ -92,6 +92,48 @@ describe('RoomClient', () => {
     expect(c.reconnects).toBe(1);
   });
 
+  it('keeps a create through attempts the server never saw, and drops it once a socket has opened', async () => {
+    const { c } = make();
+    c.join(desired);
+    FakeWebSocket.latest().close(); // asleep host: refused before open, the create was never delivered
+    await vi.advanceTimersByTimeAsync(500);
+    const ws = FakeWebSocket.latest();
+    await handshake(ws);
+    expect(ws.sent.at(-1)).toEqual({ type: 'join', ...desired, create: true });
+    ws.drop(); // the server saw the create; from here on it is a room to re-join
+    await vi.advanceTimersByTimeAsync(500);
+    const ws2 = FakeWebSocket.latest();
+    await handshake(ws2);
+    expect(ws2.sent.at(-1)).toEqual({ type: 'join', ...desired, create: false });
+  });
+
+  it('connectNow skips the backoff and replaces the pending retry rather than adding one', async () => {
+    const { c } = make();
+    c.join(desired);
+    FakeWebSocket.latest().close();
+    await vi.advanceTimersByTimeAsync(500);
+    FakeWebSocket.latest().close(); // backoff now 1000
+    expect(FakeWebSocket.instances).toHaveLength(2);
+    c.connectNow();
+    expect(FakeWebSocket.instances).toHaveLength(3);
+    await vi.advanceTimersByTimeAsync(1000); // the cancelled retry would have fired here
+    expect(FakeWebSocket.instances).toHaveLength(3);
+    c.connectNow(); // in flight: nothing to do
+    expect(FakeWebSocket.instances).toHaveLength(3);
+    c.leave();
+    c.connectNow(); // nothing wanted: nothing opened
+    expect(FakeWebSocket.instances).toHaveLength(3);
+  });
+
+  it('leave cancels a pending retry', async () => {
+    const { c } = make();
+    c.join(desired);
+    FakeWebSocket.latest().close();
+    c.leave();
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(FakeWebSocket.instances).toHaveLength(1);
+  });
+
   it('delivers non-pong frames to onFrame and drops frames that are not JSON', async () => {
     const { c, frames } = make();
     c.join(desired);

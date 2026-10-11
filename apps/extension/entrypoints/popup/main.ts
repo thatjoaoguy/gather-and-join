@@ -89,6 +89,7 @@ function renderLobby(s: Snapshot) {
   // Before setup the lobby is only the invitation; the service can wait until there is a room to bring it to.
   $('lobby-access').innerHTML = ungranted && !fresh ? accessNotice(ungranted) : '';
   const unreachable = !fresh && (s.server.state === 'unreachable' || err?.code === 'SERVER_UNREACHABLE');
+  const waking = !fresh && !unreachable && s.server.state === 'waking';
   $('tab-join').toggleAttribute('disabled', joining);
   $('tab-create').toggleAttribute('disabled', joining);
   nameInput.disabled = joining;
@@ -138,6 +139,10 @@ function renderLobby(s: Snapshot) {
     const addr = showServer ? `<code>${esc(s.server.url)}</code>` : `<span class="spoiler" tabindex="0">${esc(s.server.url)}</span>`;
     notice = `<div class="notice error" role="alert"><strong>${ic('err')} Can’t reach your server</strong><p>Nothing answered at ${addr}. Check the address with the person hosting it, or make sure their machine is awake.</p></div>`;
     recovery = `<div class="media-controls"><button class="primary" id="open-setup" type="button">Open setup</button><button id="retry-probe" type="button">Try again</button></div>`;
+  } else if (waking) {
+    // Nothing is wrong: a free host put the server to sleep between parties and is starting it.
+    const then = joining ? 'You’ll be in as soon as it answers.' : 'You can join as soon as it answers; we keep checking.';
+    notice = `<div class="notice info" role="status"><strong>${ic('info')} Waking your server up…</strong><p>It went to sleep between parties and takes up to a minute to come back. ${then}</p></div>`;
   }
   if (!fresh && !joining) notice += updateRow(s);
   $('lobby-notice').innerHTML = notice;
@@ -156,7 +161,7 @@ function renderLobby(s: Snapshot) {
   const camRow = camDenied ? `<li class="err">${ic('camOff')}<span>Camera blocked</span><a href="#" id="grant-cam">Allow</a></li>`
     : camOk ? `<li class="ok">${ic('cam')}<span>Camera allowed · off until you turn it on</span></li>`
     : `<li class="warn">${ic('camOff')}<span>Camera not set up</span><a href="#" id="grant-cam">Allow</a></li>`;
-  const srv = joining && s.server.state !== 'unreachable' ? { ...s, server: { ...s.server, state: 'checking' as const } } : s;
+  const srv = joining && s.server.state !== 'unreachable' && s.server.state !== 'waking' ? { ...s, server: { ...s.server, state: 'checking' as const } } : s;
   $('readiness').innerHTML = micRow + camRow + serverRow(srv);
   $('lobby-foot').textContent = micDenied ? 'You can still join without a microphone; nobody will hear you until it’s allowed.' : 'Headphones on. Make yourself at home.';
 }

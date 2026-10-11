@@ -23,6 +23,7 @@ export function serverState(st: ServerStatus, extensionVersion?: string): { tone
       return { tone: 'ok', word: 'Reachable' };
     }
     case 'checking': return { tone: 'busy', word: 'Connecting' };
+    case 'waking': return { tone: 'busy', word: 'Waking up' };
     case 'unreachable': return { tone: 'err', word: 'Can’t reach it' };
     default: return { tone: '', word: 'Not checked' };
   }

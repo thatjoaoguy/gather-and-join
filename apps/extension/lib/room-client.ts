@@ -14,6 +14,7 @@ export class RoomClient {
   private backoff = 500;
   private pendingPongs = new Map<number, (s: PingSample) => void>();
   private offsetTimer: ReturnType<typeof setInterval> | null = null;
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private closedByUs = false;
   status: SocketStatus = 'disconnected';
   reconnects = 0;
@@ -46,10 +47,22 @@ export class RoomClient {
     this.desired = null;
     this.send({ type: 'leave' });
     this.closedByUs = true;
+    this.cancelRetry();
     this.ws?.close();
     this.ws = null;
     this.setStatus('disconnected');
     if (this.offsetTimer) { clearInterval(this.offsetTimer); this.offsetTimer = null; }
+  }
+
+  /** The server is known to be up (its health answered): connect now rather than waiting out the backoff. */
+  connectNow() {
+    if (!this.desired) return;
+    this.cancelRetry();
+    this.connect();
+  }
+
+  private cancelRetry() {
+    if (this.retryTimer) { clearTimeout(this.retryTimer); this.retryTimer = null; }
   }
 
   /** Test seam: kill the socket as a network drop would (no leave frame). */
@@ -98,9 +111,11 @@ export class RoomClient {
       this.setStatus('disconnected');
       if (this.closedByUs || !this.desired) return;
       this.reconnects++;
-      // Re-join, never re-create: the room outlives our socket.
-      this.desired = { ...this.desired, create: false };
-      setTimeout(() => this.connect(), this.backoff);
+      // Re-join, never re-create: the room outlives our socket. A socket that never opened
+      // delivered nothing, though, so a create it carried is still owed (a server asleep on
+      // a free host refuses the first attempts; the room must not turn into a join meanwhile).
+      if (!neverOpened) this.desired = { ...this.desired, create: false };
+      this.retryTimer = setTimeout(() => { this.retryTimer = null; this.connect(); }, this.backoff);
       this.backoff = Math.min(this.backoff * 2, 5000);
     };
     ws.onerror = () => { /* onclose follows */ };
