@@ -48,7 +48,10 @@ element, would lengthen it for good at every break. The [episode start](/docs/wa
 
 ## Wire protocol
 
-See `packages/shared/src/protocol.ts`. Six frames worth knowing beyond the obvious ones:
+See `packages/shared/src/protocol.ts`. Seven frames worth knowing beyond the obvious ones:
+`welcome` is the server's first frame on every socket and carries its version (the
+extension compares it with its own, since both are released under one number, and
+tells the user which side to update; nothing is negotiated),
 `join` carries `create: true` when the client is creating the room (the server
 rejects collisions with `ROOM_EXISTS` and the client retries with a fresh code),
 `playback` may carry `reason: 'stall'` so the popup can say who buffered, a `media`

@@ -12,7 +12,10 @@ microphone. A camera is optional.
 ## From the Chrome Web Store
 
 The listing is unlisted for now: install from the link the person hosting your
-server shares with you. Chrome keeps it updated automatically.
+server shares with you. Chrome keeps it updated automatically, usually within a
+few hours of a release; to do it now, turn on Developer mode at
+`chrome://extensions` and press **Update**. The setup page shows the version
+you have at the bottom, and says when it is behind the server's.
 
 ## First-time setup
 

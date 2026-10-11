@@ -15,7 +15,10 @@ A extensão está em inglês. Neste guia, os nomes de botões e opções aparece
 
 Por enquanto, a extensão não aparece nas buscas da loja: instale pelo link que
 a pessoa que hospeda o seu servidor compartilhar com você. O Chrome mantém a
-extensão atualizada automaticamente.
+extensão atualizada automaticamente, normalmente em poucas horas depois de um
+lançamento; para atualizar agora, ative o modo de desenvolvedor em
+`chrome://extensions` e pressione **Update**. A página de configuração mostra
+no rodapé a versão que você tem, e avisa quando ela está atrás da do servidor.
 
 ## Configuração inicial {/* #first-time-setup */}
 

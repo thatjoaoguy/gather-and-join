@@ -20,6 +20,21 @@ title: Solução de problemas
 - Em uma configuração na mesma rede, confira se quem hospeda liberou o servidor
   no firewall e se ninguém está em uma rede de convidados.
 
+## "Your server needs an update" {/* #your-server-needs-an-update */}
+
+O servidor está uma versão atrás da extensão; o aviso mostra as duas versões.
+As salas podem continuar funcionando, mas qualquer coisa que a versão nova
+mudou entre os dois não vai. Peça a quem hospeda o servidor que o atualize —
+no Render, é [um clique no dashboard](/docs/host-a-server#updating-the-server).
+Depois disso, a página de configuração mostra a versão do servidor abaixo do
+endereço.
+
+## "Gather & Join needs an update" {/* #gather--join-needs-an-update */}
+
+O contrário: o servidor está à frente da sua extensão. O Chrome atualiza as
+extensões sozinho em poucas horas. Para atualizar agora, abra
+`chrome://extensions`, ative o modo de desenvolvedor e pressione **Update**.
+
 ## Ninguém me ouve {/* #nobody-can-hear-me */}
 
 - Abra a página de configuração e confira se o microfone aparece como

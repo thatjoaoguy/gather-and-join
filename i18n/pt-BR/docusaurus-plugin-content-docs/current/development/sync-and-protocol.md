@@ -52,8 +52,10 @@ elemento separado, o alongariam de vez a cada intervalo. O [início do episódio
 
 ## Protocolo de comunicação {/* #wire-protocol */}
 
-Veja `packages/shared/src/protocol.ts`. Seis frames que vale a pena conhecer além dos
-óbvios: `join` leva `create: true` quando o cliente está criando a sala (o servidor
+Veja `packages/shared/src/protocol.ts`. Sete frames que vale a pena conhecer além dos
+óbvios: `welcome` é o primeiro frame do servidor em todo socket e leva a versão dele
+(a extensão a compara com a própria, já que os dois são lançados sob um único
+número, e diz ao usuário qual lado atualizar; nada é negociado), `join` leva `create: true` quando o cliente está criando a sala (o servidor
 rejeita colisões com `ROOM_EXISTS` e o cliente tenta de novo com um código novo),
 `playback` pode levar `reason: 'stall'` para que o pop-up diga quem travou carregando
 (buffering), um frame `media` leva o estado de microfone/câmera informado pelo
