@@ -66,6 +66,80 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # Uploads the ZIP as the store item's draft and stops there: submitting it for review
+  # stays a click in the Developer Dashboard, after the smoke test in CHROMEWEBSTORE.md.
+  # Keyless: GitHub's OIDC token is exchanged through Workload Identity Federation for a
+  # short-lived token of the service account linked to the publisher. Skipped until the
+  # repository variables are set, so forks and unconfigured clones stay green.
+  upload-extension:
+    name: Upload to Chrome Web Store
+    needs: package-extension
+    if: vars.CWS_EXTENSION_ID != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      releaseVersion: ${{ inputs.version }}
+      item: https://chromewebstore.googleapis.com/v2/publishers/${{ vars.CWS_PUBLISHER_ID }}/items/${{ vars.CWS_EXTENSION_ID }}
+      upload: https://chromewebstore.googleapis.com/upload/v2/publishers/${{ vars.CWS_PUBLISHER_ID }}/items/${{ vars.CWS_EXTENSION_ID }}
+    steps:
+    - name: 📥 Download ZIP Artifact
+      uses: actions/download-artifact@v8
+      with:
+        name: gather-and-join-${{ inputs.version }}-chrome
+
+    - name: 🔑 Authenticate to Google
+      id: google
+      uses: google-github-actions/auth@v3
+      with:
+        workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+        service_account: ${{ vars.CWS_SERVICE_ACCOUNT }}
+        token_format: access_token
+        access_token_scopes: https://www.googleapis.com/auth/chromewebstore
+
+    - name: 🏪 Upload Draft
+      env:
+        TOKEN: ${{ steps.google.outputs.access_token }}
+      run: |
+        archive="gather-and-join-$releaseVersion-chrome.zip"
+        status() { curl -fsS -H "Authorization: Bearer $TOKEN" "$item:fetchStatus"; }
+
+        # The store holds one submission at a time: while one is in review, a new package
+        # is refused. Leave it be rather than cancel someone's review; this release's ZIP
+        # stays on the GitHub release, and the next release uploads as usual.
+        submitted=$(status | jq -r '.submittedItemRevisionStatus.state // empty')
+        if [[ "$submitted" == PENDING_REVIEW ]]; then
+          echo "::warning::A submission is in review; $releaseVersion was not uploaded to the store"
+          echo "⏸️ Store upload skipped: a submission is in review" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+
+        response=$(curl -sS -w '\n%{http_code}' -X POST -H "Authorization: Bearer $TOKEN" \
+          -T "$archive" "$upload:upload")
+        code=$(tail -n1 <<<"$response")
+        body=$(sed '$d' <<<"$response")
+        if [[ "$code" != 200 ]]; then
+          echo "::error::Store upload failed (HTTP $code): $(jq -c '.error // .' <<<"$body")"
+          exit 1
+        fi
+
+        # Large packages are processed asynchronously. The reference names the pending
+        # state both UPLOAD_IN_PROGRESS and IN_PROGRESS, so accept either.
+        state=$(jq -r '.uploadState' <<<"$body")
+        for _ in $(seq 1 30); do
+          [[ "$state" == UPLOAD_IN_PROGRESS || "$state" == IN_PROGRESS ]] || break
+          sleep 5
+          state=$(status | jq -r '.lastAsyncUploadState')
+        done
+        if [[ "$state" != SUCCEEDED ]]; then
+          echo "::error::Store upload ended in state $state: $body"
+          exit 1
+        fi
+        echo "🏪 Uploaded \`$archive\` to the store as a draft; submit it for review from the Developer Dashboard" \
+          | tee -a "$GITHUB_STEP_SUMMARY"
+
   package-server:
     name: Package Server
     runs-on: ubuntu-latest

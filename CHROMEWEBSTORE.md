@@ -5,12 +5,18 @@ they stay in step with it. Copy from here at submit time. Not shipped in the ZIP
 
 ## Submitting
 
-- Download the ZIP from the GitHub release (`gather-and-join-X.Y.Z-chrome.zip`).
-  The release workflow builds it with `GJ_TEST` unset and checks the manifest
-  version. To build one by hand: `pnpm --filter @gj/extension exec wxt zip`
-  (output in `apps/extension/.output/*.zip`). Never zip the repository.
-- Load the production ZIP unpacked and smoke-test: popup, setup page, create and
-  join, microphone grant, episode change. Check the service-worker console.
+- Every release uploads its ZIP to the store item as a draft (the *Upload to
+  Chrome Web Store* job in `packaging.yml`); nothing is submitted for review
+  until you press **Submit for review** in the Developer Dashboard. If a
+  submission is already in review, the upload is skipped with a warning, since
+  the store refuses a new package until that review ends. The same ZIP
+  (`gather-and-join-X.Y.Z-chrome.zip`) is on the GitHub release, built with
+  `GJ_TEST` unset and checked against the manifest version. To build one by
+  hand: `pnpm --filter @gj/extension exec wxt zip` (output in
+  `apps/extension/.output/*.zip`). Never zip the repository.
+- Before submitting, load that release's ZIP unpacked and smoke-test: popup,
+  setup page, create and join, microphone grant, episode change. Check the
+  service-worker console.
 - The store rejects any upload whose version is not strictly higher than the last
   one it accepted, including rejected submissions. Every release bumps the
   version, so re-upload a new release rather than a rebuilt ZIP; to get one
@@ -162,3 +168,15 @@ streamed by several viewers at once; that is a Drive quota, not an extension fau
   above then resolves.
 - Releases are tagged `vX.Y.Z` with the store ZIP attached by the release
   workflow; `v0.1.0` was tagged by hand at the first submission.
+- The store upload authenticates keylessly: GitHub's OIDC token goes through
+  Workload Identity Federation in Google Cloud to a service account, which is
+  linked to the publisher under **Account** in the Developer Dashboard (one per
+  publisher). The job needs four repository variables, not secrets, and is
+  skipped until `CWS_EXTENSION_ID` is set:
+
+  | Variable | Value |
+  |---|---|
+  | `CWS_PUBLISHER_ID` | Developer Dashboard → Publisher → Settings |
+  | `CWS_EXTENSION_ID` | the item's 32-letter ID |
+  | `CWS_SERVICE_ACCOUNT` | the service account's email |
+  | `GCP_WORKLOAD_IDENTITY_PROVIDER` | `projects/<number>/locations/global/workloadIdentityPools/<pool>/providers/<provider>` |

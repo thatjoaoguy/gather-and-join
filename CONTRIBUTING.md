@@ -94,7 +94,8 @@ commits since the last tag and:
 
 A release sets the version in every `package.json`, prepends the notes to
 `CHANGELOG.md`, tags `vX.Y.Z`, and publishes a GitHub release with the Chrome
-Web Store ZIP attached. Don't edit versions or the changelog by hand. When a
+Web Store ZIP attached. The same ZIP is uploaded to the store as a draft;
+submitting it for review is a maintainer's click in the Developer Dashboard. Don't edit versions or the changelog by hand. When a
 pull request is squash-merged, its title becomes the commit subject, so give the
 title the same form.
 

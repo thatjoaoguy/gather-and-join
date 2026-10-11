@@ -57,5 +57,7 @@ jobs:
       contents: write
       # A caller's permissions cap the reusable workflow's: without this the GHCR push 403s.
       packages: write
+      # The store upload's OIDC token for Google.
+      id-token: write
     with:
       version: ${{ needs.semantic-release.outputs.new_release_version }}
