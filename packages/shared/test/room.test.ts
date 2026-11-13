@@ -72,7 +72,7 @@ describe('content ids', () => {
     expect(parseContentId('https://play.hbomax.com/home')).toBeNull();
     expect(parseContentId('https://play.hbomax.com/')).toBeNull();
     expect(parseContentId('garbage')).toBeNull();
-    expect(watchUrlFor('hbomax:abc')).toBe('https://play.hbomax.com/video/watch/abc');
+    expect(watchUrlFor('hbomax:abc')).toBe('https://www.hbomax.com/video/watch/abc');
     expect(watchUrlFor('urn:hbo:episode:G1')).toBeNull();
   });
 });

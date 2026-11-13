@@ -15,6 +15,7 @@ describe('provider registry', () => {
   });
 
   it('routes by host and by content id', () => {
+    expect(providerForHost('www.hbomax.com')).toBe(hbomax);
     expect(providerForHost('play.hbomax.com')).toBe(hbomax);
     expect(providerForHost('localhost')).toBe(harness);
     expect(providerForHost('drive.google.com')).toBe(gdrive);
@@ -42,8 +43,9 @@ describe('provider registry', () => {
   });
 
   it('a provider only parses its own page shapes on its own host', () => {
+    expect(hbomax.parseContentId(new URL('https://www.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79'))).toBe('hbomax:b411d5ce-0436-44a5-856b-473fc140fe79');
     expect(hbomax.parseContentId(new URL('https://play.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79'))).toBe('hbomax:b411d5ce-0436-44a5-856b-473fc140fe79');
-    expect(hbomax.parseContentId(new URL('https://play.hbomax.com/home'))).toBeNull();
+    expect(hbomax.parseContentId(new URL('https://www.hbomax.com/home'))).toBeNull();
     expect(harness.parseContentId(new URL('http://localhost:4173/watch/urn:hbo:episode:G1'))).toBe('urn:hbo:episode:G1');
     expect(gdrive.parseContentId(new URL('https://drive.google.com/file/d/1A2b3C4d5E6f7G8h/view?usp=sharing'))).toBe('gdrive:1A2b3C4d5E6f7G8h');
     expect(gdrive.parseContentId(new URL('https://drive.google.com/file/d/1A2b3C4d5E6f7G8h/preview'))).toBe('gdrive:1A2b3C4d5E6f7G8h');
@@ -115,8 +117,8 @@ describe('trusted watch URLs', () => {
     expect(trustedWatchUrl('urn:hbo:episode:G1', 'http://localhost:4173/watch/urn:hbo:episode:G1?copy=plain')).toBe('http://localhost:4173/watch/urn:hbo:episode:G1?copy=plain');
   });
   it('falls back to the canonical URL, or nothing, for anything else', () => {
-    expect(trustedWatchUrl(hbo, 'javascript:alert(1)//play.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79')).toBe('https://play.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79');
-    expect(trustedWatchUrl(hbo, 'https://evil.example/video/watch/00000000-0000-0000-0000-000000000000')).toBe('https://play.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79');
+    expect(trustedWatchUrl(hbo, 'javascript:alert(1)//play.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79')).toBe('https://www.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79');
+    expect(trustedWatchUrl(hbo, 'https://evil.example/video/watch/00000000-0000-0000-0000-000000000000')).toBe('https://www.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79');
     expect(trustedWatchUrl('urn:hbo:episode:G1', 'javascript:void 0')).toBeNull();
     expect(trustedWatchUrl('urn:hbo:episode:G1', null)).toBeNull();
   });
