@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/thatjoaoguy/gather-and-join/compare/v0.12.0...v0.12.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* recognize HBO Max on www.hbomax.com ([#76](https://github.com/thatjoaoguy/gather-and-join/issues/76)) ([947f3e6](https://github.com/thatjoaoguy/gather-and-join/commit/947f3e6d7c40b8f917936427d3b5fb8d81c67fa9))
+
 # [0.12.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.11.0...v0.12.0) (2026-10-11)
 
 
