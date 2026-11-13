@@ -36,7 +36,7 @@ describe('settingsModel', () => {
     const room = { ...snap().room!, contentId: 'hbomax:b411d5ce-0436-44a5-856b-473fc140fe79', watchUrl: 'javascript:alert(1)' };
     const elsewhere = { contentId: 'hbomax:other', title: 'Another show | HBO Max' };
     expect(settingsModel(snap({ room }), true, elsewhere, '0.10.0')!.episode).toEqual({
-      service: 'HBO Max', title: null, here: false, watchUrl: 'https://play.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79',
+      service: 'HBO Max', title: null, here: false, watchUrl: 'https://www.hbomax.com/video/watch/b411d5ce-0436-44a5-856b-473fc140fe79',
     });
     expect(settingsModel(snap({ room: { ...room, contentId: null } }), true, elsewhere, '0.10.0')!.episode).toBeNull();
   });

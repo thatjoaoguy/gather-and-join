@@ -75,16 +75,18 @@ function prefixedProvider(spec: PrefixedProviderSpec): ContentProvider {
 }
 
 /**
- * HBO Max (inspected 2026-09-16): the app is `play.hbomax.com`, watch pages are
- * `/video/watch/<uuid>` with no URN anywhere, so the content id is `hbomax:<uuid>`.
+ * HBO Max (inspected 2026-09-16, host re-checked 2026-11-12): the app is
+ * `www.hbomax.com`, watch pages are `/video/watch/<uuid>` with no URN anywhere,
+ * so the content id is `hbomax:<uuid>`. It used to be `play.hbomax.com`, which
+ * stays listed for anyone the move has not reached yet.
  */
-const HBOMAX_ORIGIN = 'https://play.hbomax.com';
+const HBOMAX_ORIGIN = 'https://www.hbomax.com';
 
 export const hbomax: ContentProvider = prefixedProvider({
   id: 'hbomax',
   name: 'HBO Max',
-  hosts: ['play.hbomax.com'],
-  matches: ['https://play.hbomax.com/*'],
+  hosts: ['www.hbomax.com', 'play.hbomax.com'],
+  matches: ['https://www.hbomax.com/*', 'https://play.hbomax.com/*'],
   rawId: pathMatch(/\/video\/watch\/([0-9a-f-]{36})/i),
   normalize: (uuid) => uuid.toLowerCase(),
   watchUrl: (uuid) => `${HBOMAX_ORIGIN}/video/watch/${uuid}`,
