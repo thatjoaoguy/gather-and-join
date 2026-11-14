@@ -4,6 +4,7 @@
  * Opened with ?grant=1 or ?grant=camera it prompts at once, then stays open on
  * whatever is still outstanding: granting one permission is not being set up.
  */
+import '../../lib/firefox-shim';
 import { SERVICES } from '@gj/shared';
 import { DEFAULT_SERVER_URL, HOST_GUIDE_URL } from '../../lib/constants';
 import type { PeerStats, ServerStatus, Snapshot } from '../../lib/messages';

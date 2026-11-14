@@ -74,7 +74,11 @@ async function prime() {
 function detectRealm(): string {
   // The service worker has a `location` (…/background.js) but no document; so does node under vitest.
   if (typeof document === 'undefined') return 'background';
-  if (location.protocol === 'chrome-extension:') return location.pathname.replace(/^\/+|\.html$/g, '') || 'extension';
+  if (location.protocol === 'chrome-extension:' || location.protocol === 'moz-extension:') {
+    // Firefox's MV2 background is a page it generates itself; it is still the background realm.
+    const name = location.pathname.replace(/^\/+|\.html$/g, '') || 'extension';
+    return name.includes('background') ? 'background' : name;
+  }
   return 'page';
 }
 

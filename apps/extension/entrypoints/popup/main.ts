@@ -3,6 +3,7 @@
  * readiness) and room (code, participants, media, recovery). Screens follow
  * docs/design-system/screens/index.html.
  */
+import '../../lib/firefox-shim';
 import { parseContentId, isValidRoomCode, normalizeRoomCode, providerForHost, trustedWatchUrl, ROOM_CODE_LENGTH, SERVICES, type ContentProvider } from '@gj/shared';
 import { PORT_POPUP, type OffscreenToPopup, type PopupToOffscreen, type Snapshot } from '../../lib/messages';
 import { participantsFrom, type Participant } from '../../lib/participants';
