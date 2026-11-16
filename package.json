@@ -18,8 +18,8 @@
     "@mdx-js/react": "^3.0.0",
     "clsx": "^2.0.0",
     "prism-react-renderer": "^2.3.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.10.2",
@@ -27,9 +27,9 @@
     "@docusaurus/types": "3.10.2",
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.0.0",
-    "eslint": "^10.11.0",
+    "eslint": "^10.13.0",
     "typescript": "~6.0.2",
-    "typescript-eslint": "^8.71.0"
+    "typescript-eslint": "^8.72.0"
   },
   "browserslist": {
     "production": [
