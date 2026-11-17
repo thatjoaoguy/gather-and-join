@@ -19,8 +19,14 @@ src/observer.ts        an `obs:` client; its frame log is the ground truth
 src/fixtures.ts        fake media; full fixtures via `make fixtures`, in-process fallback otherwise
 src/sabotage-matrix.ts which tests MUST fail under each flag
 src/check-deployment.ts smoke-checks a *deployed* server over the network, not localhost
+src/firefox-smoke.ts   the Firefox build against a Chrome peer, over WebDriver BiDi (`pnpm smoke:firefox`)
 tests/*.spec.ts        the Playwright suite
 ```
+
+Playwright cannot load an extension into Firefox, so the Firefox build is not in the
+suite or the matrix: `smoke:firefox` is its only automated check. It needs a local
+Firefox (`FIREFOX_BIN` to point elsewhere) and runs the signaling server on :8080, the
+extension's default, since a Firefox peer cannot be pointed anywhere else.
 
 ## How to write a test here
 

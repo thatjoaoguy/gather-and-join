@@ -11,6 +11,7 @@
     "test:sabotage": "node --experimental-strip-types src/sabotage-matrix.ts",
     "check:deployment": "node --experimental-strip-types src/check-deployment.ts",
     "launch": "node --experimental-strip-types src/launch-peers.ts",
+    "smoke:firefox": "node --experimental-strip-types src/firefox-smoke.ts",
     "fixtures": "make -C . fixtures"
   },
   "dependencies": {
