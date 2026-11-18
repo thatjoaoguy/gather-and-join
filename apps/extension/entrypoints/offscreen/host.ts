@@ -131,12 +131,17 @@ export function mountOffscreenHost(opts: HostOptions): OffscreenHost {
 
   const session = new RoomSession(
     {
-      createClient: (url, h) => new TracedRoomClient(
-        url,
-        (m) => { traceFrame(m); h.onFrame(m); },
-        (status) => { log('room', 'socket', status, url); h.onStatus(status); },
-        (url) => { log('room', 'connect failed', url); h.onConnectFailed(url); },
-      ),
+      createClient: (url, h) => {
+        // The session points this client at the configured server on join (client.url),
+        // so log where it is now, not the default it was created with.
+        const client: TracedRoomClient = new TracedRoomClient(
+          url,
+          (m) => { traceFrame(m); h.onFrame(m); },
+          (status) => { log('room', 'socket', status, client.url); h.onStatus(status); },
+          (failed) => { log('room', 'connect failed', failed); h.onConnectFailed(failed); },
+        );
+        return client;
+      },
       createMesh: (myId, h, opts) => {
         const mesh = new Mesh(myId, h.sendSignal, h.onTrack, (id) => { tracePeerState(id, mesh.peers.get(id)?.pp.pc); h.onStateChange(id); }, opts?.iceServers);
         return mesh;
