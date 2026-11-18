@@ -66,6 +66,54 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+    # Until there is a signed build from addons.mozilla.org, the release carries the
+    # unsigned Firefox package, which Firefox loads as a temporary add-on from
+    # about:debugging. The sources ZIP wxt also writes is for AMO review, not for users.
+    - name: 📦 Zip Firefox Extension
+      run: pnpm --filter @gj/extension exec wxt zip -b firefox
+
+    - name: ✅ Verify Firefox ZIP
+      run: |
+        shopt -s nullglob
+        archives=(apps/extension/.output/*-firefox.zip)
+        if [[ ${#archives[@]} -ne 1 ]]; then
+          echo "::error::Expected exactly one firefox ZIP, found ${#archives[@]}"
+          exit 1
+        fi
+        archive="${archives[0]}"
+
+        manifest=$(unzip -p "$archive" manifest.json)
+        packedVersion=$(jq -r '.version' <<<"$manifest")
+        if [[ "$packedVersion" != "$releaseVersion" ]]; then
+          echo "::error::Manifest version $packedVersion does not match release $releaseVersion"
+          exit 1
+        fi
+        if grep -q localhost <<<"$manifest"; then
+          echo "::error::Manifest references localhost; this is a test build"
+          exit 1
+        fi
+        # Firefox keys the add-on, its storage and its updates to this id.
+        if [[ "$(jq -r '.browser_specific_settings.gecko.id // empty' <<<"$manifest")" == "" ]]; then
+          echo "::error::Manifest has no gecko id"
+          exit 1
+        fi
+
+        expected="gather-and-join-$releaseVersion-firefox.zip"
+        mv "$archive" "$expected"
+        echo "FIREFOX_ARCHIVE=$expected" >> "$GITHUB_ENV"
+        echo "✅ Packed \`$expected\`" | tee -a "$GITHUB_STEP_SUMMARY"
+
+    - name: 🗂️ Upload Firefox ZIP Artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: gather-and-join-${{ env.releaseVersion }}-firefox
+        path: ${{ env.FIREFOX_ARCHIVE }}
+
+    - name: 📎 Attach Firefox ZIP to Release
+      run: gh release upload "$releaseTag" "$FIREFOX_ARCHIVE" --clobber
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   # Uploads the ZIP as the store item's draft and stops there: submitting it for review
   # stays a click in the Developer Dashboard, after the smoke test in CHROMEWEBSTORE.md.
   # Keyless: GitHub's OIDC token is exchanged through Workload Identity Federation for a
