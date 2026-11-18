@@ -11,8 +11,8 @@
 import type { C2S, PeerId, S2C } from '@gj/shared';
 import { DEFAULT_SERVER_URL } from '../../lib/constants';
 import {
-  PORT_PLAYER, PORT_POPUP, readTestConfig,
-  type Diag, type OffscreenToPlayer, type OffscreenToPopup, type PeerStats, type PlayerToOffscreen, type PopupToOffscreen, type Snapshot, type ToBackground, type ToOffscreen,
+  PORT_CALL, PORT_PLAYER, PORT_POPUP, readTestConfig,
+  type Diag, type FromCallTab, type ToCallTab, type OffscreenToPlayer, type OffscreenToPopup, type PeerStats, type PlayerToOffscreen, type PopupToOffscreen, type Snapshot, type ToBackground, type ToOffscreen,
 } from '../../lib/messages';
 import { BadgeReporter, type BadgeState } from '../../lib/badge';
 import { RoomClient } from '../../lib/room-client';
@@ -21,12 +21,20 @@ import { Mesh } from '../../lib/mesh';
 import { LocalMedia } from '../../lib/local-media';
 import { RemoteMedia } from '../../lib/remote-media';
 import { LoopbackSender } from '../../lib/loopback-sender';
+import { TabCapture } from '../../lib/tab-capture';
+import { PerfectPeer } from '../../lib/perfect-peer';
 import { appendLogLine, log } from '../../lib/log';
 import { kvGet, kvSet } from '../../lib/kv';
 
 export type HostOptions = {
   /** Where a badge state goes: the service worker on Chrome, chrome.action itself on Firefox. */
   reportBadge: (state: BadgeState) => Promise<unknown>;
+  /**
+   * Firefox only: open and close the pinned call tab that captures the mic and camera,
+   * since its background page may not (lib/tab-capture.ts). Absent on Chrome, where the
+   * offscreen document captures them itself.
+   */
+  callTab?: { open(): Promise<void>; close(): void };
 };
 export type OffscreenHost = { handle(msg: ToOffscreen): Promise<unknown> };
 
@@ -111,7 +119,14 @@ export function mountOffscreenHost(opts: HostOptions): OffscreenHost {
     catch (e) { log('offscreen', 'badge report failed', state, String(e)); }
   });
 
-  const local = new LocalMedia((speaking) => session.onSpeaking(speaking));
+  const tabCapture: TabCapture | undefined = opts.callTab && new TabCapture({
+    openTab: () => { log('offscreen', 'opening the call tab'); return opts.callTab!.open(); },
+    closeTab: () => { log('offscreen', 'closing the call tab'); opts.callTab!.close(); },
+    inRoom: (): boolean => session.snapshot.room !== null || session.snapshot.joining,
+    createPeer: (signal) => new PerfectPeer(true, signal, { iceServers: [] }),
+    onLost: (kinds) => { log('offscreen', 'call tab closed; lost', kinds.join(', ')); session.deviceLost(kinds); },
+  });
+  const local = new LocalMedia((speaking) => session.onSpeaking(speaking), tabCapture);
   const remote = new RemoteMedia((peerId, speaking) => session.onPeerSpeaking(peerId, speaking));
 
   const session = new RoomSession(
@@ -261,6 +276,13 @@ export function mountOffscreenHost(opts: HostOptions): OffscreenHost {
       post(port, { type: 'snapshot', snapshot: session.snapshot });
       port.onMessage.addListener((m: PopupToOffscreen) => { onPopupMessage(m).catch((e) => log('offscreen', 'popup message failed', m.type, String(e?.stack ?? e))); });
       port.onDisconnect.addListener(() => popupPorts.delete(port));
+    } else if (port.name === PORT_CALL && tabCapture) {
+      tabCapture.attach({
+        post: (m: ToCallTab) => { try { port.postMessage(m); } catch (e) { log('offscreen', 'post failed', port.name, m.type, String(e)); } },
+        onMessage: (fn) => port.onMessage.addListener((m: FromCallTab) => fn(m)),
+        onDisconnect: (fn) => port.onDisconnect.addListener(fn),
+        disconnect: () => port.disconnect(),
+      });
     }
   });
 

@@ -390,6 +390,24 @@ export class RoomSession {
     this.snapshot.micOn = on;
     this.announceMedia();
     this.broadcast();
+    // Nothing to unmute (on Firefox, the call tab was closed): acquire the mic again.
+    if (on && !t && this.mesh) void this.micGranted();
+  }
+
+  /**
+   * A device went away under us: on Firefox, the call tab holding it was closed. That
+   * mutes you, as the tab itself says it will, rather than failing; unmuting acquires
+   * the mic again.
+   */
+  deviceLost(kinds: ReadonlyArray<'audio' | 'video'>) {
+    if (kinds.includes('video') && this.snapshot.camOn) void this.setCamera(false);
+    if (kinds.includes('audio')) {
+      this.deps.local.stopMic();
+      this.mesh?.setAudioTrack(null);
+      this.snapshot.micOn = false;
+      this.announceMedia();
+    }
+    this.broadcast();
   }
 
   /** Tell the room our mic/camera state, so their tiles can show it. */

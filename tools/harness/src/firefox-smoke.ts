@@ -9,6 +9,11 @@
  * Not a Playwright test: Playwright cannot load an extension into Firefox. Firefox is
  * driven over WebDriver BiDi instead (`webExtension.install`), with its fake media on.
  *
+ * Permission checks stay on, with the microphone and camera allowed the way a grant on
+ * the setup page leaves them. Switching the checks off (media.navigator.permission.disabled)
+ * hides the one thing this script exists to catch: Firefox refuses getUserMedia in a
+ * background page whatever the permission, which is why the pinned call tab captures.
+ *
  * Automation cannot open a moz-extension:// page, so unlike a Chrome peer the Firefox
  * peer cannot be pointed at a test server: it uses the extension's default,
  * ws://localhost:8080. The signaling server runs there (or `pnpm dev:server` is reused).
@@ -102,9 +107,9 @@ try {
   }
   if (!(await listening(TEST_PLAYER_PORT))) playerServer = await startPlayerServer(TEST_PLAYER_PORT);
 
-  // ---- Firefox: a throwaway profile, fake media, no prompts ----------------------
+  // ---- Firefox: a throwaway profile, fake media, the mic and camera already allowed ----
   fs.writeFileSync(path.join(profile, 'user.js'), Object.entries({
-    'media.navigator.streams.fake': true, 'media.navigator.permission.disabled': true,
+    'media.navigator.streams.fake': true, 'permissions.default.microphone': 1, 'permissions.default.camera': 1,
     'media.autoplay.default': 0, 'media.autoplay.blocking_policy': 0,
     // Both peers are on this machine; let ICE use the loopback interface.
     'media.peerconnection.ice.loopback': true,
@@ -160,7 +165,11 @@ try {
     return ffSnap?.peerMedia?.[chromeId]?.connectionState === 'connected' && cSnap?.peerMedia?.[ffId]?.connectionState === 'connected';
   }, { timeout: 20_000, label: 'mesh' }));
   check('WebRTC connects Firefox and Chrome', meshUp, { firefoxSees: ffSnap?.peerMedia?.[chromeId]?.connectionState, chromeSees: cSnap?.peerMedia?.[ffId]?.connectionState });
-  check('Firefox\'s mic is on (getUserMedia in the background page)', cSnap?.peerMedia?.[ffId]?.micOn === true && cSnap?.peerMedia?.[ffId]?.hasAudio === true);
+  const tabs = (await bidi.send('browsingContext.getTree')).contexts.map((c: { url: string }) => c.url) as string[];
+  check('Firefox opened the pinned call tab', tabs.some((u) => u.endsWith('/call.html')), tabs);
+  // The tab starts capturing once the room is up; give it the moment that takes.
+  const micUp = await passes(waitForCondition(async () => { cSnap = await chrome!.gj('getSnapshot'); return cSnap?.peerMedia?.[ffId]?.micOn === true && cSnap?.peerMedia?.[ffId]?.hasAudio === true; }, { timeout: 15_000, label: 'Firefox mic' }));
+  check('Firefox\'s mic is on (captured by the call tab)', micUp, { chromeSeesFirefox: { micOn: cSnap?.peerMedia?.[ffId]?.micOn, hasAudio: cSnap?.peerMedia?.[ffId]?.hasAudio } });
 
   // media.spec.ts's rule: the right tone within 25 Hz, above -60 dB, at some poll.
   const hears = (get: () => Promise<any>, hz: number) => {

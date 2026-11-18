@@ -34,8 +34,24 @@ async function hasOffscreen(): Promise<boolean> {
   return ctxs.length > 0;
 }
 
+// Firefox: the pinned tab that captures the mic and camera this page may not (lib/tab-capture.ts).
+const CALL_TAB_URL = chrome.runtime.getURL('call.html');
+let callTabId: number | null = null;
+const callTab = {
+  async open() {
+    // One left over (a background page restart) is reloaded, so it connects to this page.
+    const [existing] = await chrome.tabs.query({ url: CALL_TAB_URL });
+    if (existing?.id !== undefined) { callTabId = existing.id; await chrome.tabs.reload(existing.id); return; }
+    callTabId = (await chrome.tabs.create({ url: CALL_TAB_URL, pinned: true, active: false })).id ?? null;
+  },
+  close() {
+    if (callTabId !== null) chrome.tabs.remove(callTabId).catch(() => { /* already closed by hand */ });
+    callTabId = null;
+  },
+};
+
 async function ensureOffscreen(): Promise<void> {
-  if (HOSTED) { host ??= mountOffscreenHost({ reportBadge: (state) => showBadge(state) }); return; }
+  if (HOSTED) { host ??= mountOffscreenHost({ reportBadge: (state) => showBadge(state), callTab }); return; }
   if (await hasOffscreen()) return;
   creating ??= chrome.offscreen
     .createDocument({

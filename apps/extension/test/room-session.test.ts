@@ -260,6 +260,25 @@ describe('RoomSession', () => {
     expect(session.snapshot.micPermission).toBe('granted');
   });
 
+  it('Firefox: a closed call tab mutes you, and unmuting acquires the mic again', async () => {
+    const { session, mesh, local, client } = setup();
+    await session.joinRoom('RM0001', 'Ana');
+    client.connect();
+    client.frame(roomFrame({ peers: [{ peerId: 'me', name: 'Ana' }] }));
+    expect(mesh.audio).toBe(local.micTrack);
+    session.deviceLost(['audio']);
+    expect(session.snapshot.micOn).toBe(false);
+    expect(mesh.audio).toBeNull();
+    expect(local.local.micStream).toBeNull();
+    expect(client.sent.filter((m) => m.type === 'media').at(-1)).toEqual({ type: 'media', micOn: false, camOn: false });
+    const fresh = new FakeTrack('audio');
+    (local.local as any).ensureMic = async () => { local.local.micStream = new FakeStream([fresh]); local.local.micPermission = 'granted'; return fresh; };
+    session.setMic(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(mesh.audio).toBe(fresh);
+    expect(fresh.enabled).toBe(true);
+  });
+
   it('ducking only fires when enabled, and un-ducks when disabled mid-speech', async () => {
     const { session, events } = setup();
     session.onSpeaking(true);

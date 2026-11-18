@@ -11,6 +11,8 @@ entrypoints/        wiring only — no behaviour lives here
   offscreen/          the long-lived context: RoomSession, WebSocket, every RTCPeerConnection, mic, remote audio
   player.content.ts   dies on every navigation: <video> binding, drift correction, the sidebar
   popup/ options/     UI, built fresh on every open
+  call/               Firefox only: the pinned tab that captures mic and camera, which a background
+                      page may not; tracks reach the session over a loopback (lib/call-tab.ts ⇄ lib/tab-capture.ts)
   testhook.content.ts GJ_TEST=1 builds only
 lib/                behaviour, as classes with injected collaborators
   providers/          DOM-level provider knowledge (PlayerAdapter)

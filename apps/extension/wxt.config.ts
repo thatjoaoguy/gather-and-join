@@ -39,7 +39,7 @@ export default defineConfig({
   imports: false,
   outDir: TEST_BUILD ? '.output-test' : '.output',
   // The test hook entrypoint only exists in test builds.
-  filterEntrypoints: TEST_BUILD ? undefined : ['background', 'player', 'offscreen', 'popup', 'options'],
+  filterEntrypoints: TEST_BUILD ? undefined : ['background', 'player', 'offscreen', 'popup', 'options', 'call'],
   manifest: ({ browser }) => ({
     name: TEST_BUILD ? 'Gather & Join (test build)' : 'Gather & Join',
     description: 'Watch together in sync, with voice and video, on HBO Max, YouTube, Google Drive and Wix. Everyone plays from their own account.',
