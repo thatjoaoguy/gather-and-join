@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "wxt",
-    "build": "wxt build",
+    "build": "wxt build && wxt build -b firefox",
     "build:test": "GJ_TEST=1 wxt build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:unit": "vitest run",

@@ -29,9 +29,9 @@
   <img src="https://gatherandjoin.com/img/room.webp" alt="A room in progress: the episode playing, the room popup with its invite code and three people connected, and webcam tiles for the call beside the player.">
 </p>
 
-Gather & Join is a Chrome extension that keeps a small group on the same second
-of the same episode and puts a voice call alongside the show, plus a small
-server one of you hosts. Each viewer watches through the service's own player,
+Gather & Join is a browser extension for Chrome and Firefox that keeps a small
+group on the same second of the same episode and puts a voice call alongside the
+show, plus a small server one of you hosts. Each viewer watches through the service's own player,
 signed in to their own account; voice and video go directly between you. The
 server only sees room details and the messages that set up the call.
 
@@ -42,8 +42,10 @@ more on the way.
 
 1. **Someone hosts the server** and shares its address. It runs free on Render
    with no credit card. [Host a server →](https://gatherandjoin.com/docs/host-a-server)
-2. **Everyone installs the extension** and pastes that address once.
-   [Install →](https://gatherandjoin.com/docs/install)
+2. **Everyone installs the extension** and pastes that address once. On Firefox,
+   until it is on addons.mozilla.org, that is the Firefox package from the
+   [latest release](https://github.com/thatjoaoguy/gather-and-join/releases/latest),
+   loaded as a temporary add-on. [Install →](https://gatherandjoin.com/docs/install)
 3. **One person creates a room** on the episode and reads out the six-character
    code; everyone else joins. Anyone can play, pause or seek, and only the room's
    leader changes episodes. [Watch together →](https://gatherandjoin.com/docs/watch-together)

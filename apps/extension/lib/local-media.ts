@@ -1,13 +1,33 @@
 /**
- * Local mic/camera and the speech detector that drives ducking. Lives in the
- * offscreen document. Mic permission cannot be prompted here — it is granted
- * once from the options page and inherited by the extension origin.
+ * Local mic/camera and the speech detector that drives ducking. Lives with the
+ * session (the offscreen document on Chrome, the background page on Firefox).
+ * Mic permission cannot be prompted here — it is granted once from the options
+ * page and inherited by the extension origin.
  */
 import { DUCK_RMS_THRESHOLD, DUCK_SILENCE_MS, DUCK_POLL_MS } from '@gj/shared';
 export { DUCK_RMS_THRESHOLD, DUCK_SILENCE_MS, DUCK_POLL_MS };
 
 import { log } from './log';
 import { kvGet } from './kv';
+
+export type CaptureKind = 'audio' | 'video';
+
+/**
+ * Where the tracks come from. On Chrome, this document's own getUserMedia. Firefox
+ * refuses getUserMedia in a background page whatever the permission says, so there the
+ * pinned call tab captures and sends the tracks over (`lib/tab-capture.ts`).
+ */
+export type TrackSource = {
+  /** Rejects with a DOMException named as getUserMedia's would be (NotAllowedError, NotFoundError…). */
+  get(kind: CaptureKind, constraints: MediaTrackConstraints): Promise<MediaStream>;
+  /** The track of `kind` is no longer wanted; LocalMedia has already stopped its own copy. */
+  release(kind: CaptureKind): void;
+};
+
+export const ownDevices: TrackSource = {
+  get: (kind, constraints) => navigator.mediaDevices.getUserMedia(kind === 'audio' ? { audio: constraints } : { video: constraints }),
+  release: () => {},
+};
 
 export class LocalMedia {
   micStream: MediaStream | null = null;
@@ -22,7 +42,10 @@ export class LocalMedia {
   private lastVoice = 0;
   private poll: ReturnType<typeof setInterval> | null = null;
 
-  constructor(private readonly onSpeaking: (speaking: boolean) => void) {}
+  constructor(
+    private readonly onSpeaking: (speaking: boolean) => void,
+    private readonly source: TrackSource = ownDevices,
+  ) {}
 
   async ensureMic(): Promise<MediaStreamTrack | null> {
     if (this.micStream) return this.micStream.getAudioTracks()[0] ?? null;
@@ -32,9 +55,7 @@ export class LocalMedia {
       if (delay > 0) await new Promise((r) => setTimeout(r, delay));
     }
     try {
-      this.micStream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      });
+      this.micStream = await this.source.get('audio', { echoCancellation: true, noiseSuppression: true, autoGainControl: true });
       this.micPermission = 'granted';
     } catch (e) {
       this.micPermission = (e as DOMException)?.name === 'NotAllowedError' ? 'denied' : 'unknown';
@@ -48,7 +69,7 @@ export class LocalMedia {
   async ensureCamera(): Promise<MediaStreamTrack | null> {
     if (this.camStream) return this.camStream.getVideoTracks()[0] ?? null;
     try {
-      this.camStream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 320 }, height: { ideal: 240 } } });
+      this.camStream = await this.source.get('video', { width: { ideal: 320 }, height: { ideal: 240 } });
       this.camPermission = 'granted';
       log('offscreen', 'camera acquired', this.camStream.getVideoTracks()[0]?.getSettings());
     } catch (e) {
@@ -60,8 +81,10 @@ export class LocalMedia {
   }
 
   stopCamera() {
-    this.camStream?.getTracks().forEach((t) => t.stop());
+    if (!this.camStream) return;
+    this.camStream.getTracks().forEach((t) => t.stop());
     this.camStream = null;
+    this.source.release('video');
   }
 
   /** Release the microphone (and its speech detector). The next ensureMic re-acquires it. */
@@ -70,8 +93,10 @@ export class LocalMedia {
     this.analyser?.disconnect();
     this.analyser = null;
     this.buf = null;
+    const had = !!this.micStream;
     this.micStream?.getTracks().forEach((t) => t.stop());
     this.micStream = null;
+    if (had) this.source.release('audio');
     this.level = 0;
     if (this.speaking) { this.speaking = false; this.onSpeaking(false); }
   }

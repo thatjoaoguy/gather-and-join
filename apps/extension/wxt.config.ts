@@ -39,16 +39,29 @@ export default defineConfig({
   imports: false,
   outDir: TEST_BUILD ? '.output-test' : '.output',
   // The test hook entrypoint only exists in test builds.
-  filterEntrypoints: TEST_BUILD ? undefined : ['background', 'player', 'offscreen', 'popup', 'options'],
-  manifest: {
+  filterEntrypoints: TEST_BUILD ? undefined : ['background', 'player', 'offscreen', 'popup', 'options', 'call'],
+  manifest: ({ browser }) => ({
     name: TEST_BUILD ? 'Gather & Join (test build)' : 'Gather & Join',
     description: 'Watch together in sync, with voice and video, on HBO Max, YouTube, Google Drive and Wix. Everyone plays from their own account.',
-    permissions: ['offscreen', 'storage', 'tabs', 'webNavigation', 'scripting'],
+    // Firefox has no offscreen API: there the persistent MV2 background page hosts the
+    // long-lived state itself (see entrypoints/background.ts).
+    permissions: [...(browser === 'firefox' ? [] : ['offscreen']), 'storage', 'tabs', 'webNavigation', 'scripting'],
     ...(REQUIRED_MATCHES.length ? { host_permissions: REQUIRED_MATCHES } : {}),
-    optional_host_permissions: SERVICE_MATCHES,
+    // MV2 has no optional_host_permissions; an origin in optional_permissions is the same per-service grant.
+    ...(browser === 'firefox' ? { optional_permissions: SERVICE_MATCHES } : { optional_host_permissions: SERVICE_MATCHES }),
+    // AMO refuses a new add-on that does not declare what it collects; this one collects
+    // nothing. Firefox reads the declaration from 140 on, hence the minimum.
+    ...(browser === 'firefox' ? {
+      browser_specific_settings: { gecko: { id: 'gather-and-join@gatherandjoin.com', strict_min_version: '140.0', data_collection_permissions: { required: ['none'] } } },
+    } : {}),
     // The participant HUD declares Quicksand in the host document (a shadow root cannot), so the font files must be fetchable from player pages.
-    web_accessible_resources: [{ resources: ['fonts/*'], matches: WAR_MATCHES }],
-  },
+    web_accessible_resources: [
+      { resources: ['fonts/*'], matches: WAR_MATCHES },
+      // Firefox refuses to drive automation to a moz-extension:// page, so a Firefox test
+      // build lets the harness reach the popup from the fake player's origin instead.
+      ...(TEST_BUILD && browser === 'firefox' ? [{ resources: ['popup.html'], matches: REQUIRED_MATCHES.map(originMatch) }] : []),
+    ],
+  }),
   hooks: {
     'build:manifestGenerated': (_wxt, manifest) => {
       // The Web Store rejects a description over 132 characters at upload; Chrome itself loads it fine.

@@ -4,6 +4,7 @@
  * SyncEngine keeps it in step with the room, PartySidebar shows the peers, and
  * a Port relays everything to the offscreen document.
  */
+import '../lib/firefox-shim';
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { parseContentId, skipFor, trustedWatchUrl } from '@gj/shared';
 import { PORT_PLAYER, readTestConfig, type Diag, type OffscreenToPlayer, type PlayerToOffscreen, type Snapshot, type ToPlayer } from '../lib/messages';

@@ -12,11 +12,21 @@ import { test, expect } from '@playwright/test';
 import { startParty, spreadMs, pressPlay, state, snapshot, dumpParty } from '../src/party.ts';
 import { EPISODE, waitForCondition, type Peer } from '../src/peers.ts';
 
-/** The player ends where the sidebar begins, and fills the rest of the frame. */
+/**
+ * The player ends where the sidebar begins, and fills the rest of the frame. A miss
+ * reports each box's left edge, width and inline style: the fake player's own pixel widths are
+ * what it measured, and `shrunk` says which boxes the extension narrowed.
+ */
 const fitsBesideSidebar = (p: Peer, label: string) => waitForCondition(() => p.player().evaluate(() => {
   const player = document.getElementById('player')!.getBoundingClientRect(), tiles = document.getElementById('gj-tiles')!.getBoundingClientRect();
   return Math.abs(player.right - tiles.left) <= 1 && Math.abs(player.width - (innerWidth - tiles.width)) <= 1;
-}), { timeout: 5000, label });
+}), { timeout: 5000, label }).catch(async (e: unknown) => {
+  const boxes = await p.player().evaluate(() => {
+    const box = (el: HTMLElement | null) => el && { left: Math.round(el.getBoundingClientRect().left), width: Math.round(el.getBoundingClientRect().width), style: el.getAttribute('style'), shrunk: el.dataset.gjShrunk ?? null };
+    return { innerWidth, html: box(document.documentElement), body: box(document.body), player: box(document.getElementById('player')), tiles: box(document.getElementById('gj-tiles')) };
+  }).catch((err: unknown) => String(err));
+  throw new Error(`${(e as Error).message}\n${JSON.stringify(boxes)}`);
+});
 
 test('wix-shaped embed: the room follows a player framed by an unmatched site, both ways, fullscreen included', async () => {
   const party = await startParty({ n: 2, shape: 'wix' });

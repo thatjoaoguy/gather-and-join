@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- Firefox only: Chrome's offscreen document captures the mic and camera itself. -->
+  <meta name="manifest.include" content="['firefox']">
+  <title>Gather &amp; Join — your microphone</title>
+  <link rel="icon" href="/icon/32.png">
+  <link rel="stylesheet" href="../../lib/ui/system.css">
+  <style>
+    main { max-width: 560px; margin: 56px auto; padding: 0 16px 48px; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-panel); padding: 32px; }
+    .lockup { display: block; width: 168px; height: auto; margin-bottom: 8px; }
+    h1 { font-size: 26px; margin: 20px 0 8px; }
+    .lede { color: var(--muted); margin: 0 0 24px; }
+    .device { display: flex; align-items: center; gap: 14px; padding: 16px 0; border-top: 1px solid var(--line); }
+    .device:last-of-type { border-bottom: 1px solid var(--line); }
+    .device .ic { flex: none; }
+    .device .what { flex: 1; min-width: 0; }
+    .device .what strong { display: block; }
+    .device .what span { font-size: 13px; color: var(--muted); }
+    .device.on .ic { color: var(--success); }
+    .device.err .ic { color: var(--error); }
+    /* The level is the proof this tab holds the microphone: it moves when you speak. */
+    .meter { flex: none; width: 120px; height: 8px; border-radius: 4px; background: var(--field); border: 1px solid var(--line); overflow: hidden; }
+    .meter i { display: block; height: 100%; width: 0; background: var(--success); transition: width 80ms linear; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+    .fine { font-size: 13px; color: var(--muted); margin: 16px 0 0; }
+  </style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <img class="lockup" src="/brand/lockup.svg" alt="Gather &amp; Join">
+    <h1>Your microphone lives here.</h1>
+    <p class="lede">Firefox lets only a tab use your microphone and camera, so this pinned tab carries them while you’re in a room. You can leave it in the background.</p>
+    <div class="device" id="mic">
+      <span class="ic" id="mic-ic"></span>
+      <div class="what"><strong>Microphone</strong><span id="mic-text">Waiting for the room…</span></div>
+      <div class="meter" aria-hidden="true"><i id="level"></i></div>
+    </div>
+    <div class="device" id="cam">
+      <span class="ic" id="cam-ic"></span>
+      <div class="what"><strong>Camera</strong><span id="cam-text">Off until you turn it on in the room.</span></div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="back" type="button">Back to the show</button>
+    </div>
+    <p class="fine">Closing this tab mutes you. It closes by itself when you leave the room.</p>
+  </div>
+</main>
+<script type="module" src="./main.ts"></script>
+</body>
+</html>

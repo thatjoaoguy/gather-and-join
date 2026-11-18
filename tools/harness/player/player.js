@@ -20,7 +20,12 @@
       document.body.style.width = `${innerWidth}px`;
       Object.assign(playerEl.style, { width: `${innerWidth}px`, minWidth: `${innerWidth}px`, margin: '0' });
     };
-    fit();
+    // A frame can run this before its parent has laid it out, when innerWidth is still 0;
+    // pinned at 0px the player never needs narrowing, so wait for the frame's first size.
+    // Not with `resize`: a frame's first size can arrive without one. A ResizeObserver
+    // always reports a box's first size.
+    if (innerWidth > 0) fit();
+    else new ResizeObserver((_, ro) => { if (innerWidth > 0) { ro.disconnect(); fit(); } }).observe(document.documentElement);
     document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) setTimeout(fit, 250); });
   }
 

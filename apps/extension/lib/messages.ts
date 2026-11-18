@@ -5,6 +5,8 @@
  *  - Content script ⇄ offscreen: a long-lived `chrome.runtime.connect` Port
  *    named PORT_PLAYER. The port dies with the page; the offscreen document does not.
  *  - Popup ⇄ offscreen: a Port named PORT_POPUP.
+ *  - Call tab ⇄ background page (Firefox only): a Port named PORT_CALL; the tab
+ *    captures the mic and camera the background page may not (lib/tab-capture.ts).
  *  - Anyone → background: `chrome.runtime.sendMessage({target: 'background', ...})`.
  *  - Background → offscreen: `chrome.runtime.sendMessage({target: 'offscreen', ...})`.
  *  - Background → one player frame: `chrome.tabs.sendMessage({target: 'player', ...})`.
@@ -16,6 +18,18 @@ import { kvGet } from './kv';
 
 export const PORT_PLAYER = 'gj-player';
 export const PORT_POPUP = 'gj-popup';
+export const PORT_CALL = 'gj-call';
+
+/** Background page → call tab. Tracks travel over the tab's own loopback connection, signalled here. */
+export type ToCallTab =
+  | { type: 'capture'; id: number; kind: 'audio' | 'video'; constraints: MediaTrackConstraints }
+  | { type: 'release'; kind: 'audio' | 'video' }
+  | { type: 'signal'; payload: unknown };
+/** Call tab → background page. A failed capture carries getUserMedia's error name, so permission handling is unchanged. */
+export type FromCallTab =
+  | { type: 'captured'; id: number; ok: true }
+  | { type: 'captured'; id: number; ok: false; error: string; message: string }
+  | { type: 'signal'; payload: unknown };
 
 export type PeerMediaState = {
   connectionState: RTCPeerConnectionState;

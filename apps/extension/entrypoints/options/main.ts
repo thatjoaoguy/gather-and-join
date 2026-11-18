@@ -4,8 +4,9 @@
  * Opened with ?grant=1 or ?grant=camera it prompts at once, then stays open on
  * whatever is still outstanding: granting one permission is not being set up.
  */
+import '../../lib/firefox-shim';
 import { SERVICES } from '@gj/shared';
-import { DEFAULT_SERVER_URL, HOST_GUIDE_URL } from '../../lib/constants';
+import { BROWSER_NAME, DEFAULT_SERVER_URL, HOST_GUIDE_URL } from '../../lib/constants';
 import type { PeerStats, ServerStatus, Snapshot } from '../../lib/messages';
 import { nextStep, setupComplete, setupSteps, setupSummary, type DevicePermission, type SetupStep } from '../../lib/setup-state';
 import { updateNotice } from '../../lib/room-labels';
@@ -15,6 +16,8 @@ import { ensureQuicksand } from '../../lib/ui/fonts';
 ensureQuicksand();
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+// The copy names the browser asking; the page is written for Chrome and corrected here.
+document.querySelectorAll('[data-browser]').forEach((el) => { el.textContent = BROWSER_NAME; });
 const VERSION = chrome.runtime.getManifest().version;
 const wanted = new URLSearchParams(location.search).get('grant'); // "1" = mic, "camera" = camera
 const urlInput = $<HTMLInputElement>('server-url');
@@ -79,7 +82,7 @@ function showDevice(kind: Kind, permission: DevicePermission, errName?: string) 
   action.innerHTML = `<button class="${kind === 'audio' ? 'primary' : ''}" id="${m.grantId}" type="button">${permission === 'denied' ? 'Try again' : `Allow ${m.label.toLowerCase()}`}</button>`;
   $(m.grantId).onclick = () => grant(kind);
   notice.innerHTML = permission === 'denied'
-    ? `<div class="notice error" role="alert"><strong>${ic('err')} ${m.label} not allowed</strong><p>Chrome or your system blocked it${errName ? ` (<code>${errName}</code>)` : ''}. Check Chrome’s site settings for this extension and your system’s privacy settings for the ${m.label.toLowerCase()}, then try again.</p></div>`
+    ? `<div class="notice error" role="alert"><strong>${ic('err')} ${m.label} not allowed</strong><p>${BROWSER_NAME} or your system blocked it${errName ? ` (<code>${errName}</code>)` : ''}. Check ${BROWSER_NAME}’s site settings for this extension and your system’s privacy settings for the ${m.label.toLowerCase()}, then try again.</p></div>`
     : '';
 }
 
@@ -250,7 +253,7 @@ else if (wanted) void grant('audio');
 
 async function buildReport(): Promise<{ text: string; summary: string }> {
   const manifest = chrome.runtime.getManifest();
-  const chromeVersion = /Chrome\/([\d.]+)/.exec(navigator.userAgent)?.[1] ?? '?';
+  const browserVersion = new RegExp(`${BROWSER_NAME}/([\\d.]+)`).exec(navigator.userAgent)?.[1] ?? '?';
   const [snapshot, peerStats, prefs, session] = await Promise.all([
     toOffscreen<Snapshot>({ type: 'getSnapshot' }),
     toOffscreen<Record<string, PeerStats>>({ type: 'getPeerStats' }),
@@ -261,12 +264,12 @@ async function buildReport(): Promise<{ text: string; summary: string }> {
   const out: string[] = [
     'Gather & Join diagnostics',
     `generated: ${new Date().toISOString()}`,
-    `extension: ${manifest.name} ${manifest.version}   chrome: ${chromeVersion}   platform: ${navigator.platform}`,
+    `extension: ${manifest.name} ${manifest.version}   ${BROWSER_NAME.toLowerCase()}: ${browserVersion}   platform: ${navigator.platform}`,
     `server: ${(prefs.serverUrl as string) ?? DEFAULT_SERVER_URL}   server version: ${snapshot?.server.version ?? '?'}   ducking: ${prefs.ducking === true ? 'on' : 'off'}`,
   ];
   let summary: string;
   if (!snapshot) {
-    out.push('session: offscreen document not running (no room has been joined since Chrome started)');
+    out.push(`session: ${BROWSER_NAME === 'Firefox' ? 'not running' : 'offscreen document not running'} (no room has been joined since ${BROWSER_NAME} started)`);
     summary = 'Not in a room right now.';
   } else {
     const s = snapshot;

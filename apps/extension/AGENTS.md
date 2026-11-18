@@ -1,7 +1,10 @@
 # apps/extension — agent guide
 
-WXT + TypeScript MV3 extension. Five contexts with five different lifetimes; the
-split exists so the voice call survives an episode change. Root `AGENTS.md` first.
+WXT + TypeScript extension: Chrome MV3, and Firefox MV2 from the same sources
+(`import.meta.env.BROWSER` tells them apart). Five contexts with five different
+lifetimes; the split exists so the voice call survives an episode change. On
+Firefox the background page is persistent and mounts the offscreen host itself,
+and a pinned call tab captures the mic and camera. Root `AGENTS.md` first.
 
 ## Layout
 
@@ -11,6 +14,8 @@ entrypoints/        wiring only — no behaviour lives here
   offscreen/          the long-lived context: RoomSession, WebSocket, every RTCPeerConnection, mic, remote audio
   player.content.ts   dies on every navigation: <video> binding, drift correction, the sidebar
   popup/ options/     UI, built fresh on every open
+  call/               Firefox only: the pinned tab that captures mic and camera, which a background
+                      page may not; tracks reach the session over a loopback (lib/call-tab.ts ⇄ lib/tab-capture.ts)
   testhook.content.ts GJ_TEST=1 builds only
 lib/                behaviour, as classes with injected collaborators
   providers/          DOM-level provider knowledge (PlayerAdapter)
@@ -66,8 +71,9 @@ before it opens a page.
 ```sh
 pnpm --filter @gj/extension test:unit
 pnpm --filter @gj/extension typecheck
-pnpm --filter @gj/extension build        # → .output/chrome-mv3
+pnpm --filter @gj/extension build        # → .output/chrome-mv3 and .output/firefox-mv2
 pnpm --filter @gj/extension build:test   # GJ_TEST=1 → .output-test, what the harness loads
+pnpm --filter @gj/harness smoke:firefox  # the Firefox build end to end; Playwright cannot load it
 ```
 
 Anything about behaviour across contexts (navigation, worker death, reconnect)

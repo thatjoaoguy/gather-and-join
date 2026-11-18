@@ -6,6 +6,7 @@
  * which is the one chrome.action the offscreen document cannot reach, and keep
  * the player script registered for the services the user has granted.
  */
+import '../lib/firefox-shim';
 import { defineBackground } from 'wxt/utils/define-background';
 import { parseContentId, PLAYER_HOSTS, PROVIDERS, SERVICES } from '@gj/shared';
 import { applyBadge, badgeStateFrom, type BadgeState, type IconDeps } from '../lib/badge';
@@ -13,16 +14,44 @@ import { readTestConfig, type Snapshot, type ToBackground, type ToOffscreen } fr
 import { log } from '../lib/log';
 import { adapterForDocument, playerUrlOf } from '../lib/providers';
 import { PlayerAccess } from '../lib/player-access';
+import { mountOffscreenHost, type OffscreenHost } from './offscreen/host';
+
+// Firefox has no offscreen API, and an MV3 event page there dies after 30 s idle, so
+// the Firefox build is MV2 with a persistent background page that hosts the long-lived
+// state itself. Everything that would have crossed to the offscreen document is a
+// direct call here.
+const HOSTED = import.meta.env.BROWSER === 'firefox';
+let host: OffscreenHost | null = null;
+// MV2 has browser_action where MV3 has action; the slice `applyBadge` uses is the same.
+const action = (chrome.action ?? chrome.browserAction) as typeof chrome.action;
 
 const OFFSCREEN_URL = 'offscreen.html';
 let creating: Promise<void> | null = null;
 
 async function hasOffscreen(): Promise<boolean> {
+  if (HOSTED) return host !== null;
   const ctxs = await chrome.runtime.getContexts({ contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT] });
   return ctxs.length > 0;
 }
 
+// Firefox: the pinned tab that captures the mic and camera this page may not (lib/tab-capture.ts).
+const CALL_TAB_URL = chrome.runtime.getURL('call.html');
+let callTabId: number | null = null;
+const callTab = {
+  async open() {
+    // One left over (a background page restart) is reloaded, so it connects to this page.
+    const [existing] = await chrome.tabs.query({ url: CALL_TAB_URL });
+    if (existing?.id !== undefined) { callTabId = existing.id; await chrome.tabs.reload(existing.id); return; }
+    callTabId = (await chrome.tabs.create({ url: CALL_TAB_URL, pinned: true, active: false })).id ?? null;
+  },
+  close() {
+    if (callTabId !== null) chrome.tabs.remove(callTabId).catch(() => { /* already closed by hand */ });
+    callTabId = null;
+  },
+};
+
 async function ensureOffscreen(): Promise<void> {
+  if (HOSTED) { host ??= mountOffscreenHost({ reportBadge: (state) => showBadge(state), callTab }); return; }
   if (await hasOffscreen()) return;
   creating ??= chrome.offscreen
     .createDocument({
@@ -37,6 +66,8 @@ async function ensureOffscreen(): Promise<void> {
 
 async function toOffscreen(msg: ToOffscreen): Promise<unknown> {
   await ensureOffscreen();
+  // A page never receives its own sendMessage, so the hosted case is a plain call.
+  if (host) { try { return await host.handle(msg); } catch { return undefined; } }
   try { return await chrome.runtime.sendMessage(msg); } catch { return undefined; }
 }
 
@@ -69,7 +100,7 @@ const icons: IconDeps = {
 
 /** The dot is cosmetic: a failure is logged and dropped, never thrown at a caller. */
 async function showBadge(state: BadgeState): Promise<void> {
-  try { await applyBadge(chrome.action, state, { name: chrome.runtime.getManifest().name, icons }); }
+  try { await applyBadge(action, state, { name: chrome.runtime.getManifest().name, icons }); }
   catch (e) { log('background', 'badge failed', state, String(e)); }
 }
 
@@ -103,6 +134,8 @@ const access = new PlayerAccess(__GJ_TEST__ ? PROVIDERS : SERVICES, {
 });
 
 export default defineBackground(() => {
+  // The host must be up before the first port lands, and before the page is asked for anything.
+  if (HOSTED) void ensureOffscreen();
   chrome.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
     if (!msg || msg.target !== 'background') return;
     switch (msg.type) {
@@ -157,7 +190,7 @@ export default defineBackground(() => {
       const key = `gjLastUrl:${d.tabId}`;
       const prev = (await chrome.storage.session.get(key))[key] as string | undefined;
       await chrome.storage.session.set({ [key]: d.url });
-      if (prev && (await hasOffscreen())) await chrome.offscreen.closeDocument();
+      if (prev && !HOSTED && (await hasOffscreen())) await chrome.offscreen.closeDocument();
     }
     await toOffscreen({ target: 'offscreen', type: 'navigation', tabId: d.tabId, url: d.url, contentId: parseContentId(d.url) });
   };

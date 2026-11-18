@@ -1,8 +1,8 @@
 # Agent guide
 
 Gather & Join keeps a small group on the same second of the same episode and
-puts a call alongside it: a Chrome MV3 extension (WXT + TypeScript) plus a
-signaling server one participant hosts. pnpm workspace, no UI framework, no
+puts a call alongside it: a browser extension (WXT + TypeScript; Chrome MV3,
+Firefox MV2) plus a signaling server one participant hosts. pnpm workspace, no UI framework, no
 bundler for the server.
 
 Read this file, then the `AGENTS.md` in the workspace you are about to change.
@@ -20,6 +20,7 @@ it routes you to the right code and tells you what a change has to survive.
 | Wire protocol / room rules | `packages/shared/src/protocol.ts`, `room.ts`, `apps/server/src/index.ts` | `packages/shared/test`, `apps/server/test` |
 | A new streaming service | `packages/shared/src/providers.ts` **and** `apps/extension/lib/providers/` | `packages/shared/test/providers.test.ts`; extend the fake player if the site has a new DOM hazard |
 | Call / WebRTC | `apps/extension/lib/mesh.ts`, `perfect-peer.ts`, `loopback-sender.ts` | `apps/extension/test` with the fakes, then `tools/harness/tests/media.spec.ts` |
+| Firefox only: the hosting background page, the pinned call tab | `apps/extension/entrypoints/background.ts`, `lib/tab-capture.ts`, `lib/call-tab.ts`, `entrypoints/call/` | `apps/extension/test/tab-capture.test.ts`, then `pnpm --filter @gj/harness smoke:firefox` |
 | Room lifecycle, rejoin, persistence | `apps/extension/lib/room-session.ts`, `room-client.ts` | `apps/extension/test/room-session.test.ts`, `reconnect.spec.ts` |
 | Popup / options / sidebar UI | `apps/extension/entrypoints/*`, `lib/sidebar/`, `lib/ui/` | tokens from `docs/design-system`; screens are `docs/design-system/screens/index.html` |
 | What the server prints | `apps/server/src/index.ts` | `apps/server/test/server.test.ts`; keep the `key=value` line shape |
@@ -40,6 +41,7 @@ pnpm typecheck        # every workspace, tsc --noEmit
 pnpm test:unit        # vitest: shared, extension libs, server
 pnpm test:e2e         # Playwright: N real Chromes, fake player, fake media
 pnpm test:sabotage    # every row; `pnpm test:sabotage drift` for one
+pnpm --filter @gj/harness smoke:firefox   # the Firefox build against a Chrome peer; needs Firefox
 ```
 
 `pnpm verify` is the gate before a pull request and it runs everything headless
@@ -63,6 +65,13 @@ Technical ones, each of which has already cost someone a day:
 - **The content script dies on every navigation.** Nothing long-lived may live
   there. The `RoomSession`, the socket and every `RTCPeerConnection` live in the
   offscreen document, which is the whole reason the call survives an episode change.
+  Firefox has no offscreen API, so its persistent MV2 background page mounts the same
+  host (`entrypoints/offscreen/host.ts`).
+- **Firefox refuses getUserMedia in a background page**, whatever the permission says.
+  There a pinned call tab captures the mic and camera and sends the tracks to the
+  background page over a loopback (`lib/call-tab.ts` ⇄ `lib/tab-capture.ts`). The
+  `pnpm verify` suite cannot see this; `smoke:firefox` can, and only because it keeps
+  permission checks on.
 - **The offscreen document has no `chrome.storage`**, only `chrome.runtime`. It
   reads and writes storage through the service worker via `lib/kv.ts`.
 - **Media cannot cross extension contexts.** Remote video reaches the page tiles
