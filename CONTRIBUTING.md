@@ -12,18 +12,20 @@ something works.
 ## Setting up
 
 Requirements: Node ≥ 22.6 (CI uses 26), pnpm 12, and Chromium for the
-end-to-end suite.
+end-to-end suite. Firefox, for the Firefox build's smoke check.
 
 ```sh
 pnpm install
 pnpm exec playwright install --with-deps chromium   # from tools/harness, once
 pnpm dev:server                                       # ws://localhost:8080
 pnpm dev:harness                                      # fake player at http://localhost:4173
-pnpm --filter @gj/extension build                    # → apps/extension/.output/chrome-mv3
+pnpm --filter @gj/extension build                    # → .output/chrome-mv3 and .output/firefox-mv2
 ```
 
 Load `apps/extension/.output/chrome-mv3` unpacked in Chrome (`chrome://extensions`
-→ Developer mode → Load unpacked). The
+→ Developer mode → Load unpacked). In Firefox, open `about:debugging#/runtime/this-firefox`
+→ Load Temporary Add-on, and pick `apps/extension/.output/firefox-mv2/manifest.json`;
+Firefox drops it when it quits. The
 [quick start](https://gatherandjoin.com/docs/development#quick-start) has the rest.
 
 ## Before you open a pull request
@@ -38,6 +40,17 @@ checks that exactly its guarding test fails). Everything runs headless without
 an HBO Max subscription or a Google account. If a change touches sync behaviour, add or adjust a
 test in `tools/harness/tests`; the suite asserts numbers (drift, seeks,
 re-attaches), not screenshots.
+
+The suite and the matrix drive Chrome only: Playwright cannot load an extension
+into Firefox. A change that touches the Firefox build (the background page, the
+pinned call tab, anything behind `import.meta.env.BROWSER`) also needs
+
+```sh
+pnpm --filter @gj/harness smoke:firefox
+```
+
+which puts a headless Firefox in a room with a Chrome peer and needs a local
+Firefox (`FIREFOX_BIN` to point at another one).
 
 CI runs lint, typecheck, unit tests and the build on every pull request to
 `main` and on every push to `main`, where a failure stops the release. The

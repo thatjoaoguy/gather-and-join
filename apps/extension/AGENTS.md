@@ -1,7 +1,10 @@
 # apps/extension — agent guide
 
-WXT + TypeScript MV3 extension. Five contexts with five different lifetimes; the
-split exists so the voice call survives an episode change. Root `AGENTS.md` first.
+WXT + TypeScript extension: Chrome MV3, and Firefox MV2 from the same sources
+(`import.meta.env.BROWSER` tells them apart). Five contexts with five different
+lifetimes; the split exists so the voice call survives an episode change. On
+Firefox the background page is persistent and mounts the offscreen host itself,
+and a pinned call tab captures the mic and camera. Root `AGENTS.md` first.
 
 ## Layout
 
@@ -68,8 +71,9 @@ before it opens a page.
 ```sh
 pnpm --filter @gj/extension test:unit
 pnpm --filter @gj/extension typecheck
-pnpm --filter @gj/extension build        # → .output/chrome-mv3
+pnpm --filter @gj/extension build        # → .output/chrome-mv3 and .output/firefox-mv2
 pnpm --filter @gj/extension build:test   # GJ_TEST=1 → .output-test, what the harness loads
+pnpm --filter @gj/harness smoke:firefox  # the Firefox build end to end; Playwright cannot load it
 ```
 
 Anything about behaviour across contexts (navigation, worker death, reconnect)
