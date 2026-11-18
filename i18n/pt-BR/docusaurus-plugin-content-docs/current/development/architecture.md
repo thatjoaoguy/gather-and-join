@@ -16,6 +16,16 @@ duração pode viver num contexto que morre na navegação:
 | Pop-up | abre e fecha a qualquer momento | criar/entrar, botões de microfone/câmera, lista de peers |
 | Servidor | roda continuamente | registro de salas, estado de sincronia oficial, relay de sinalização |
 
+O Firefox não tem a API offscreen e encerra uma event page MV3 depois de 30 s
+ociosa, então a versão para Firefox é MV2, com uma **background page persistente**.
+Ela monta o mesmo host que o documento offscreen monta no Chrome
+(`entrypoints/offscreen/host.ts`) e o chama diretamente, em vez de trocar
+mensagens. O Firefox tem mais um contexto:
+
+| Componente | Tempo de vida | Responsável por |
+|---|---|---|
+| Aba da chamada (Firefox) | enquanto você está numa sala | capturar o microfone e a câmera e enviá-los à background page por um loopback |
+
 Fatos descobertos durante a construção que dão forma ao código:
 
 - **Particularidades do provedor** (o primeiro adapter, inspecionado ao vivo): o app é
@@ -76,6 +86,17 @@ Fatos descobertos durante a construção que dão forma ao código:
   *vídeo* remoto é retransmitido para os quadros da página por uma
   `RTCPeerConnection` local de loopback (`lib/loopback-sender.ts` no documento
   offscreen, `lib/sidebar/loopback-receiver.ts` na página).
+- **O Firefox recusa `getUserMedia` numa background page**, diga a permissão o que
+  disser ("not allowed by the user agent or the platform in the current
+  context"), enquanto uma aba da extensão pode, e herda a permissão dada na página
+  de configuração. Por isso, no Firefox, uma aba da chamada fixada captura e envia
+  as trilhas à background page por uma `RTCPeerConnection` de loopback
+  (`lib/call-tab.ts` para `lib/tab-capture.ts`), e o `LocalMedia` as recebe como se
+  viessem do seu próprio `getUserMedia`. O `getUserMedia` também espera o documento
+  ter foco, então a aba vem para a frente pelo instante que uma captura leva para
+  começar, e depois volta. A suíte do Playwright só dirige o Chrome e não enxerga
+  nada disso; o `pnpm --filter @gj/harness smoke:firefox` enxerga, e só porque
+  mantém as verificações de permissão ligadas.
 
 ## Módulos {/* #modules */}
 
@@ -90,6 +111,8 @@ em classes com colaboradores injetados, então cada uma roda no vitest com fakes
 | `room-client.ts` | o WebSocket: reconexão/backoff, sincronização de relógio, reentrada | `WebSocket` global |
 | `mesh.ts` + `perfect-peer.ts` | uma `RTCPeerConnection` negociada por peer | um callback de envio de sinalização |
 | `loopback-sender.ts` / `sidebar/loopback-receiver.ts` | as duas pontas do loopback da página | callbacks de sinalização |
+| `local-media.ts` + `tab-capture.ts` | o microfone, a câmera e o detector de fala; no Firefox, as trilhas que a aba da chamada envia, e abrir e fechar essa aba | uma fonte de trilhas: `getUserMedia`, ou a porta e o loopback da aba da chamada |
+| `call-tab.ts` | a aba da chamada do Firefox: capturar quando pedido, enviar pelo loopback, vir para a frente quando uma captura precisa de foco | a porta, `getUserMedia`, o foco da aba |
 | `sidebar/party-sidebar.ts` | compõe `SidebarView` (DOM), `PageLayout` (abrir espaço), `LoopbackReceiver`, `EpisodeStartControl` | a porta, o localizador de vídeo do provedor |
 | `sidebar/episode-start.ts` | o aviso de "cópias diferentes": a proposta, os lembretes, alinhar e limpar | um callback de envio |
 | `sidebar/settings-panel.ts` + `settings-model.ts` | o popover de configurações da sala, aberto pela engrenagem, e o que ele mostra | as ações da barra lateral |

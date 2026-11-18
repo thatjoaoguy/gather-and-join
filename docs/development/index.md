@@ -6,7 +6,8 @@ slug: /development
 # Development
 
 Everything in this section is for people working on the code. The repository
-is a pnpm workspace: a Chrome MV3 extension built with WXT and TypeScript, the
+is a pnpm workspace: a browser extension built with WXT and TypeScript (Chrome
+MV3, and Firefox MV2 from the same sources), the
 signaling server, and the code both share. There is no UI framework, and the
 server has no bundler in development.
 
@@ -28,7 +29,7 @@ routes a change to the code that owns it.
 
 | Path | What |
 |---|---|
-| `apps/extension` | WXT + TypeScript extension: content script, service worker, offscreen document, popup, options |
+| `apps/extension` | WXT + TypeScript extension: content script, service worker, offscreen document, popup, options; on Firefox, a persistent background page and the call tab |
 | `apps/server` | Node + `ws` signaling/sync server. One file. No database, no auth. Ships as a bundled `.mjs` and a container image — see its [`Dockerfile`](https://github.com/thatjoaoguy/gather-and-join/blob/main/apps/server/Dockerfile) |
 | `packages/shared` | Wire protocol types, room reducer, clock/drift policy — imported by both sides |
 | `tools/harness` | Fake player page, self-identifying fake media, observer client, multi-peer launcher, Playwright suite, sabotage matrix |
@@ -40,12 +41,14 @@ pnpm install
 npx skills install                  # optional: agent skills pinned in skills-lock.json (Chrome extension + modern web guidance)
 pnpm dev:server                     # ws://localhost:8080
 pnpm dev:harness                    # fake player at http://localhost:4173
-pnpm --filter @gj/extension build  # → apps/extension/.output/chrome-mv3
+pnpm --filter @gj/extension build  # → apps/extension/.output/chrome-mv3 and firefox-mv2
 ```
 
 Load `apps/extension/.output/chrome-mv3` as an unpacked extension
-(`chrome://extensions` → Developer mode → Load unpacked). Open the extension's
-options page once to allow the microphone and set the server URL.
+(`chrome://extensions` → Developer mode → Load unpacked), or, in Firefox, pick
+`apps/extension/.output/firefox-mv2/manifest.json` under **Load Temporary Add-on…**
+at `about:debugging#/runtime/this-firefox`. Open the extension's options page
+once to allow the microphone and set the server URL.
 
 To watch the whole thing run without a subscription:
 

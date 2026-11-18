@@ -50,3 +50,27 @@ e cada chamada do dump esperaria esgotar o próprio timeout contra ela.
 | `offscreen` | a persistência do documento offscreen entre navegações | navigation survival, leader authority (ambos verificam que a sala sobrevive a uma transição de episódio). O encerramento do service worker é pulado com esta flag: ele mata o worker logo antes dessa navegação, e se o worker que está reiniciando fecha o documento antes que o novo content script o alcance é uma condição de corrida |
 | `echo-suppress` | a marcação de comandos remotos aplicados localmente | echo suppression, large drift, small drift, quality switch (os próprios seeks corretivos do seguidor movem a sala) |
 | `episode-start` | o salto que uma cópia mais longa aplica a partir do início do episódio da sala | início do episódio |
+
+## Firefox {/* #firefox */}
+
+O Playwright não consegue carregar uma extensão no Firefox, então a suíte e a
+matriz só dirigem o Chrome. A versão para Firefox tem a sua própria verificação:
+
+```sh
+pnpm --filter @gj/harness smoke:firefox
+```
+
+Ela dirige um Firefox headless pelo WebDriver BiDi (`webExtension.install`), põe
+esse Firefox numa sala com um peer Chrome do harness e verifica a chamada nos
+dois sentidos (cada lado ouve o tom do outro), o play e o pause nos dois sentidos,
+as câmeras nos quadros da página, e a sala sobrevivendo a um recarregamento, a uma
+rota no cliente e à troca de episódio feita pelo líder. Ela precisa de um Firefox
+instalado (`FIREFOX_BIN` aponta para outro) e roda o servidor em `:8080`, o padrão
+da extensão, porque não dá para apontar um peer Firefox para um servidor de teste:
+a automação não consegue abrir as páginas `moz-extension://` dele.
+
+Ela mantém as verificações de permissão ligadas, com o microfone e a câmera já
+permitidos do jeito que a página de configuração os deixa. Com elas desligadas,
+ela já passou enquanto ninguém num Firefox de verdade conseguia ouvir você: o
+Firefox recusa `getUserMedia` numa background page, diga a permissão o que disser,
+e isso só aparece com as verificações ligadas.

@@ -47,3 +47,26 @@ dump's calls would each wait out their own timeouts against it.
 | `offscreen` | the offscreen document's persistence across navigation | navigation survival, leader authority (both assert the room survives an episode transition). Service-worker termination is skipped under this flag: it kills the worker right before that navigation, and whether the restarting worker closes the document before the new content script reaches it is a race |
 | `echo-suppress` | tagging of locally-applied remote commands | echo suppression, large drift, small drift, quality switch (the follower's own corrective seeks move the room) |
 | `episode-start` | the skip a longer copy applies from the room's episode start | episode start |
+
+## Firefox
+
+Playwright cannot load an extension into Firefox, so the suite and the matrix
+drive Chrome only. The Firefox build has its own check:
+
+```sh
+pnpm --filter @gj/harness smoke:firefox
+```
+
+It drives a headless Firefox over WebDriver BiDi (`webExtension.install`), puts
+it in a room with one Chrome peer from the harness, and checks the call both ways
+(each side hears the other's tone), play and pause in both directions, the cameras
+into the page tiles, and the room surviving a reload, a client-side route and the
+leader's episode change. It needs a local Firefox (`FIREFOX_BIN` to point at
+another) and runs the server on `:8080`, the extension's default, because a
+Firefox peer cannot be pointed at a test server: automation cannot open its
+`moz-extension://` pages.
+
+It keeps permission checks on, with the microphone and camera already allowed the
+way the setup page leaves them. With them switched off, it once passed while
+nobody in a real Firefox could hear you: Firefox refuses `getUserMedia` in a
+background page whatever the permission, which only shows with the checks on.
