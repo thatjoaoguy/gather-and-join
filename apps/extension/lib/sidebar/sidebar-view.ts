@@ -231,10 +231,12 @@ export class SidebarView {
     for (const p of this.tiles) {
       let tile = existing.get(p.peerId);
       if (!tile) {
+        // disablepictureinpicture: Firefox floats its Picture-in-Picture toggle over any video
+        // past 45 s it is hovered over, and a live camera never ends. A tile is not a show.
         tile = this.doc.createElement('div');
         tile.className = 'tile';
         tile.dataset.peerId = p.peerId;
-        tile.innerHTML = `<span class="badge muted" title="Muted">${ICONS.micOff}</span><span class="badge lost" title="Reconnecting">${ICONS.warn}</span><div class="placeholder"><span class="avatar" aria-hidden="true"></span></div><video autoplay muted playsinline></video><span class="name"></span>`;
+        tile.innerHTML = `<span class="badge muted" title="Muted">${ICONS.micOff}</span><span class="badge lost" title="Reconnecting">${ICONS.warn}</span><div class="placeholder"><span class="avatar" aria-hidden="true"></span></div><video autoplay muted playsinline disablepictureinpicture></video><span class="name"></span>`;
         if (p.self) tile.append(this.selfControls());
       }
       if (p.self) this.renderSelfControls(tile);
