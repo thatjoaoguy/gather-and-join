@@ -8,7 +8,7 @@ import { parseContentId, isValidRoomCode, normalizeRoomCode, providerForHost, tr
 import { PORT_POPUP, type OffscreenToPopup, type PopupToOffscreen, type Snapshot } from '../../lib/messages';
 import { participantsFrom, type Participant } from '../../lib/participants';
 import { cameraProblem, connectionLabel, serverState, updateNotice } from '../../lib/room-labels';
-import { HOST_GUIDE_URL } from '../../lib/constants';
+import { BROWSER_NAME, HOST_GUIDE_URL } from '../../lib/constants';
 import { firstRun, type SetupInput } from '../../lib/setup-state';
 import { ReconnectingPort } from '../../lib/port';
 import { ic, escapeHtml as esc } from '../../lib/ui/icons';
@@ -180,7 +180,7 @@ async function checkAccess() {
 /** Every service is an optional permission, asked for here, on its own page, the first time. */
 function accessNotice(p: ContentProvider): string {
   const name = esc(p.name);
-  return `<div class="notice info" role="status"><strong>${ic('info')} Allow Gather &amp; Join on ${name}</strong><p>It can’t keep this video in step with your room until you do. Chrome asks once, for ${name} only.</p></div>`
+  return `<div class="notice info" role="status"><strong>${ic('info')} Allow Gather &amp; Join on ${name}</strong><p>It can’t keep this video in step with your room until you do. ${BROWSER_NAME} asks once, for ${name} only.</p></div>`
     + `<button class="primary full" id="grant-site" type="button">Allow on ${name}</button>`;
 }
 
