@@ -33,7 +33,9 @@ sinalização) vale mais do que números de uso. O que existe no lugar:
   cada 30 s enquanto o vídeo toca (`drift 30s: n=118 p50=32ms max=410ms seeks=0 nudges=1`).
   Os buffers sobrevivem ao Chrome reiniciar o worker ou o documento offscreen (um
   marcador `--- restarted ---` separa as encarnações) e são apagados quando o Chrome
-  fecha. A seção **Diagnostics** da página de configuração mostra a sala atual e os
+  fecha. No Firefox, a background page persistente faz o papel do worker e do
+  documento offscreen, e a aba da chamada registra as suas capturas como `[call]`.
+  A seção **Diagnostics** da página de configuração mostra a sala atual e os
   estados dos pares, e tem um botão **Copy diagnostics** que junta tudo isso, com as
   contagens de bytes de cada par, em um único texto para colar. Nada é enviado a
   lugar nenhum por conta própria.

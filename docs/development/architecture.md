@@ -16,6 +16,15 @@ context that dies on navigation:
 | Popup | open/close at will | create/join, mic/camera toggles, peer list |
 | Server | long-running | room registry, authoritative sync state, signaling relay |
 
+Firefox has no offscreen API and ends an MV3 event page after 30 s idle, so the
+Firefox build is MV2 with a **persistent background page**. It mounts the same
+host the offscreen document mounts on Chrome (`entrypoints/offscreen/host.ts`) and
+calls it directly instead of messaging. Firefox has one more context:
+
+| Component | Lifetime | Owns |
+|---|---|---|
+| Call tab (Firefox) | while you are in a room | capturing the mic and camera, sent to the background page over a loopback |
+
 Facts discovered while building that shape the code:
 
 - **Provider specifics** (the first adapter, inspected live): the app is
@@ -74,6 +83,17 @@ Facts discovered while building that shape the code:
   *video* is re-streamed to the page's tiles over a local loopback
   `RTCPeerConnection` (`lib/loopback-sender.ts` in the offscreen document,
   `lib/sidebar/loopback-receiver.ts` in the page).
+- **Firefox refuses `getUserMedia` in a background page**, whatever the
+  permission says ("not allowed by the user agent or the platform in the current
+  context"), while an extension tab may, and inherits the setup page's grant. So
+  on Firefox a pinned call tab captures and sends the tracks to the background
+  page over a loopback `RTCPeerConnection` (`lib/call-tab.ts` to
+  `lib/tab-capture.ts`), and `LocalMedia` takes them as if from its own
+  `getUserMedia`. `getUserMedia` also waits until its document has focus, so the
+  tab comes forward for the moment a capture takes to start, then goes back. The
+  Playwright suite drives Chrome only and cannot see any of this;
+  `pnpm --filter @gj/harness smoke:firefox` does, and only because it keeps
+  permission checks on.
 
 ## Modules
 
@@ -88,6 +108,8 @@ media-track stand-ins):
 | `room-client.ts` | the WebSocket: reconnect/backoff, clock sync, rejoin | `WebSocket` global |
 | `mesh.ts` + `perfect-peer.ts` | one negotiated `RTCPeerConnection` per peer | a send-signal callback |
 | `loopback-sender.ts` / `sidebar/loopback-receiver.ts` | the two ends of the page loopback | signal callbacks |
+| `local-media.ts` + `tab-capture.ts` | the mic, the camera and the speech detector; on Firefox, the tracks the call tab sends, and opening and closing that tab | a track source: `getUserMedia`, or the call tab's port and loopback |
+| `call-tab.ts` | Firefox's call tab: capture on request, send over the loopback, come forward when a capture needs focus | the port, `getUserMedia`, tab focus |
 | `sidebar/party-sidebar.ts` | composes `SidebarView` (DOM), `PageLayout` (making room), `LoopbackReceiver`, `EpisodeStartControl` | the port, the provider's video locator |
 | `sidebar/episode-start.ts` | the "copies differ" notice: the proposal, nudges, align and clear | a send callback |
 | `sidebar/settings-panel.ts` + `settings-model.ts` | the gear's room settings popover and what it shows | the sidebar's actions |

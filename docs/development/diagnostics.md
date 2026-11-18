@@ -31,7 +31,9 @@ frames only) is worth more than usage numbers. What there is instead:
   while playing (`drift 30s: n=118 p50=32ms max=410ms seeks=0 nudges=1`). The
   buffers survive Chrome restarting the worker or the offscreen document (a
   `--- restarted ---` marker separates incarnations) and are cleared when Chrome
-  exits. The setup page's **Diagnostics** section shows the current room and peer
+  exits. In Firefox the persistent background page stands in for both the worker
+  and the offscreen document, and the call tab logs its captures as `[call]`. The
+  setup page's **Diagnostics** section shows the current room and peer
   states and has a **Copy diagnostics** button that assembles all of it, with peer
   byte counts, into one paste. Nothing is sent anywhere by itself.
 

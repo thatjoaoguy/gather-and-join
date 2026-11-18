@@ -36,13 +36,19 @@ setup page shows the server's version under the address once it is done.
 
 The other way round: the server is ahead of your extension. Chrome updates
 extensions on its own within a few hours. To do it now, open
-`chrome://extensions`, turn on Developer mode, and press **Update**.
+`chrome://extensions`, turn on Developer mode, and press **Update**. Firefox's
+package does not update itself: download the new one from the
+[latest release](https://github.com/thatjoaoguy/gather-and-join/releases/latest)
+and load it [the same way](/docs/install#in-firefox).
 
 ## Nobody can hear me
 
 - Open the setup page and check that the microphone shows as allowed. Chrome's
   own site settings for the extension and the system privacy settings can each
   block it.
+- In Firefox, check that the pinned Gather & Join tab is still open: it holds
+  your microphone, and closing it mutes you. Unmute from your tile in the
+  sidebar and it opens again.
 - Use headphones. With speakers, echo cancellation removes your voice along with
   the show.
 

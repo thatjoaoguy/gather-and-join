@@ -6,7 +6,8 @@ slug: /development
 # Desenvolvimento
 
 Tudo nesta seção é para quem trabalha no código. O repositório é um workspace
-pnpm: uma extensão Chrome MV3 feita com WXT e TypeScript, o servidor de
+pnpm: uma extensão de navegador feita com WXT e TypeScript (Chrome MV3, e
+Firefox MV2 a partir do mesmo código), o servidor de
 sinalização e o código que os dois compartilham. Não há framework de UI, e o
 servidor não usa bundler em desenvolvimento.
 
@@ -29,7 +30,7 @@ indica qual código é dono de cada mudança.
 
 | Caminho | O quê |
 |---|---|
-| `apps/extension` | Extensão em WXT + TypeScript: content script, service worker, documento offscreen, pop-up, opções |
+| `apps/extension` | Extensão em WXT + TypeScript: content script, service worker, documento offscreen, pop-up, opções; no Firefox, uma background page persistente e a aba da chamada |
 | `apps/server` | Servidor de sinalização/sincronia em Node + `ws`. Um arquivo só. Sem banco de dados, sem autenticação. É distribuído como um `.mjs` empacotado e como uma imagem de contêiner — veja o [`Dockerfile`](https://github.com/thatjoaoguy/gather-and-join/blob/main/apps/server/Dockerfile) dele |
 | `packages/shared` | Tipos do protocolo de comunicação, reducer da sala, política de relógio/desvio — importado pelos dois lados |
 | `tools/harness` | Página com player falso, mídia falsa que se identifica, cliente observador, lançador de vários peers, suíte Playwright, matriz de sabotagem |
@@ -41,13 +42,16 @@ pnpm install
 npx skills install                  # opcional: skills de agente fixadas em skills-lock.json (extensão do Chrome + orientações de web moderna)
 pnpm dev:server                     # ws://localhost:8080
 pnpm dev:harness                    # player falso em http://localhost:4173
-pnpm --filter @gj/extension build  # → apps/extension/.output/chrome-mv3
+pnpm --filter @gj/extension build  # → apps/extension/.output/chrome-mv3 e firefox-mv2
 ```
 
 Carregue `apps/extension/.output/chrome-mv3` como extensão descompactada
 (`chrome://extensions` → **Modo do desenvolvedor** (Developer mode) →
-**Carregar sem compactação** (Load unpacked)). Abra a página de opções da
-extensão uma vez para permitir o microfone e definir a URL do servidor.
+**Carregar sem compactação** (Load unpacked)) ou, no Firefox, escolha
+`apps/extension/.output/firefox-mv2/manifest.json` em **Carregar extensão
+temporária…** (Load Temporary Add-on…), em `about:debugging#/runtime/this-firefox`.
+Abra a página de opções da extensão uma vez para permitir o microfone e definir
+a URL do servidor.
 
 Para ver tudo funcionando sem nenhuma assinatura:
 

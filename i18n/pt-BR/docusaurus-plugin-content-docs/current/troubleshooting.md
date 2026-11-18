@@ -38,13 +38,19 @@ endereço.
 
 O contrário: o servidor está à frente da sua extensão. O Chrome atualiza as
 extensões sozinho em poucas horas. Para atualizar agora, abra
-`chrome://extensions`, ative o modo de desenvolvedor e pressione **Update**.
+`chrome://extensions`, ative o modo de desenvolvedor e pressione **Update**. O
+pacote do Firefox não se atualiza sozinho: baixe o novo do
+[lançamento mais recente](https://github.com/thatjoaoguy/gather-and-join/releases/latest)
+e carregue-o [do mesmo jeito](/docs/install#in-firefox).
 
 ## Ninguém me ouve {/* #nobody-can-hear-me */}
 
 - Abra a página de configuração e confira se o microfone aparece como
   permitido. Tanto as configurações de site do próprio Chrome para a extensão
   quanto as configurações de privacidade do sistema podem bloqueá-lo.
+- No Firefox, confira se a aba fixada do Gather & Join continua aberta: ela
+  guarda o seu microfone, e fechá-la deixa você no mudo. Tire o mudo pelo seu
+  quadro na barra lateral e ela abre de novo.
 - Use fones de ouvido. Com alto-falantes, o cancelamento de eco remove a sua
   voz junto com o som do programa.
 

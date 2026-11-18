@@ -79,7 +79,7 @@ O endereço do servidor, o seu nome de exibição e as suas configurações fica
 guardados no armazenamento local da extensão, no seu dispositivo. Nada é
 sincronizado pela sua Conta do Google. Um pequeno log de diagnóstico (eventos de
 conexão, correções de sincronia) é mantido no armazenamento da sessão para a
-solução de problemas e é apagado quando o Chrome é fechado; ele só é
+solução de problemas e é apagado quando o navegador é fechado; ele só é
 compartilhado se você pressionar **Copy diagnostics** na página de configuração
 e colá-lo em algum lugar por conta própria.
 
@@ -113,6 +113,12 @@ apenas nos serviços que você permitiu, inclusive em abas que já estavam abert
 quando você permitiu um deles), um documento offscreen (para manter a chamada
 ativa durante as mudanças de página) e armazenamento local (para as suas
 configurações).
+
+Ao Firefox, ela pede o mesmo, menos o documento offscreen, que o Firefox não tem:
+lá, a própria background page da extensão mantém a chamada ativa e, enquanto você
+está numa sala, uma aba fixada da própria extensão guarda o seu microfone e a sua
+câmera, porque o Firefox só deixa uma aba usá-los. A versão para Firefox também
+declara ao Firefox que não coleta nenhum dado.
 
 O acesso a sites é concedido por serviço, e somente quando você permite: a
 extensão não tem acesso a nenhum site quando é instalada, pede acesso a cada

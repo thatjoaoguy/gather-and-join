@@ -71,7 +71,7 @@ server is used, so media is never routed through a third party.
 The server address, your display name, and your settings are kept in the
 extension's local storage on your device. Nothing is synced through your Google
 account. A short diagnostics log (connection events, sync corrections) is kept
-in session storage for troubleshooting and is cleared when Chrome exits; it is
+in session storage for troubleshooting and is cleared when the browser exits; it is
 only shared if you press **Copy diagnostics** on the setup page and paste it
 somewhere yourself.
 
@@ -101,6 +101,12 @@ is open and to take you to the room's), navigation events (to follow changes of
 episode), scripting (to run only on the services you allowed, including tabs
 that were already open when you allowed one), an offscreen document (to keep the
 call alive across page changes), and local storage (for your settings).
+
+Firefox is asked for the same, except the offscreen document, which Firefox does
+not have: there the extension's own background page keeps the call alive, and
+while you are in a room a pinned tab of the extension's holds your microphone and
+camera, since Firefox lets only a tab use them. The Firefox build also declares to
+Firefox that it collects no data.
 
 Site access is granted per service, and only when you allow it: the extension
 has access to no site when it is installed, asks for each service the first time
