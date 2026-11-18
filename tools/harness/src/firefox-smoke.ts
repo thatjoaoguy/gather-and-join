@@ -219,17 +219,17 @@ try {
   await ffEval(`document.querySelector('#next-push').click()`);
   check('Firefox client-side route: the player follows the new episode', await passes(waitForCondition(async () => (await ffGj('getState'))?.contentId === EPISODE(2), { label: 'Firefox pushState' })));
   await bidi.send('browsingContext.navigate', { context: ctx, url: watchUrl(EPISODE(1)), wait: 'complete' });
-  const reloaded = await ffBridged();
-  ffSnap = await ffGj('getSnapshot').catch(() => null);
+  // The new page answers the hook before its first snapshot arrives from the background
+  // page, so a single read right after the load can come back empty: wait for the room.
+  const reloaded = await ffBridged() && await passes(waitForCondition(async () => (ffSnap = await ffGj('getSnapshot').catch(() => null))?.room?.code === code, { label: 'Firefox room after the load' }));
   check('Firefox real page load: same room, same socket, call up', reloaded && ffSnap?.room?.code === code && ffSnap?.socketReconnects === 0 && ffSnap?.peerMedia?.[chromeId]?.connectionState === 'connected',
     { socketReconnects: ffSnap?.socketReconnects, mesh: ffSnap?.peerMedia?.[chromeId]?.connectionState });
   await chrome.page.click('#next-load');
   let ffUrl = '';
   const followed = await passes(waitForCondition(async () => {
     ffUrl = (await bidi.send('browsingContext.getTree', { root: ctx })).contexts[0].url;
-    return ffUrl.includes(EPISODE(2)) && (await ffGj('ping').catch(() => null)) === 'pong';
+    return ffUrl.includes(EPISODE(2)) && (ffSnap = await ffGj('getSnapshot').catch(() => null))?.room?.contentId === EPISODE(2);
   }, { timeout: 20_000, label: 'Firefox follows the leader' }));
-  ffSnap = await ffGj('getSnapshot').catch(() => null);
   check('Leader changes episode: Firefox follows, same socket, call up', followed && ffSnap?.room?.contentId === EPISODE(2) && ffSnap?.socketReconnects === 0 && ffSnap?.peerMedia?.[chromeId]?.connectionState === 'connected',
     { url: ffUrl, socketReconnects: ffSnap?.socketReconnects, mesh: ffSnap?.peerMedia?.[chromeId]?.connectionState });
   const after = await hears(async () => (await ffGj('getRemoteAudio'))?.[chromeId], CHROME_TONE_HZ);
