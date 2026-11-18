@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.13.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.12.1...v0.13.0) (2026-11-18)
+
+
+### Features
+
+* support Firefox ([#80](https://github.com/thatjoaoguy/gather-and-join/issues/80)) ([7516492](https://github.com/thatjoaoguy/gather-and-join/commit/75164923ed45cd3d874d1a4204349d77dba44e03))
+
 ## [0.12.1](https://github.com/thatjoaoguy/gather-and-join/compare/v0.12.0...v0.12.1) (2026-11-13)
 
 
