@@ -1,7 +1,8 @@
 /**
  * The Firefox build, end to end, against a Chrome peer: install, join, the call both
  * ways, play/pause sync, cameras into the page tiles, and the room surviving a reload,
- * a client-side route and the leader's episode change.
+ * a client-side route and the leader's episode change; then Firefox's own controls on
+ * the Drive-shaped page, where the player is a facade over a cross-origin embed.
  *
  *   pnpm --filter @gj/harness smoke:firefox
  *   GJ_SKIP_BUILD=1 FIREFOX_BIN=/path/to/firefox pnpm --filter @gj/harness smoke:firefox
@@ -234,6 +235,28 @@ try {
     { url: ffUrl, socketReconnects: ffSnap?.socketReconnects, mesh: ffSnap?.peerMedia?.[chromeId]?.connectionState });
   const after = await hears(async () => (await ffGj('getRemoteAudio'))?.[chromeId], CHROME_TONE_HZ);
   check('After the episode change, Firefox still hears Chrome', after.ok, after.last);
+
+  // ---- Drive-shaped: no <video>, a facade over a cross-origin embed ------------------
+  // Firefox's own controls are the point: the facade's events are what carry them to the
+  // room, and the room's commands reach the embed whether or not those events arrive.
+  await openPlayer(chrome, EPISODE(3), 'drive');
+  const ffOnDrive = await passes(waitForCondition(async () => {
+    ffUrl = (await bidi.send('browsingContext.getTree', { root: ctx })).contexts[0].url;
+    return ffUrl.includes('/drivewatch/') && ffUrl.includes(EPISODE(3)) && (await ffGj('getState').catch(() => null))?.positionMs != null;
+  }, { timeout: 20_000, label: 'Firefox follows to the Drive-shaped page' }));
+  const chromeOnDrive = await passes(waitForCondition(async () => (await chrome!.gj('getState') as any)?.positionMs != null, { label: 'Chrome attaches to the Drive-shaped page' }));
+  check('Drive-shaped page: Firefox follows the leader there, both attach', ffOnDrive && chromeOnDrive, { url: ffUrl });
+  await ffEval(`document.querySelector('#play').click()`);
+  check('Drive-shaped: Firefox\'s play reaches Chrome', await passes(waitForCondition(async () => (await chrome!.gj('getState') as any)?.paused === false, { label: 'Chrome plays (Drive)' })),
+    { chrome: await chrome.gj('getState'), firefox: await ffGj('getState').catch(() => null) });
+  // Both playing before Firefox pauses, so the pause check cannot pass on a Chrome that never
+  // started: if Firefox's play did not get through, Chrome's does (the room drives Firefox).
+  if ((await chrome.gj('getState') as any)?.paused !== false) await chrome.page.click('#play');
+  await passes(waitForCondition(async () => (await chrome!.gj('getState') as any)?.paused === false && (await ffGj('getState'))?.paused === false, { label: 'both playing (Drive)' }));
+  await sleep(1500);
+  await ffEval(`document.querySelector('#pause').click()`);
+  check('Drive-shaped: Firefox\'s pause reaches Chrome', await passes(waitForCondition(async () => (await chrome!.gj('getState') as any)?.paused === true, { label: 'Chrome pauses (Drive)' })),
+    { chrome: await chrome.gj('getState'), firefox: await ffGj('getState').catch(() => null) });
   bidi.close();
 } catch (e) {
   check('smoke run', false, String(e));

@@ -26,7 +26,19 @@ const UNSTARTED = -1, ENDED = 0, PLAYING = 1, PAUSED = 2, BUFFERING = 3;
 
 type Info = { currentTime?: number; playerState?: number; playbackRate?: number; duration?: number };
 
-export class YtEmbedMedia extends EventTarget {
+type Listener = EventListenerOrEventListenerObject;
+
+/*
+ * Not an EventTarget subclass, though it would be the obvious shape. In a Firefox
+ * content script EventTarget is the page's own, seen through an Xray wrapper, and
+ * an instance of a class extending it is not a normal instance: events it
+ * dispatched never reached the listeners the content script added, so the
+ * player's own play, pause and seeks never reached the room (measured with
+ * smoke:firefox; Chrome is unaffected). A plain registry with the same three
+ * methods behaves the same in both.
+ */
+export class YtEmbedMedia {
+  private readonly listeners = new Map<string, Set<Listener>>();
   /** Last position reported by the player, and the local clock reading when it arrived. */
   private tickSec = 0;
   private tickWall = 0;
@@ -45,7 +57,6 @@ export class YtEmbedMedia extends EventTarget {
     /** Origin to post commands to; derived from the frame's own src. */
     private readonly origin: string,
   ) {
-    super();
     this.tickWall = performance.now();
     this.onMessage = (e: MessageEvent) => this.receive(e);
     window.addEventListener('message', this.onMessage);
@@ -62,6 +73,29 @@ export class YtEmbedMedia extends EventTarget {
   get element(): HTMLIFrameElement { return this.frame; }
 
   get isConnected(): boolean { return this.frame.isConnected; }
+
+  addEventListener(type: string, fn: Listener | null) {
+    if (!fn) return;
+    let set = this.listeners.get(type);
+    if (!set) this.listeners.set(type, (set = new Set()));
+    set.add(fn);
+  }
+
+  removeEventListener(type: string, fn: Listener | null) {
+    if (fn) this.listeners.get(type)?.delete(fn);
+  }
+
+  /** As a real dispatch: every listener runs even if one throws, and the error still surfaces. */
+  dispatchEvent(e: Event): boolean {
+    for (const fn of [...(this.listeners.get(e.type) ?? [])]) {
+      try {
+        if (typeof fn === 'function') fn.call(this, e); else fn.handleEvent(e);
+      } catch (err) {
+        setTimeout(() => { throw err; });
+      }
+    }
+    return !e.defaultPrevented;
+  }
 
   // --- the HTMLVideoElement slice -----------------------------------------
 
