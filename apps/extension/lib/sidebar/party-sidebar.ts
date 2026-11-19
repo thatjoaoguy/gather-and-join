@@ -31,10 +31,12 @@ export class PartySidebar {
     findAnchor: (root: ParentNode) => HTMLElement | null,
     openers: SidebarOpeners,
     private readonly doc: Document = document,
+    /** Parts of the player in layers of their own (PlayerAdapter.findOverlays). */
+    findOverlays?: (root: ParentNode) => HTMLElement[],
   ) {
     this.loopback = new LoopbackReceiver((payload) => port.send({ type: 'loopback:signal', payload }), () => this.render());
     this.episodeStart = new EpisodeStartControl((contentId, start) => port.send({ type: 'episodeStart', contentId, start }));
-    this.view = new SidebarView(new PageLayout(findAnchor, doc), {
+    this.view = new SidebarView(new PageLayout(findAnchor, doc, findOverlays), {
       goToEpisode: (url) => doc.location.assign(url),
       enterStart: (ms) => { this.episodeStart.enter(ms); this.render(); },
       alignStart: () => this.episodeStart.align(),

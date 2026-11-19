@@ -10,7 +10,7 @@ import '../lib/firefox-shim';
 import { defineBackground } from 'wxt/utils/define-background';
 import { parseContentId, PLAYER_HOSTS, PROVIDERS, SERVICES } from '@gj/shared';
 import { applyBadge, badgeStateFrom, type BadgeState, type IconDeps } from '../lib/badge';
-import { readTestConfig, type Snapshot, type ToBackground, type ToOffscreen } from '../lib/messages';
+import { MAIN_WORLD_SCRIPTS, readTestConfig, type Snapshot, type ToBackground, type ToOffscreen } from '../lib/messages';
 import { log } from '../lib/log';
 import { adapterForDocument, playerUrlOf } from '../lib/providers';
 import { PlayerAccess } from '../lib/player-access';
@@ -150,6 +150,14 @@ export default defineBackground(() => {
         if (sender.tab?.id === undefined) { sendResponse(false); return; }
         chrome.tabs.update(sender.tab.id, { url: msg.url }).then(() => sendResponse(true), () => sendResponse(false));
         return true;
+      // Only into the asking frame, and only a script on the list: the frame is a player the user granted, or it would have no content script.
+      case 'mainWorld': {
+        const file = Object.hasOwn(MAIN_WORLD_SCRIPTS, msg.script) ? MAIN_WORLD_SCRIPTS[msg.script] : undefined;
+        if (!file || sender.tab?.id === undefined || sender.frameId === undefined) { sendResponse(false); return; }
+        chrome.scripting.executeScript({ target: { tabId: sender.tab.id, frameIds: [sender.frameId] }, files: [file], world: 'MAIN' })
+          .then(() => sendResponse(true), (e) => { log('background', 'page-world script failed', msg.script, String(e)); sendResponse(false); });
+        return true;
+      }
       case 'grantMic':
         chrome.tabs.create({ url: chrome.runtime.getURL('options.html?grant=1') }).then(() => sendResponse(true));
         return true;

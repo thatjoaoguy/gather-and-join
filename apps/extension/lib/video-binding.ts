@@ -35,6 +35,15 @@ export class VideoBinding {
     this.observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'hidden'] });
   }
 
+  /**
+   * Look again now: the adapter's answer changed without a DOM mutation
+   * (PlayerAdapter.onChange). The reattach sabotage only blinds re-scans after the
+   * first attach, so a facade that is ready late still attaches under it.
+   */
+  rescan() {
+    if (this.observer || (this.sabotaged && !this.everAttached)) this.scan();
+  }
+
   stop() {
     this.observer?.disconnect();
     this.observer = null;

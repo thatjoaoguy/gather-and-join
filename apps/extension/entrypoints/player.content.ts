@@ -58,12 +58,18 @@ export default defineContentScript({
       (v, isReattach) => {
         log('page', isReattach ? 'video re-attached' : 'video attached', `readyState=${v.readyState}`, `paused=${v.paused}`);
         onDuration(v);
-        if (isReattach) { engine.onVideoAttached(); ducker.reapply(); }
+        // On a first attach too: a player that attaches late finds the room snapshot
+        // already applied to nothing, and the player has often started on its own.
+        engine.onVideoAttached();
+        if (isReattach) ducker.reapply();
         sidebar.ensureMounted();
       },
       adapter.findVideo,
       cfg.sabotage === 'reattach',
     );
+    // A facade can become usable on a message from the page rather than a DOM change.
+    adapter.onChange?.(() => video.rescan());
+    const holdUpNext = (on: boolean) => adapter.suppressUpNext?.(on);
     const engine = new SyncEngine(
       video,
       (out) => {
@@ -94,7 +100,7 @@ export default defineContentScript({
     const sidebar = new PartySidebar(port, adapter.findAnchor ?? adapter.findVideo, {
       allowCamera: () => toBackground('grantCamera'),
       openSetup: () => { void chrome.runtime.sendMessage({ target: 'background', type: 'openPage', url: chrome.runtime.getURL('options.html') }).catch(() => {}); },
-    });
+    }, document, adapter.findOverlays);
     // The setup page's eye also hides the server address here, for screen sharing.
     let showServer = true;
     /** The room is elsewhere and there is a trustworthy way there. */
@@ -137,6 +143,7 @@ export default defineContentScript({
           }
           if (!m.snapshot.room) engine.room = null;
           upNext.set(!!m.snapshot.room && !m.snapshot.isLeader);
+          holdUpNext(!!m.snapshot.room && !m.snapshot.isLeader);
           renderSidebar();
           return;
         }
@@ -217,6 +224,7 @@ export default defineContentScript({
       engine.stop();
       video.stop();
       upNext.stop();
+      holdUpNext(false);
       sidebar.stop();
       port.close();
     };

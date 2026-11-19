@@ -93,6 +93,36 @@ export const hbomax: ContentProvider = prefixedProvider({
 });
 
 /**
+ * Disney+: the app is `www.disneyplus.com` and routes client-side, and its watch
+ * pages are `/play/<uuid>`, sometimes behind a locale segment (`/en-gb/play/…`).
+ * The content id is `disneyplus:<uuid>`, and `watchUrl` drops the locale: Disney
+ * sends each viewer to their own. `/video/<id>` belonged to the retired app,
+ * whose ids are not known to be the same as `/play/`'s, so it is not read; a
+ * viewer arriving from an old link is on `/play/` by the time it matters.
+ *
+ * `/play/<uuid>` is a generic shape, and parseContentId tries every provider on
+ * an unknown host, so it is read on Disney's own domain only. Otherwise another
+ * site's URL of that shape would pass `trustedWatchUrl` as this content.
+ *
+ * The match pattern is the whole host for the same reason as YouTube's: a viewer
+ * reaches the player from the home page without a page load.
+ */
+const DISNEYPLUS_ORIGIN = 'https://www.disneyplus.com';
+
+export const disneyplus: ContentProvider = prefixedProvider({
+  id: 'disneyplus',
+  name: 'Disney+',
+  hosts: ['www.disneyplus.com'],
+  matches: ['https://www.disneyplus.com/*'],
+  rawId(url) {
+    if (url.hostname !== 'disneyplus.com' && !url.hostname.endsWith('.disneyplus.com')) return null;
+    return pathMatch(/^(?:\/[a-z]{2}(?:-[a-z0-9]{2,4})?)?\/play\/([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})(?:\/|$)/i)(url);
+  },
+  normalize: (uuid) => uuid.toLowerCase(),
+  watchUrl: (uuid) => `${DISNEYPLUS_ORIGIN}/play/${uuid}`,
+});
+
+/**
  * Google Drive: watch pages are `/file/d/<fileId>/view`, and `/preview` for the
  * embeddable variant, so the content id is `gdrive:<fileId>`. File ids are
  * case-sensitive base64url, unlike HBO Max's lowercase uuids.
@@ -216,7 +246,7 @@ export const harness: ContentProvider = {
 };
 
 /** Every provider, in lookup order. */
-export const PROVIDERS: readonly ContentProvider[] = [hbomax, gdrive, youtube, wixvideo, harness];
+export const PROVIDERS: readonly ContentProvider[] = [hbomax, disneyplus, gdrive, youtube, wixvideo, harness];
 
 /** The providers a user can watch on, each an optional host permission. The harness is not one. */
 export const SERVICES: readonly ContentProvider[] = PROVIDERS.filter((p) => p !== harness);

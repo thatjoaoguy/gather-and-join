@@ -39,10 +39,10 @@ export default defineConfig({
   imports: false,
   outDir: TEST_BUILD ? '.output-test' : '.output',
   // The test hook entrypoint only exists in test builds.
-  filterEntrypoints: TEST_BUILD ? undefined : ['background', 'player', 'offscreen', 'popup', 'options', 'call'],
+  filterEntrypoints: TEST_BUILD ? undefined : ['background', 'player', 'offscreen', 'popup', 'options', 'call', 'disney-bridge'],
   manifest: ({ browser }) => ({
     name: TEST_BUILD ? 'Gather & Join (test build)' : 'Gather & Join',
-    description: 'Watch together in sync, with voice and video, on HBO Max, YouTube, Google Drive and Wix. Everyone plays from their own account.',
+    description: 'Watch in sync, with voice and video, on Disney+, HBO Max, YouTube, Google Drive and Wix. Everyone plays from their own account.',
     // Firefox has no offscreen API: there the persistent MV2 background page hosts the
     // long-lived state itself (see entrypoints/background.ts).
     permissions: [...(browser === 'firefox' ? [] : ['offscreen']), 'storage', 'tabs', 'webNavigation', 'scripting'],

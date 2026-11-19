@@ -84,7 +84,19 @@ export class PageLayout {
   constructor(
     private readonly findAnchor: (root: ParentNode) => HTMLElement | null,
     private readonly doc: Document = document,
+    /**
+     * Parts of the player that live in viewport layers of their own rather than
+     * around the anchor: Disney+ draws its controls and subtitles in a fixed layer
+     * beside the video's. Each one's wide layer is narrowed like the anchor's.
+     */
+    private readonly findOverlays: (root: ParentNode) => HTMLElement[] = () => [],
   ) {}
+
+  /** The anchor and the overlays: everything whose layer must fit beside the sidebar. */
+  private parts(): HTMLElement[] {
+    const anchor = this.findAnchor(this.doc);
+    return [...(anchor ? [anchor] : []), ...this.findOverlays(this.doc)];
+  }
 
   /** Page mode on/off. */
   shrinkPage(on: boolean) {
@@ -110,8 +122,10 @@ export class PageLayout {
     if (!this.pageShrunk) return;
     this.shrunk = this.shrunk.filter((t) => t.isConnected);
     for (const t of this.shrunk) narrow(t, '1');
-    const layer = this.wideLayer(this.doc.documentElement);
-    if (layer && !this.shrunk.includes(layer) && narrow(layer, '1')) this.shrunk.push(layer);
+    for (const part of this.parts()) {
+      const layer = this.wideLayer(part, this.doc.documentElement);
+      if (layer && !this.shrunk.includes(layer) && narrow(layer, '1')) this.shrunk.push(layer);
+    }
   }
 
   /**
@@ -124,7 +138,7 @@ export class PageLayout {
   }
 
   /**
-   * The outermost ancestor of the player still too wide to fit beside the sidebar.
+   * The outermost ancestor of a part of the player still too wide to fit beside the sidebar.
    *
    * Narrowing <html> is enough for a layout in flow, but not for a player inside a
    * layer laid out against the viewport: a position:fixed inset:0 wrapper, or an
@@ -133,9 +147,9 @@ export class PageLayout {
    * and one only — a site that recomputes inner widths asynchronously reports stale
    * ones to a walk that keeps going.
    */
-  private wideLayer(limit: HTMLElement): HTMLElement | null {
+  private wideLayer(part: HTMLElement, limit: HTMLElement): HTMLElement | null {
     const chain: HTMLElement[] = [];
-    for (let el = this.findAnchor(this.doc); el && el !== limit; el = el.parentElement) chain.unshift(el);
+    for (let el: HTMLElement | null = part; el && el !== limit; el = el.parentElement) chain.unshift(el);
     const available = this.available();
     // +1 to stay clear of sub-pixel widths; a layer one pixel over is not the problem.
     return chain.find((el) => el.getBoundingClientRect().width > available + 1) ?? null;
@@ -153,8 +167,10 @@ export class PageLayout {
     }
     // Not enough when a child is only an ancestor of the player on paper: <body> is,
     // and an absolutely positioned app layer inside it ignores its width.
-    const layer = this.wideLayer(fs);
-    if (layer && layer !== except) narrow(layer, 'fs');
+    for (const part of this.parts()) {
+      const layer = this.wideLayer(part, fs);
+      if (layer && layer !== except) narrow(layer, 'fs');
+    }
   }
 
   restoreAll() {

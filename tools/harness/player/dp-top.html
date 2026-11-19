@@ -1,0 +1,129 @@
+<!doctype html>
+<!--
+  Fake Disney+ watch page. What it reproduces was measured on the real player
+  (2026-11-18), and each part is a way a naive adapter goes wrong:
+
+  - `disney-web-player` holds two <video>s and the first is display:none and
+    empty, so querySelector('video') gets the wrong one.
+  - The element's clock is not the program's. Program position = media time +
+    an offset, and every seek reloads the media at a new offset (the media time
+    lands near 20s), so a currentTime write never means a program position.
+  - The program's clock lives on the element's page-world `mediaPlayer`, which
+    a content script's isolated world cannot see. Its playhead is only brought up
+    to date in its own `timeupdate` listener, registered before anyone else's.
+  - A seek while playing fires pause, seeking, play, seeked, playing.
+  - The controls and subtitles are a fixed layer of their own (disney-web-player-ui),
+    beside the video's layer rather than around it, and both layers are sized in
+    inline pixels from the window: narrowing what contains the video leaves them
+    full width.
+  - From inside the credits, `continuousPlay` moves on to the next episode after
+    a 5s countdown, in place, with history.replaceState; `continuousPlay.hide()`
+    holds it back.
+
+  #play / #pause are the player's own controls, for the harness's helpers.
+  `__dp` is for the tests: the exact program position (ground truth that does
+  not go through the extension), and how often the countdown was held back.
+-->
+<meta charset="utf-8">
+<title>Fake Disney+</title>
+<style>
+  html, body { margin: 0; background: #0f1014; color: #f9f9f9; font: 14px system-ui, sans-serif; height: 100%; }
+  header { display: flex; gap: 8px; align-items: center; padding: 8px 12px; }
+  .layer { position: fixed; top: 48px; left: 0; bottom: 0; }
+  disney-web-player, disney-web-player-ui { display: block; width: 100%; height: 100%; }
+  video { width: 100%; height: 100%; background: #000; }
+  #ui { pointer-events: none; }
+  .subtitles { position: absolute; left: 0; right: 0; bottom: 40px; text-align: center; font-size: 22px; }
+</style>
+<header>
+  <strong id="title"></strong>
+  <button id="play" type="button">Play</button>
+  <button id="pause" type="button">Pause</button>
+  <span id="status"></span>
+</header>
+<div><dwp-player-everywhere id="video-layer" class="layer">
+  <disney-web-player>
+    <div class="btm-media-client"><div class="media-element-container">
+      <video id="spare" style="display: none;"></video>
+      <video id="main" style="width: 100%; height: 100%;"></video>
+    </div></div>
+  </disney-web-player>
+</dwp-player-everywhere></div>
+<div><div id="ui" class="layer">
+  <disney-web-player-ui><div class="subtitles">subtitles</div></disney-web-player-ui>
+</div></div>
+<script>
+(() => {
+  customElements.define('disney-web-player', class extends HTMLElement {});
+  customElements.define('disney-web-player-ui', class extends HTMLElement {});
+  // Like the real page: both layers take the window's width in inline pixels, on load and on resize.
+  const size = () => { for (const id of ['video-layer', 'ui']) document.getElementById(id).style.width = innerWidth + 'px'; };
+  size();
+  addEventListener('resize', size);
+  const EPISODES = ['G0000001', 'G0000002', 'G0000003', 'G0000004', 'G0000005'];
+  const urn = () => (decodeURIComponent(location.pathname).match(/urn:hbo:episode:([A-Za-z0-9]+)/) || [])[1] || EPISODES[0];
+  const PROGRAM_MS = 2_700_000;
+  const CREDITS_MS = PROGRAM_MS - 100_000;
+  const COUNTDOWN_MS = 5000;
+  const player = document.querySelector('disney-web-player');
+  const v = document.getElementById('main');
+  let offsetSec = -20;
+  let hides = 0;
+  let held = false;
+  let countdown = null;
+
+  const info = { playheadPositionMs: 0, programDurationMs: PROGRAM_MS, hasEnd: true, type: 'VOD' };
+  const exactMs = () => (v.currentTime + offsetSec) * 1000;
+  // First listener on the element: everyone else's runs after the playhead is set.
+  v.addEventListener('timeupdate', () => {
+    info.playheadPositionMs = exactMs();
+    document.getElementById('status').textContent = 't=' + (info.playheadPositionMs / 1000).toFixed(2);
+    if (info.playheadPositionMs >= CREDITS_MS && !held && !countdown) countdown = setTimeout(nextEpisode, COUNTDOWN_MS);
+  });
+
+  /** Where the media lands for a program position: near 20s, with plenty of the 330s file ahead. */
+  const mediaFor = (sec) => 20 + (sec % 60);
+
+  function nextEpisode() {
+    countdown = null;
+    if (held) return;
+    const next = EPISODES[(EPISODES.indexOf(urn()) + 1) % EPISODES.length];
+    history.replaceState(null, '', location.pathname.replace(/urn:hbo:episode:[A-Za-z0-9]+/, 'urn:hbo:episode:' + next));
+    show();
+    held = false;
+    offsetSec = -20;
+    v.currentTime = 20;
+  }
+
+  player.mediaPlayer = {
+    seek(ms) {
+      const sec = ms / 1000;
+      const land = () => { offsetSec = sec - mediaFor(sec); v.currentTime = mediaFor(sec); };
+      if (v.paused) { land(); return; }
+      v.pause();
+      // The player takes a moment to start: the playhead keeps its old value meanwhile.
+      setTimeout(() => { land(); v.play().catch(() => {}); }, 120);
+    },
+    play() { v.play().catch(() => {}); },
+    pause() { v.pause(); },
+    timeline: { info },
+    continuousPlay: {
+      countdownMs: COUNTDOWN_MS,
+      hide() { hides++; held = true; if (countdown) { clearTimeout(countdown); countdown = null; } },
+      next: nextEpisode,
+    },
+  };
+  window.__dp = { exactMs, hides: () => hides, marker: Math.random() };
+
+  function show() {
+    document.getElementById('title').textContent = urn();
+    document.title = 'Fake Disney+ — ' + urn() + ' | Disney+';
+  }
+  show();
+  document.getElementById('play').addEventListener('click', () => player.mediaPlayer.play());
+  document.getElementById('pause').addEventListener('click', () => player.mediaPlayer.pause());
+  v.addEventListener('loadedmetadata', () => { v.currentTime = 20; }, { once: true });
+  v.loop = true;
+  v.src = '/media/main';
+})();
+</script>

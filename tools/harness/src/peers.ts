@@ -24,7 +24,9 @@ export const youtubeWatchUrl = (contentId: string) => `${PLAYER_ORIGIN}/ytwatch/
  * the test hook live in the frame.
  */
 export const wixSiteUrl = (contentId: string) => `${PLAYER_ORIGIN.replace('://localhost', '://wixsite.localhost')}/wixsite/${contentId}`;
-export type PlayerShape = 'hbo' | 'drive' | 'youtube' | 'wix';
+/** The Disney+-shaped page: the <video> runs on its own clock; the program's is on a page-world player object. */
+export const disneyWatchUrl = (contentId: string) => `${PLAYER_ORIGIN}/dpwatch/${contentId}`;
+export type PlayerShape = 'hbo' | 'drive' | 'youtube' | 'wix' | 'disney';
 
 export type Sabotage = 'reattach' | 'drift' | 'offscreen' | 'echo-suppress' | 'episode-start' | null;
 
@@ -124,7 +126,7 @@ export async function launchPeer(index: number, opts: LaunchOptions = {}): Promi
 
 /** Navigate a peer's player page and wait for the extension hook to be live. `copy` picks one of the player's copies of the episode. */
 export async function openPlayer(peer: Peer, contentId = EPISODE(1), shape: PlayerShape = 'hbo', copy?: 'plain' | 'extras') {
-  const url = { hbo: watchUrl, drive: driveWatchUrl, youtube: youtubeWatchUrl, wix: wixSiteUrl }[shape](contentId);
+  const url = { hbo: watchUrl, drive: driveWatchUrl, youtube: youtubeWatchUrl, wix: wixSiteUrl, disney: disneyWatchUrl }[shape](contentId);
   await peer.page.goto(copy ? `${url}?copy=${copy}` : url);
   await waitForHook(peer);
 }

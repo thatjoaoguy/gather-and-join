@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PROVIDERS, SERVICES, PLAYER_HOSTS, PLAYER_MATCHES, providerForHost, providerForContentId, parseContentId, watchUrlFor, trustedWatchUrl, hbomax, gdrive, youtube, wixvideo, harness } from '../src/index.ts';
+import { PROVIDERS, SERVICES, PLAYER_HOSTS, PLAYER_MATCHES, providerForHost, providerForContentId, parseContentId, watchUrlFor, trustedWatchUrl, hbomax, disneyplus, gdrive, youtube, wixvideo, harness } from '../src/index.ts';
 
 describe('provider registry', () => {
   it('has unique ids, hosts and match patterns', () => {
@@ -21,12 +21,14 @@ describe('provider registry', () => {
     expect(providerForHost('drive.google.com')).toBe(gdrive);
     expect(providerForHost('www.youtube.com')).toBe(youtube);
     expect(providerForHost('embed.wix.com')).toBe(wixvideo);
+    expect(providerForHost('www.disneyplus.com')).toBe(disneyplus);
     expect(providerForHost('example.com')).toBeNull();
     expect(providerForContentId('hbomax:abc')).toBe(hbomax);
     expect(providerForContentId('urn:hbo:episode:G1')).toBe(harness);
     expect(providerForContentId('gdrive:1A2b3C4d5E6f7G8h')).toBe(gdrive);
     expect(providerForContentId('youtube:aqz-KE-bpKQ')).toBe(youtube);
     expect(providerForContentId('wixvideo:fedcba9876543210fedcba9876543210')).toBe(wixvideo);
+    expect(providerForContentId('disneyplus:0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a')).toBe(disneyplus);
     expect(providerForContentId('netflix:1')).toBeNull();
   });
 
@@ -38,6 +40,8 @@ describe('provider registry', () => {
     expect(gdrive.parseContentId(new URL(gdrive.watchUrl(gid)!))).toBe(gid);
     const yid = 'youtube:aqz-KE-bpKQ';
     expect(youtube.parseContentId(new URL(youtube.watchUrl(yid)!))).toBe(yid);
+    const did = 'disneyplus:0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a';
+    expect(disneyplus.parseContentId(new URL(disneyplus.watchUrl(did)!))).toBe(did);
     expect(harness.watchUrl('urn:hbo:episode:G1')).toBeNull(); // the server's WATCH_URL_TEMPLATE supplies it
     expect(wixvideo.watchUrl('wixvideo:fedcba9876543210fedcba9876543210')).toBeNull(); // the embed needs the site's instance and channel too
   });
@@ -102,6 +106,34 @@ describe('provider registry', () => {
     expect(trustedWatchUrl('wixvideo:fedcba9876543210fedcba9876543210', 'https://example.com/video?videoId=fedcba9876543210fedcba9876543210')).toBeNull();
   });
 
+  it('reads a Disney+ watch page, behind a locale or not, and hands back the locale-free one', () => {
+    const id = 'disneyplus:0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a';
+    for (const url of [
+      'https://www.disneyplus.com/play/0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a',
+      'https://www.disneyplus.com/en-gb/play/0B8A4A2B-6D5B-4F35-9D8E-8F1D2B0F0C3A',
+      'https://www.disneyplus.com/pt-br/play/0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a/?startTime=42',
+      'https://www.disneyplus.com/es-419/play/0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a',
+    ]) expect(parseContentId(url)).toBe(id);
+    expect(watchUrlFor(id)).toBe('https://www.disneyplus.com/play/0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a');
+    // Browse and details pages autoplay trailers; they are not the room's content.
+    expect(parseContentId('https://www.disneyplus.com/en-gb/browse/entity-0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a')).toBeNull();
+    expect(parseContentId('https://www.disneyplus.com/home')).toBeNull();
+    // The retired app's ids are not known to match /play/'s, so they must not name a room's content.
+    expect(parseContentId('https://www.disneyplus.com/video/0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a')).toBeNull();
+  });
+
+  it('reads the Disney+ shape on Disney\'s domain only', () => {
+    // `/play/<uuid>` is generic. Tried against the whole web it would let another
+    // site's URL through trustedWatchUrl as the room's episode.
+    const id = 'disneyplus:0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a';
+    expect(parseContentId('https://example.com/play/0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a')).toBeNull();
+    expect(parseContentId('https://disneyplus.com.evil.example/play/0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a')).toBeNull();
+    expect(trustedWatchUrl(id, 'https://evil.example/play/0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a')).toBe('https://www.disneyplus.com/play/0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a');
+    // A moved subdomain of Disney's own still works, as a moved HBO Max host does.
+    expect(parseContentId('https://apps.disneyplus.com/play/0b8a4a2b-6d5b-4f35-9d8e-8f1d2b0f0c3a')).toBe(id);
+    expect(parseContentId('https://www.disneyplus.com/play/not-a-uuid')).toBeNull();
+  });
+
   it('keeps Google Drive file ids case-sensitive, unlike HBO Max uuids', () => {
     // Two Drive files can differ only in case; lowercasing would collapse them.
     expect(parseContentId('https://drive.google.com/file/d/1aB_cD-eFgHiJkLm/view')).toBe('gdrive:1aB_cD-eFgHiJkLm');
@@ -123,7 +155,7 @@ describe('trusted watch URLs', () => {
     expect(trustedWatchUrl('urn:hbo:episode:G1', null)).toBeNull();
   });
   it('names every provider', () => {
-    expect(PROVIDERS.map((p) => p.name)).toEqual(['HBO Max', 'Google Drive', 'YouTube', 'Wix Video', 'Fake player']);
+    expect(PROVIDERS.map((p) => p.name)).toEqual(['HBO Max', 'Disney+', 'Google Drive', 'YouTube', 'Wix Video', 'Fake player']);
     expect(providerForContentId(hbo)?.name).toBe('HBO Max');
   });
 });
