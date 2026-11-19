@@ -58,7 +58,10 @@ export default defineContentScript({
       (v, isReattach) => {
         log('page', isReattach ? 'video re-attached' : 'video attached', `readyState=${v.readyState}`, `paused=${v.paused}`);
         onDuration(v);
-        if (isReattach) { engine.onVideoAttached(); ducker.reapply(); }
+        // On a first attach too: a player that attaches late finds the room snapshot
+        // already applied to nothing, and the player has often started on its own.
+        engine.onVideoAttached();
+        if (isReattach) ducker.reapply();
         sidebar.ensureMounted();
       },
       adapter.findVideo,
