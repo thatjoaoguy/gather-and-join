@@ -60,8 +60,9 @@ pnpm --filter @gj/harness smoke:firefox
 It drives a headless Firefox over WebDriver BiDi (`webExtension.install`), puts
 it in a room with one Chrome peer from the harness, and checks the call both ways
 (each side hears the other's tone), play and pause in both directions, the cameras
-into the page tiles, and the room surviving a reload, a client-side route and the
-leader's episode change. It needs a local Firefox (`FIREFOX_BIN` to point at
+into the page tiles, the room surviving a reload, a client-side route and the
+leader's episode change, and Firefox's own play and pause reaching Chrome on the
+Drive-shaped page, where the player is a facade over a cross-origin embed. It needs a local Firefox (`FIREFOX_BIN` to point at
 another) and runs the server on `:8080`, the extension's default, because a
 Firefox peer cannot be pointed at a test server: automation cannot open its
 `moz-extension://` pages.

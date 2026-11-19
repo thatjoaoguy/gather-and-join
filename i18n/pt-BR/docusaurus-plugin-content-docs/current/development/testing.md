@@ -63,8 +63,10 @@ pnpm --filter @gj/harness smoke:firefox
 Ela dirige um Firefox headless pelo WebDriver BiDi (`webExtension.install`), põe
 esse Firefox numa sala com um peer Chrome do harness e verifica a chamada nos
 dois sentidos (cada lado ouve o tom do outro), o play e o pause nos dois sentidos,
-as câmeras nos quadros da página, e a sala sobrevivendo a um recarregamento, a uma
-rota no cliente e à troca de episódio feita pelo líder. Ela precisa de um Firefox
+as câmeras nos quadros da página, a sala sobrevivendo a um recarregamento, a uma
+rota no cliente e à troca de episódio feita pelo líder, e o play e o pause do
+próprio Firefox chegando ao Chrome na página no formato do Drive, onde o player é
+uma fachada sobre um embed de outra origem. Ela precisa de um Firefox
 instalado (`FIREFOX_BIN` aponta para outro) e roda o servidor em `:8080`, o padrão
 da extensão, porque não dá para apontar um peer Firefox para um servidor de teste:
 a automação não consegue abrir as páginas `moz-extension://` dele.

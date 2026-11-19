@@ -65,7 +65,12 @@ Fatos descobertos durante a construção que dão forma ao código:
   ~266 ms e, entre uma e outra, é estimada por extrapolação (dead reckoning) a
   partir do relógio local; medida contra o elemento real, essa estimativa fica num
   p95 de ~2 ms (veja `tools/harness/src/embed-drift-probe.ts`), porque o erro vem
-  da latência de cada amostra, não do espaçamento entre elas.
+  da latência de cada amostra, não do espaçamento entre elas. A fachada mantém o
+  próprio registro de listeners em vez de estender `EventTarget`: num content
+  script do Firefox o `EventTarget` é o da própria página, visto através de um
+  wrapper Xray, e os eventos que uma subclasse disparava nunca chegavam aos
+  listeners do content script, então os controles do próprio Drive nunca chegavam
+  à sala.
 - **Um player pode ser um frame num site que a extensão não conhece.** O Wix Video
   é um iframe em `embed.wix.com` dentro de um site de qualquer domínio, então é
   impossível reconhecer o site, e o script do player é injetado em todo frame
