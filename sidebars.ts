@@ -20,6 +20,7 @@ const sidebars: SidebarsConfig = {
       link: {type: 'doc', id: 'watch-together'},
       items: [
         'watch-together/hbo-max',
+        'watch-together/disney-plus',
         'watch-together/youtube',
         'watch-together/google-drive',
         'watch-together/wix-video',

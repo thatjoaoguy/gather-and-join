@@ -45,7 +45,7 @@ dump's calls would each wait out their own timeouts against it.
 | `reattach` | `MutationObserver` re-wiring of a recreated `<video>` | element re-attach, quality switch |
 | `drift` | the dead zone / rate band (everything hard-seeks) | small drift |
 | `offscreen` | the offscreen document's persistence across navigation | navigation survival, leader authority (both assert the room survives an episode transition). Service-worker termination is skipped under this flag: it kills the worker right before that navigation, and whether the restarting worker closes the document before the new content script reaches it is a race |
-| `echo-suppress` | tagging of locally-applied remote commands | echo suppression, large drift, small drift, quality switch (the follower's own corrective seeks move the room) |
+| `echo-suppress` | tagging of locally-applied remote commands | echo suppression, large drift, small drift, quality switch (the follower's own corrective seeks move the room), disney-shaped seek (the burst of the follower's applied seek reaches the room as pauses) |
 | `episode-start` | the skip a longer copy applies from the room's episode start | episode start |
 
 ## Firefox
@@ -61,8 +61,10 @@ It drives a headless Firefox over WebDriver BiDi (`webExtension.install`), puts
 it in a room with one Chrome peer from the harness, and checks the call both ways
 (each side hears the other's tone), play and pause in both directions, the cameras
 into the page tiles, the room surviving a reload, a client-side route and the
-leader's episode change, and Firefox's own play and pause reaching Chrome on the
-Drive-shaped page, where the player is a facade over a cross-origin embed. It needs a local Firefox (`FIREFOX_BIN` to point at
+leader's episode change, Firefox's own play and pause reaching Chrome on the
+Drive-shaped page, where the player is a facade over a cross-origin embed, and on
+the Disney+-shaped page the page-world script reaching the facade, the two program
+clocks agreeing, and a seek from Firefox's player controls reaching Chrome. It needs a local Firefox (`FIREFOX_BIN` to point at
 another) and runs the server on `:8080`, the extension's default, because a
 Firefox peer cannot be pointed at a test server: automation cannot open its
 `moz-extension://` pages.
