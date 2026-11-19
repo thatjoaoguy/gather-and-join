@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/thatjoaoguy/gather-and-join/compare/v0.13.0...v0.13.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* Drive's play, pause and seeks reach the room from Firefox ([#82](https://github.com/thatjoaoguy/gather-and-join/issues/82)) ([a34e150](https://github.com/thatjoaoguy/gather-and-join/commit/a34e15054dad860afa10c064392b5198d36859e8))
+
 # [0.13.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.12.1...v0.13.0) (2026-11-18)
 
 
