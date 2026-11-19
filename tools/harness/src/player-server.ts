@@ -1,8 +1,10 @@
 /**
- * Fake player, served on localhost, in four shapes: HBO (a <video> in the top
+ * Fake player, served on localhost, in five shapes: HBO (a <video> in the top
  * document), Drive (`/drivewatch/`, a cross-origin embed), YouTube
  * (`/ytwatch/`, a <video> whose ad break reuses the same element) and Wix
- * (`/wixsite/`, the HBO page framed by a site the extension does not match).
+ * (`/wixsite/`, the HBO page framed by a site the extension does not match),
+ * and Disney+ (`/dpwatch/`, a <video> on the wrong clock and a page-world player
+ * object on the right one).
  * Between them they reproduce the hazards the extension must survive: element
  * recreation, ad breaks of both kinds, SPA and hard navigation, autoplay-next
  * countdown, a player that is only ever a frame.
@@ -108,6 +110,8 @@ export function startPlayerServer(port = PLAYER_PORT): Promise<http.Server> {
     if (p.startsWith('/ytwatch/')) return serveFile(res, path.join(PLAYER_DIR, 'yt-top.html'));
     // Wix-shaped variant: the ordinary player, but framed by a site on a host the
     // extension does not match (wixsite.localhost), so it runs in the frame only.
+    // Disney+-shaped: the program's clock is on a page-world player object, not the <video>.
+    if (p.startsWith('/dpwatch/urn:hbo:')) return serveFile(res, path.join(PLAYER_DIR, 'dp-top.html'));
     if (p.startsWith('/wixsite/')) return serveFile(res, path.join(PLAYER_DIR, 'wix-top.html'));
     if (p.startsWith('/wixembed/urn:hbo:')) return serveFile(res, path.join(PLAYER_DIR, 'index.html'));
     if (p.startsWith('/static/')) return serveFile(res, path.join(PLAYER_DIR, p.slice('/static/'.length)));

@@ -16,6 +16,7 @@ entrypoints/        wiring only — no behaviour lives here
   popup/ options/     UI, built fresh on every open
   call/               Firefox only: the pinned tab that captures mic and camera, which a background
                       page may not; tracks reach the session over a loopback (lib/call-tab.ts ⇄ lib/tab-capture.ts)
+  disney-bridge.ts    page-world half of the Disney+ adapter; injected on demand by the worker, no manifest entry
   testhook.content.ts GJ_TEST=1 builds only
 lib/                behaviour, as classes with injected collaborators
   providers/          DOM-level provider knowledge (PlayerAdapter)
@@ -57,7 +58,18 @@ up-next panel). Register the adapter in `lib/providers/index.ts`. Nothing else i
 the extension should learn which provider it is on — the optional host permissions,
 the player script's matches and the worker's navigation filter are all derived. A player
 that other sites embed as an iframe (Wix Video) sets `embedded` on its adapter;
-the content script then runs in that frame, and never in anyone else's.
+the content script then runs in that frame, and never in anyone else's. A player
+whose controls or subtitles sit in a viewport layer of their own, beside the
+video's rather than around it (Disney+), lists them in `findOverlays`, or the
+sidebar leaves them full width underneath it.
+
+When the player's truth lives in page JavaScript the isolated world cannot see
+(Disney+'s `mediaPlayer`), the adapter returns a `<video>`-shaped facade and a
+page-world half supplies it: an unlisted entrypoint, named in
+`MAIN_WORLD_SCRIPTS` (`lib/messages.ts`), that the worker injects into the asking
+frame on a `mainWorld` message. The two halves talk over synchronous DOM events
+(`lib/providers/disney-channel.ts`). Keep the page-world half to reading and
+commanding the player; it must not touch ads, DRM or the service's telemetry.
 
 Every service is an **optional** host permission, so the player script has no
 manifest entry: `lib/player-access.ts` registers it at runtime for the granted

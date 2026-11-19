@@ -134,10 +134,20 @@ export type OffscreenToPopup = { type: 'snapshot'; snapshot: Snapshot };
 /** The user revoked this service's permission; the page's player script stops. */
 export type ToPlayer = { target: 'player'; type: 'standDown' };
 
+/**
+ * Page-world scripts a player frame may have the worker inject into itself, by
+ * name. A name rather than a path, so a frame cannot pick any file it likes.
+ * WXT builds each `entrypoints/<name>.ts` unlisted script to `<name>.js`.
+ */
+export const MAIN_WORLD_SCRIPTS = { disney: 'disney-bridge.js' } as const;
+export type MainWorldScript = keyof typeof MAIN_WORLD_SCRIPTS;
+
 export type ToBackground =
   | { target: 'background'; type: 'ensureOffscreen' }
   | { target: 'background'; type: 'openPage'; url: string }
   | { target: 'background'; type: 'navigateTab'; url: string }
+  /** A player frame wants its provider's page-world half (Disney+); it lands in that frame only. */
+  | { target: 'background'; type: 'mainWorld'; script: MainWorldScript }
   | { target: 'background'; type: 'grantMic' }
   | { target: 'background'; type: 'grantCamera' }
   | { target: 'background'; type: 'getActivePlayerUrl' }

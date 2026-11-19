@@ -32,6 +32,23 @@ export type PlayerAdapter = {
    * document only.
    */
   readonly embedded?: boolean;
+  /**
+   * Parts of the player drawn in viewport layers of their own, outside the
+   * anchor's: Disney+ keeps its controls and subtitles in a fixed layer beside the
+   * video's. The sidebar narrows each one's layer too. Usually absent.
+   */
+  findOverlays?(root: ParentNode): HTMLElement[];
+  /**
+   * Hands the adapter a function to call when findVideo's answer may have changed
+   * without a DOM mutation to wake VideoBinding: Disney+'s facade becomes usable
+   * when a message arrives from the page, not when the page changes.
+   */
+  onChange?(notify: () => void): void;
+  /**
+   * Autoplay-next that no selector reaches, held back the provider's own way.
+   * Called alongside `upNext`: on for everyone but the leader.
+   */
+  suppressUpNext?(on: boolean): void;
   /** Autoplay-next panel: the panel elements to hide, and the dismiss buttons inside them to click. */
   readonly upNext: { readonly panel: readonly string[]; readonly dismiss: readonly string[] };
 };

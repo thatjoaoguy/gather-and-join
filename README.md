@@ -35,8 +35,8 @@ show, plus a small server one of you hosts. Each viewer watches through the serv
 signed in to their own account; voice and video go directly between you. The
 server only sees room details and the messages that set up the call.
 
-**Works with** HBO Max, YouTube, video files on Google Drive, and Wix Video, with
-more on the way.
+**Works with** Disney+, HBO Max, YouTube, video files on Google Drive, and Wix
+Video, with more on the way.
 
 ## How it works
 

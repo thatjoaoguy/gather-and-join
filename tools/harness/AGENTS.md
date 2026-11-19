@@ -12,7 +12,8 @@ player/index.html      the fake player, HBO-shaped: a <video> the page recreates
 player/drive-top.html  Drive-shaped: no <video> at all, a cross-origin embed (+ yt-embed.html)
 player/yt-top.html     YouTube-shaped: one <video>, and the ad break reuses it
 player/wix-top.html    Wix-shaped: the HBO page framed by a site on wixsite.localhost, which the extension does not match
-src/player-server.ts   serves them (dev: :4173, tests: :14173) at /watch, /drivewatch, /ytwatch, /wixsite
+player/dp-top.html     Disney+-shaped: two <video>s on the wrong clock; the program's is on a page-world player object
+src/player-server.ts   serves them (dev: :4173, tests: :14173) at /watch, /drivewatch, /ytwatch, /wixsite, /dpwatch
 src/peers.ts           launches one Chrome per peer with the test build loaded
 src/party.ts           test-level composition: N peers in one room + the observer
 src/observer.ts        an `obs:` client; its frame log is the ground truth
@@ -31,10 +32,12 @@ extension's default, since a Firefox peer cannot be pointed anywhere else.
 ## How to write a test here
 
 - **Pick the shape the hazard lives in**: `startParty({ n, shape })`, one of
-  `'hbo'` (the default), `'drive'`, `'youtube'` or `'wix'`. Each page reproduces a
+  `'hbo'` (the default), `'drive'`, `'youtube'`, `'wix'` or `'disney'`. Each page reproduces a
   different way a real player breaks a naive `querySelector('video')`. On the
   Wix shape the player and the test hook are in a frame: reach the player's
-  document with `peer.player()`, not `peer.page`.
+  document with `peer.player()`, not `peer.page`. On the Disney shape measure
+  positions with the page's `__dp.exactMs()`, which does not go through the
+  extension's facade.
 - **Assert a number, not a screenshot.** Pairwise position spread from the
   observer's frame log, hard-seek and re-attach counters, peak frequency bin per
   peer, sampled pixel colour, `framesDecoded`, `video.volume`. A test that cannot

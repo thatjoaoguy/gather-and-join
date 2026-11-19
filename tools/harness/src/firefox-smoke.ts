@@ -2,7 +2,10 @@
  * The Firefox build, end to end, against a Chrome peer: install, join, the call both
  * ways, play/pause sync, cameras into the page tiles, and the room surviving a reload,
  * a client-side route and the leader's episode change; then Firefox's own controls on
- * the Drive-shaped page, where the player is a facade over a cross-origin embed.
+ * the Drive-shaped page, where the player is a facade over a cross-origin embed; last,
+ * the Disney+ shape, whose adapter needs a page-world script the background page
+ * injects (scripting with world MAIN) and a channel of DOM events between that script
+ * and the content script.
  *
  *   pnpm --filter @gj/harness smoke:firefox
  *   GJ_SKIP_BUILD=1 FIREFOX_BIN=/path/to/firefox pnpm --filter @gj/harness smoke:firefox
@@ -30,7 +33,7 @@ import type { Peer } from './peers.ts';
 const DEFAULT_SERVER_PORT = 8080;
 // Before the harness modules read it: the Chrome peer has to meet Firefox on that server.
 process.env.TEST_SERVER_PORT = String(DEFAULT_SERVER_PORT);
-const { launchPeer, openPlayer, waitForCondition, closePeers, watchUrl, EPISODE } = await import('./peers.ts');
+const { launchPeer, openPlayer, waitForCondition, closePeers, watchUrl, disneyWatchUrl, EPISODE } = await import('./peers.ts');
 const { startPlayerServer } = await import('./player-server.ts');
 const { TEST_PLAYER_PORT } = await import('./endpoints.ts');
 
@@ -257,6 +260,36 @@ try {
   await ffEval(`document.querySelector('#pause').click()`);
   check('Drive-shaped: Firefox\'s pause reaches Chrome', await passes(waitForCondition(async () => (await chrome!.gj('getState') as any)?.paused === true, { label: 'Chrome pauses (Drive)' })),
     { chrome: await chrome.gj('getState'), firefox: await ffGj('getState').catch(() => null) });
+
+  // ---- the Disney+ shape ------------------------------------------------------------------
+  // Positions are read off the fake player's own program clock, not through the facade.
+  const program = '(() => { const v = document.getElementById("main"); return { ms: window.__dp.exactMs(), paused: v.paused, at: Date.now() }; })()';
+  const programSpread = async () => {
+    const [x, y] = [await chrome!.page.evaluate(program) as any, await ffEval(program)];
+    const T = Math.max(x.at, y.at);
+    const at = (s: any) => (s.paused ? s.ms : s.ms + (T - s.at));
+    return { spread: Math.abs(at(x) - at(y)), firefoxMs: at(y), chromeMs: at(x) };
+  };
+  // Another episode than the Drive section's: the room only moves Firefox for a change of content.
+  await chrome.page.goto(disneyWatchUrl(EPISODE(4)));
+  const onDisney = await passes(waitForCondition(async () => {
+    const url = (await bidi.send('browsingContext.getTree', { root: ctx })).contexts[0].url as string;
+    return url.includes('/dpwatch/') && (await ffGj('getState').catch(() => null))?.positionMs != null && (await chrome!.gj('getState').catch(() => null) as any)?.positionMs != null;
+  }, { timeout: 20_000, label: 'both facades attached on the Disney shape' }));
+  check('Disney shape: Firefox follows, and its page-world half reports to the facade', onDisney, { firefox: await ffGj('getState').catch(() => null) });
+  await chrome.page.click('#play');
+  const dpPlaying = await passes(waitForCondition(async () => (await ffEval(program))?.paused === false, { label: 'Firefox plays on the Disney shape' }));
+  await sleep(4000);
+  const dp = await programSpread();
+  check('Disney shape: program clocks within 400 ms after 4 s of play', dpPlaying && dp.spread < 400, `${Math.round(dp.spread)}ms`);
+  const target = Math.round(dp.firefoxMs + 300_000);
+  await ffEval(`document.querySelector('disney-web-player').mediaPlayer.seek(${target})`);
+  let landed = { spread: Infinity, firefoxMs: 0, chromeMs: 0 };
+  const followedSeek = await passes(waitForCondition(async () => {
+    landed = await programSpread();
+    return landed.spread < 500 && Math.abs(landed.chromeMs - target) < 5000;
+  }, { timeout: 10_000, label: 'Chrome follows the seek from Firefox\'s controls' }));
+  check('Disney shape: a seek from Firefox\'s player controls reaches Chrome', followedSeek, { target, firefoxMs: Math.round(landed.firefoxMs), chromeMs: Math.round(landed.chromeMs), spreadMs: Math.round(landed.spread) });
   bidi.close();
 } catch (e) {
   check('smoke run', false, String(e));

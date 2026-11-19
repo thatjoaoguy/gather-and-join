@@ -1,5 +1,7 @@
 import { queryVideo, type PlayerAdapter } from './player-adapter';
 import { embedMedia } from './yt-embed-media';
+import { disneyMedia } from './disney-media';
+import { domChannel, FROM_PAGE, TO_PAGE } from './disney-channel';
 
 /**
  * The fake player in `tools/harness/player` serves three shapes on one host:
@@ -8,8 +10,11 @@ import { embedMedia } from './yt-embed-media';
  * 127.0.0.1 speaking the YouTube widget protocol), and `/ytwatch/...` mirrors
  * YouTube (a real <video> whose ad break reuses that same element), and
  * `/wixembed/...` is the frame of the Wix-shaped `/wixsite/...` page (a real
- * <video> in an iframe on a site the extension does not match). Which one a
- * page is decides itself by what is in the DOM, so one adapter covers all four.
+ * <video> in an iframe on a site the extension does not match), and
+ * `/dpwatch/...` mirrors Disney+ (a <video> on the wrong clock; the program's is
+ * on a page-world player object, reached through the same facade and page-world
+ * half as disneyplus.ts). Which one a page is decides itself by what is in the
+ * DOM, so one adapter covers all five.
  *
  * The upNext selectors below are byte-identical to hbomax.ts on purpose, and the
  * ad marker to youtube.ts, and neither must be hoisted into a shared constant.
@@ -23,17 +28,30 @@ const embed = embedMedia((origin) => origin !== location.origin);
 const ytShaped = (root: ParentNode) => !!root.querySelector('#movie_player');
 const adShowing = (root: ParentNode) => !!root.querySelector('#movie_player.ad-showing');
 const loaded = (v: HTMLVideoElement | null) => (v && v.readyState > 0 ? v : null);
+/** The element is what makes a page the Disney+-shaped one, as on the real site. */
+const disneyShaped = (root: ParentNode) => !!root.querySelector('disney-web-player');
+const disney = disneyMedia({
+  channel: () => domChannel(document, TO_PAGE, FROM_PAGE),
+  requestBridge: () => { void chrome.runtime.sendMessage({ target: 'background', type: 'mainWorld', script: 'disney' }).catch(() => {}); },
+});
 
 export const harnessAdapter: PlayerAdapter = {
   providerId: 'harness',
   // The YouTube shape's gate, scoped to that shape so HBO and Drive answer unchanged:
   // the marker while an ad runs, and metadata for the gap after it clears.
   findVideo: (root) => {
+    if (disneyShaped(root)) return disney.findVideo(root);
     const v = queryVideo(root);
     if (ytShaped(root)) return adShowing(root) ? null : loaded(v);
     return v ?? embed.findVideo(root);
   },
-  findAnchor: (root) => queryVideo(root) ?? embed.findAnchor(root),
+  findAnchor: (root) => (disneyShaped(root) ? disney.findAnchor(root) : queryVideo(root) ?? embed.findAnchor(root)),
+  findOverlays: (root) => {
+    const ui = root.querySelector<HTMLElement>('disney-web-player-ui');
+    return ui ? [ui] : [];
+  },
+  onChange: disney.onChange,
+  suppressUpNext: disney.suppressUpNext,
   // For the Wix shape. The Drive shape's frame is not a watch page, so it stays out.
   embedded: true,
   upNext: { panel: ['[data-testid="up_next"]'], dismiss: ['[data-testid="player-ux-up-next-dismiss"]'] },

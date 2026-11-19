@@ -1,6 +1,7 @@
 import { providerForHost, parseContentId, harness } from '@gj/shared';
 import type { PlayerAdapter } from './player-adapter';
 import { hbomaxAdapter } from './hbomax';
+import { disneyplusAdapter } from './disneyplus';
 import { gdriveAdapter } from './gdrive';
 import { youtubeAdapter } from './youtube';
 import { wixvideoAdapter } from './wixvideo';
@@ -8,7 +9,7 @@ import { harnessAdapter } from './harness';
 
 export type { PlayerAdapter } from './player-adapter';
 
-const ADAPTERS: readonly PlayerAdapter[] = [hbomaxAdapter, gdriveAdapter, youtubeAdapter, wixvideoAdapter, harnessAdapter];
+const ADAPTERS: readonly PlayerAdapter[] = [hbomaxAdapter, disneyplusAdapter, gdriveAdapter, youtubeAdapter, wixvideoAdapter, harnessAdapter];
 
 /** The adapter for the page at `hostname`, or null if no provider runs there. */
 function adapterForHost(hostname: string): PlayerAdapter | null {
