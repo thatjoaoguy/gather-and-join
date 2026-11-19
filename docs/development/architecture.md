@@ -62,7 +62,11 @@ Facts discovered while building that shape the code:
   ~266 ms and is dead-reckoned from the local clock in between; measured against
   the real element that estimate holds to a p95 of ~2 ms (see
   `tools/harness/src/embed-drift-probe.ts`), because the error comes from tick
-  latency, not tick spacing.
+  latency, not tick spacing. The facade keeps its own listener registry rather
+  than extending `EventTarget`: in a Firefox content script `EventTarget` is the
+  page's own, seen through an Xray wrapper, and events a subclass dispatched never
+  reached the content script's listeners, so Drive's own controls never reached
+  the room.
 - **A player can be a frame on a site the extension does not know.** Wix Video
   is an iframe on `embed.wix.com` inside a site of any domain, so matching the
   site is impossible and the player script is injected into every matching
