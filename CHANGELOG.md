@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.14.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.13.1...v0.14.0) (2026-11-19)
+
+
+### Features
+
+* support Disney+ ([#84](https://github.com/thatjoaoguy/gather-and-join/issues/84)) ([b8adccb](https://github.com/thatjoaoguy/gather-and-join/commit/b8adccbcaf64550f5db5aa41cc87cad4c300eebd))
+
 ## [0.13.1](https://github.com/thatjoaoguy/gather-and-join/compare/v0.13.0...v0.13.1) (2026-11-19)
 
 
