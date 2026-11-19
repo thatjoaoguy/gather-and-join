@@ -41,7 +41,7 @@ export default function Home(): ReactNode {
             </Heading>
             <p className={styles.lead}>
               <Translate id="home.hero.lead">
-                Gather &amp; Join keeps a small group in sync while they watch the same thing, and adds a voice call so it feels like one room. Works with HBO Max, YouTube, video files on Google Drive, and the video player on Wix sites; more services are on the way.
+                Gather &amp; Join keeps a small group in sync while they watch the same thing, and adds a voice call so it feels like one room. Works with Disney+, HBO Max, YouTube, video files on Google Drive, and the video player on Wix sites; more services are on the way.
               </Translate>
             </p>
             <div className={styles.actions}>
@@ -50,7 +50,7 @@ export default function Home(): ReactNode {
             </div>
           </div>
           <aside className={styles.card} aria-label={translate({id: 'home.glance.label', message: 'At a glance'})}>
-            <div><strong><Translate id="home.glance.worksWith">Works with</Translate></strong><span>HBO Max, YouTube, Google Drive, Wix Video</span></div>
+            <div><strong><Translate id="home.glance.worksWith">Works with</Translate></strong><span>Disney+, HBO Max, YouTube, Google Drive, Wix Video</span></div>
             <div><strong><Translate id="home.glance.roomSize">Room size</Translate></strong><span><Translate id="home.glance.roomSize.value">Best up to 6 on camera, more on voice</Translate></span></div>
             <div><strong><Translate id="home.glance.server">Server</Translate></strong><span><Translate id="home.glance.server.value">Self-hosted, one file, no accounts</Translate></span></div>
             <div><strong><Translate id="home.glance.cost">Cost</Translate></strong><span><Translate id="home.glance.cost.value">Free, open source (MIT)</Translate></span></div>

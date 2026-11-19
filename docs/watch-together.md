@@ -47,6 +47,7 @@ sharing your screen.
 Each service has its own quirks, so each has a page:
 
 - [HBO Max](/docs/watch-together/hbo-max)
+- [Disney+](/docs/watch-together/disney-plus)
 - [YouTube](/docs/watch-together/youtube)
 - [Google Drive](/docs/watch-together/google-drive)
 - [Wix Video](/docs/watch-together/wix-video)

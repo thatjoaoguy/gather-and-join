@@ -65,12 +65,28 @@ Fatos descobertos durante a construção que dão forma ao código:
   ~266 ms e, entre uma e outra, é estimada por extrapolação (dead reckoning) a
   partir do relógio local; medida contra o elemento real, essa estimativa fica num
   p95 de ~2 ms (veja `tools/harness/src/embed-drift-probe.ts`), porque o erro vem
-  da latência de cada amostra, não do espaçamento entre elas. A fachada mantém o
-  próprio registro de listeners em vez de estender `EventTarget`: num content
-  script do Firefox o `EventTarget` é o da própria página, visto através de um
-  wrapper Xray, e os eventos que uma subclasse disparava nunca chegavam aos
+  da latência de cada amostra, não do espaçamento entre elas. Os eventos da
+  fachada vêm de um registro de listeners próprio (`lib/providers/media-events.ts`,
+  compartilhado com a fachada do Disney+ abaixo) em vez de `EventTarget`: num
+  content script do Firefox o `EventTarget` é o da própria página, visto através
+  de um wrapper Xray, e os eventos que uma subclasse disparava nunca chegavam aos
   listeners do content script, então os controles do próprio Drive nunca chegavam
   à sala.
+- **Um `<video>` alcançável ainda pode estar no relógio errado.** O Disney+ toca
+  num `<video>` comum, mas o `currentTime` dele é o da mídia, não o do programa:
+  cada seek recarrega a mídia perto dos 20 s, e o `duration` é só o fim do que já
+  foi carregado. O relógio do programa fica no `mediaPlayer` do elemento do
+  player, uma propriedade do mundo da página que um content script não enxerga.
+  Por isso um pequeno script que o worker injeta sob demanda no mundo da própria
+  página (`entrypoints/disney-bridge.ts`, `lib/providers/disney-page.ts`) lê a
+  diferença entre os dois relógios logo depois do handler de `timeupdate` do
+  próprio player, onde ela se mantém ao milissegundo, e faz os seeks pelo
+  `mediaPlayer.seek`. `lib/providers/disney-media.ts` soma essa diferença ao
+  `currentTime` do elemento e apresenta a fatia de sempre de `HTMLVideoElement`,
+  juntando a pausa, o seek e o play que o player dispara a cada seek num único
+  seek, para que a sala não veja uma pausa. Os controles e as legendas ficam numa
+  camada fixa ao lado da do vídeo, e não em volta dela, então o adaptador indica
+  essa camada (`findOverlays`) e a barra lateral a estreita também.
 - **Um player pode ser um frame num site que a extensão não conhece.** O Wix Video
   é um iframe em `embed.wix.com` dentro de um site de qualquer domínio, então é
   impossível reconhecer o site, e o script do player é injetado em todo frame

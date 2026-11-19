@@ -48,7 +48,7 @@ e cada chamada do dump esperaria esgotar o próprio timeout contra ela.
 | `reattach` | a religação via `MutationObserver` de um `<video>` recriado | element re-attach, quality switch |
 | `drift` | a zona morta / faixa de velocidade (tudo vira salto forçado) | small drift |
 | `offscreen` | a persistência do documento offscreen entre navegações | navigation survival, leader authority (ambos verificam que a sala sobrevive a uma transição de episódio). O encerramento do service worker é pulado com esta flag: ele mata o worker logo antes dessa navegação, e se o worker que está reiniciando fecha o documento antes que o novo content script o alcance é uma condição de corrida |
-| `echo-suppress` | a marcação de comandos remotos aplicados localmente | echo suppression, large drift, small drift, quality switch (os próprios seeks corretivos do seguidor movem a sala) |
+| `echo-suppress` | a marcação de comandos remotos aplicados localmente | echo suppression, large drift, small drift, quality switch (os próprios seeks corretivos do seguidor movem a sala), disney-shaped seek (a rajada do seek aplicado pelo seguidor chega à sala como pausas) |
 | `episode-start` | o salto que uma cópia mais longa aplica a partir do início do episódio da sala | início do episódio |
 
 ## Firefox {/* #firefox */}
@@ -66,7 +66,9 @@ dois sentidos (cada lado ouve o tom do outro), o play e o pause nos dois sentido
 as câmeras nos quadros da página, a sala sobrevivendo a um recarregamento, a uma
 rota no cliente e à troca de episódio feita pelo líder, e o play e o pause do
 próprio Firefox chegando ao Chrome na página no formato do Drive, onde o player é
-uma fachada sobre um embed de outra origem. Ela precisa de um Firefox
+uma fachada sobre um embed de outra origem, e, na página no formato do Disney+, o
+script do mundo da página chegando à fachada, os dois relógios do programa
+concordando e um seek pelos controles do player do Firefox chegando ao Chrome. Ela precisa de um Firefox
 instalado (`FIREFOX_BIN` aponta para outro) e roda o servidor em `:8080`, o padrão
 da extensão, porque não dá para apontar um peer Firefox para um servidor de teste:
 a automação não consegue abrir as páginas `moz-extension://` dele.
