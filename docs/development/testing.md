@@ -47,6 +47,7 @@ dump's calls would each wait out their own timeouts against it.
 | `offscreen` | the offscreen document's persistence across navigation | navigation survival, leader authority (both assert the room survives an episode transition). Service-worker termination is skipped under this flag: it kills the worker right before that navigation, and whether the restarting worker closes the document before the new content script reaches it is a race |
 | `echo-suppress` | tagging of locally-applied remote commands | echo suppression, large drift, small drift, quality switch (the follower's own corrective seeks move the room), disney-shaped seek (the burst of the follower's applied seek reaches the room as pauses) |
 | `episode-start` | the skip a longer copy applies from the room's episode start | episode start |
+| `ad-pod` | holding a copy's length through an ad shorter than the episode | ad pod |
 
 ## Firefox
 

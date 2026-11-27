@@ -134,7 +134,7 @@ media-track stand-ins):
 | `sidebar/episode-start.ts` | the "copies differ" notice: the proposal, nudges, align and clear | a send callback |
 | `sidebar/settings-panel.ts` + `settings-model.ts` | the gear's room settings popover and what it shows | the sidebar's actions |
 | `room-labels.ts` | how the connection, server and camera state are worded, shared by the popup and the settings panel | — |
-| `copy-tracker.ts` | the length of this page's copy, held across element swaps and ad clips | a report callback |
+| `copy-tracker.ts` | the length of this page's copy, held across element swaps and ads, however long | a report callback |
 | `participants.ts` | the one derivation of "who is in the room", used by the popup and the sidebar | — |
 | `badge.ts` | the toolbar dot: which state the snapshot means, and the circle drawn onto the icon for it | a `chrome.action` slice, a canvas |
 | `player-access.ts` | which services the user granted, the player script registered for exactly those, and the pages open when a grant or revocation lands | `chrome.permissions`, `chrome.scripting`, tab and frame lookups |

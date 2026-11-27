@@ -50,6 +50,7 @@ e cada chamada do dump esperaria esgotar o próprio timeout contra ela.
 | `offscreen` | a persistência do documento offscreen entre navegações | navigation survival, leader authority (ambos verificam que a sala sobrevive a uma transição de episódio). O encerramento do service worker é pulado com esta flag: ele mata o worker logo antes dessa navegação, e se o worker que está reiniciando fecha o documento antes que o novo content script o alcance é uma condição de corrida |
 | `echo-suppress` | a marcação de comandos remotos aplicados localmente | echo suppression, large drift, small drift, quality switch (os próprios seeks corretivos do seguidor movem a sala), disney-shaped seek (a rajada do seek aplicado pelo seguidor chega à sala como pausas) |
 | `episode-start` | o salto que uma cópia mais longa aplica a partir do início do episódio da sala | início do episódio |
+| `ad-pod` | manter a duração de uma cópia durante um anúncio mais curto que o episódio | ad pod |
 
 ## Firefox {/* #firefox */}
 
