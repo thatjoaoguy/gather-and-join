@@ -137,6 +137,9 @@ export class SidebarView {
       align.textContent = 'Align';
       align.onclick = () => { if (field.commit() !== null) this.actions.alignStart(); };
       this.copiesNotice.append(field.el, align);
+      // Placed once and never moved: moving a node takes it out of the document, which
+      // drops focus from the field inside it, and the next render overwrites what was typed.
+      this.column.append(this.notice, this.copiesNotice);
       keepKeysFromPlayer(this.column);
       shadow.append(style, this.column);
       // Chrome before 114 has no popover: an unsupported panel would render permanently open, so leave it out.
@@ -224,8 +227,6 @@ export class SidebarView {
     column.classList.toggle('has-copies', !!this.copies && !this.copies.set);
     this.renderCopies(this.copiesNotice, this.copies);
     this.settingsPanel?.update(this.settings, this.copies);
-    column.insertBefore(this.copiesNotice, column.firstChild);
-    column.insertBefore(this.notice, column.firstChild); // always first
     const existing = new Map<string, HTMLElement>();
     column.querySelectorAll<HTMLElement>('.tile').forEach((t) => existing.set(t.dataset.peerId!, t));
     for (const p of this.tiles) {

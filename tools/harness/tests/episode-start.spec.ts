@@ -22,6 +22,17 @@ test.describe('episode start', () => {
       await waitForCondition(async () => (await snapshot(host))?.peers.filter((p) => p.copy).length === 2, { label: 'both copies measured' });
       const proposal = host.page.locator('#gj-tiles').locator('.rail-notice.copies input');
       await expect(proposal).toHaveValue('1:00');
+
+      // A render mid-edit keeps what is being typed: the guest muting re-renders the host's rail.
+      await proposal.fill('0:');
+      const guestOwn = guest.page.locator('#gj-tiles .tile.self');
+      await guestOwn.hover();
+      await guestOwn.locator('.self-controls .mic').click();
+      await expect(host.page.locator('#gj-tiles').locator(`.tile[data-peer-id="${guest.peerId}"]`)).toHaveClass(/\bmuted\b/);
+      await expect(proposal).toBeFocused();
+      await expect(proposal).toHaveValue('0:');
+      await proposal.fill('1:00');
+
       await host.page.locator('#gj-tiles').locator('.rail-notice.copies button.align').click();
       await waitForCondition(async () => (await snapshot(guest))?.room?.episodeStart?.startMs === EXTRAS_MS, { label: 'guest has the episode start' });
       await expect(host.page.locator('#gj-tiles').locator('.rail-notice.copies')).toBeHidden(); // asked and answered: adjusting lives in settings now
@@ -52,6 +63,7 @@ test.describe('episode start', () => {
       await waitForCondition(async () => (await spreadMs(party.peers, [0, EXTRAS_MS + 1250])).spread < SAME_FRAME_MS, { timeout: 2000, label: 'guest 1.25s further in' });
     } catch (e) { await dumpParty(party, 'episode start failure'); throw e; } finally { await party.close(); }
   });
+
 });
 
 test.describe('settings panel', () => {
