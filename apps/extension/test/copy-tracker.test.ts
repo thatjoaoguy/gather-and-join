@@ -16,4 +16,18 @@ describe('CopyTracker', () => {
     expect(t.durationFor('G1')).toBeNull();
     expect(reports).toEqual([['G1', 3_784_572], ['G2', 3_360_000]]);
   });
+
+  it('holds the episode across an ad pod longer than a minute, and lets the episode replace a pre-roll', () => {
+    const reports: Array<[string, number]> = [];
+    const t = new CopyTracker((cid, ms) => reports.push([cid, ms]));
+    expect(t.observe('G1', 3576.74)).toBe(true);
+    expect(t.observe('G1', 147.006)).toBe(false); // HBO Max's 2:27 ad pod, on an element of its own
+    expect(t.durationFor('G1')).toBe(3_576_740); // so the episode start still describes this copy
+    expect(t.observe('G1', 3576.74)).toBe(false); // back from the break: nothing moved
+    // A page whose first measured element was the pre-roll.
+    expect(t.observe('G2', 147.006)).toBe(true);
+    expect(t.observe('G2', 3360)).toBe(true);
+    expect(t.durationFor('G2')).toBe(3_360_000);
+    expect(reports).toEqual([['G1', 3_576_740], ['G2', 147_006], ['G2', 3_360_000]]);
+  });
 });
