@@ -28,7 +28,7 @@ const FIXTURES = path.join(ROOT, 'fixtures');
 export const PLAYER_PORT = Number(process.env.PLAYER_PORT ?? 4173);
 export const MAIN_SECONDS = 330;
 export const AD_SECONDS = 15;
-/** An ad pod past a minute, like HBO Max's 2:27 ones: longer than the shortest episode the extension accepts. */
+/** Ads can be longer than 60 s: this one is longer than the shortest episode the extension accepts. */
 export const AD_POD_SECONDS = 90;
 /**
  * Two copies of one episode, as different regions get them: `?copy=plain` and

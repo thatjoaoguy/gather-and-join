@@ -64,8 +64,8 @@ test.describe('episode start', () => {
     } catch (e) { await dumpParty(party, 'episode start failure'); throw e; } finally { await party.close(); }
   });
 
-  // HBO Max's ad pods run 2:27 on an element of their own. Taken as the copy's length, one told
-  // the room the copy had shrunk to the pod and left the longer copy unskipped for good.
+  // Ads can be longer than 60 s. Taken as the copy's length, one told the room the copy
+  // had shrunk to the ad and left the longer copy unskipped for good.
   test('ad pod: an ad over a minute long is not a new copy of the episode', async () => {
     const party = await startParty({ n: 2, copies: ['plain', 'extras'] });
     try {
@@ -74,7 +74,7 @@ test.describe('episode start', () => {
       await waitForCondition(async () => (await guestCopy()) !== null, { label: 'host knows the guest\'s copy' });
       const before = (await guestCopy())!;
 
-      // In a paused room, as in the report. The fake ends its break on a timer; HBO's waits for the paused pod.
+      // In a paused room. The fake ends its break on a timer; a real player waits for the paused ad.
       await guest.page.click('#ad-pod');
       await waitForCondition(() => guest.page.evaluate(() => {
         const v = document.querySelector<HTMLVideoElement>('#player video');

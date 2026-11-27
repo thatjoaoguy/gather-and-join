@@ -6,12 +6,12 @@
  * ignored, and the room hears about a change only when it is more than a reload's
  * wobble.
  *
- * An ad pod can run past MIN_COPY_MS (HBO Max serves 2:27 ones), so the floor
- * alone does not keep it out: once a length is held, a much shorter one on the
- * same content id is an ad, not a new copy. Taking it would tell the room the copy
- * shrank and stop the episode start from describing this copy, which pins the skip
- * at 0 until the page reloads. A much longer one replaces it, because the length
- * held first may have been a pre-roll's.
+ * Ads can be longer than 60 s, so the floor alone does not keep them out: once a
+ * length is held, a much shorter one on the same content id is an ad, not a new
+ * copy. Taking it would tell the room the copy shrank and stop the episode start
+ * from describing this copy, which pins the skip at 0 until the page reloads. A
+ * much longer one replaces it, because the length held first may have been a
+ * pre-roll's.
  */
 import { COPY_TOLERANCE_MS } from '@gj/shared';
 

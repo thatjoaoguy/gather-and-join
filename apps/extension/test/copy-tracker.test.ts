@@ -21,7 +21,7 @@ describe('CopyTracker', () => {
     const reports: Array<[string, number]> = [];
     const t = new CopyTracker((cid, ms) => reports.push([cid, ms]));
     expect(t.observe('G1', 3576.74)).toBe(true);
-    expect(t.observe('G1', 147.006)).toBe(false); // HBO Max's 2:27 ad pod, on an element of its own
+    expect(t.observe('G1', 147.006)).toBe(false); // an ad longer than 60 s, on an element of its own
     expect(t.durationFor('G1')).toBe(3_576_740); // so the episode start still describes this copy
     expect(t.observe('G1', 3576.74)).toBe(false); // back from the break: nothing moved
     // A page whose first measured element was the pre-roll.

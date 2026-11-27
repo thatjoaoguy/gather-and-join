@@ -126,8 +126,8 @@
     }, ms);
   }
   document.getElementById('ad-break').onclick = () => adBreak('/media/ad', 15_000);
-  // Like HBO Max's pods: one element that runs past a minute, so its length looks
-  // like an episode's. The break itself ends early; its element's length is the hazard.
+  // Ads can be longer than 60 s: one element whose length looks like an episode's.
+  // The break itself ends early; its element's length is the hazard.
   document.getElementById('ad-pod').onclick = () => adBreak('/media/adpod', 5000);
   document.getElementById('next-push').onclick = () => goTo(nextUrn(), 'push');
   document.getElementById('next-load').onclick = () => goTo(nextUrn(), 'load');
