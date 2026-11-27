@@ -37,11 +37,14 @@ This is the policy behind it, with the numbers.
 On ad-supported tiers, ad breaks land at different points per viewer, so
 `currentTime` is not comparable across the room mid-break. The extension does
 not skip, hide, mute, or shorten ads — they play exactly as the service serves
-them — so there is no fix; the room re-converges after the break. Two small guards keep a break
+them — so there is no fix; the room re-converges after the break. Three small guards keep a break
 from doing worse than desync: an element whose duration ends far before the
-room's position (an ad clip) never pauses the room when it ends, and an `ended`
+room's position (an ad clip) never pauses the room when it ends; an `ended`
 is only broadcast if the element is still current a second later (players swap
-the element right after an ad).
+the element right after an ad); and once a copy's length is known, an element
+much shorter than it is taken as an ad, however long it runs, so a break never
+changes the length the room tells copies apart by (ads can be longer than the
+60 s that rules out short clips).
 
 Ads stitched into the episode's own timeline, rather than played in a separate
 element, would lengthen it for good at every break. The [episode start](/docs/watch-together/when-copies-differ) cannot help: it describes extras before the episode, not in it.

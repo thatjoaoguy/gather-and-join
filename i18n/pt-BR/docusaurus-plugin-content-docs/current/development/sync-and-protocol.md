@@ -41,11 +41,14 @@ Nos planos com anúncios, os intervalos caem em pontos diferentes para cada pess
 então `currentTime` não é comparável entre os membros da sala durante um intervalo.
 A extensão não pula, esconde, silencia nem encurta anúncios — eles tocam exatamente
 como o serviço os entrega —, então não há correção; a sala volta a convergir depois
-do intervalo. Duas pequenas proteções impedem que um intervalo cause algo pior que
+do intervalo. Três pequenas proteções impedem que um intervalo cause algo pior que
 perder a sincronia: um elemento cuja duração termina muito antes da posição da sala
-(um clipe de anúncio) nunca pausa a sala quando termina, e um `ended` só é
+(um clipe de anúncio) nunca pausa a sala quando termina; um `ended` só é
 transmitido se o elemento ainda for o atual um segundo depois (os players trocam o
-elemento logo após um anúncio).
+elemento logo após um anúncio); e, depois que a duração de uma cópia é conhecida,
+um elemento muito mais curto que ela é tratado como anúncio, por mais longo que
+seja, então um intervalo nunca muda a duração pela qual a sala distingue as cópias
+(anúncios podem passar dos 60 s que descartam clipes curtos).
 
 Anúncios costurados na própria linha do tempo do episódio, em vez de tocados em um
 elemento separado, o alongariam de vez a cada intervalo. O [início do episódio](/docs/watch-together/when-copies-differ) não ajuda: ele descreve extras antes do episódio, não dentro dele.
