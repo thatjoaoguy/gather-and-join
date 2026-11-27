@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.1](https://github.com/thatjoaoguy/gather-and-join/compare/v0.14.0...v0.14.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* HBO Max ad pods no longer break a longer copy's skip, and typing its start is no longer reset ([#88](https://github.com/thatjoaoguy/gather-and-join/issues/88)) ([132a189](https://github.com/thatjoaoguy/gather-and-join/commit/132a189419ff6b54f496d37fadc5c6cfde2bbf32))
+
 # [0.14.0](https://github.com/thatjoaoguy/gather-and-join/compare/v0.13.1...v0.14.0) (2026-11-19)
 
 
