@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { startParty, spreadMs, pressPlay, state, snapshot, dumpParty } from '../src/party.ts';
 import { waitForCondition } from '../src/peers.ts';
-import { EXTRAS_SECONDS } from '../src/player-server.ts';
+import { AD_POD_SECONDS, EXTRAS_SECONDS, MAIN_SECONDS } from '../src/player-server.ts';
 
 /**
  * Two copies of one episode: the guest's has EXTRAS_SECONDS in front of it. The host
@@ -22,6 +22,17 @@ test.describe('episode start', () => {
       await waitForCondition(async () => (await snapshot(host))?.peers.filter((p) => p.copy).length === 2, { label: 'both copies measured' });
       const proposal = host.page.locator('#gj-tiles').locator('.rail-notice.copies input');
       await expect(proposal).toHaveValue('1:00');
+
+      // A render mid-edit keeps what is being typed: the guest muting re-renders the host's rail.
+      await proposal.fill('0:');
+      const guestOwn = guest.page.locator('#gj-tiles .tile.self');
+      await guestOwn.hover();
+      await guestOwn.locator('.self-controls .mic').click();
+      await expect(host.page.locator('#gj-tiles').locator(`.tile[data-peer-id="${guest.peerId}"]`)).toHaveClass(/\bmuted\b/);
+      await expect(proposal).toBeFocused();
+      await expect(proposal).toHaveValue('0:');
+      await proposal.fill('1:00');
+
       await host.page.locator('#gj-tiles').locator('.rail-notice.copies button.align').click();
       await waitForCondition(async () => (await snapshot(guest))?.room?.episodeStart?.startMs === EXTRAS_MS, { label: 'guest has the episode start' });
       await expect(host.page.locator('#gj-tiles').locator('.rail-notice.copies')).toBeHidden(); // asked and answered: adjusting lives in settings now
@@ -51,6 +62,32 @@ test.describe('episode start', () => {
       await waitForCondition(async () => (await snapshot(guest))?.room?.episodeStart?.startMs === EXTRAS_MS + 1250, { label: 'typed start reached the room' });
       await waitForCondition(async () => (await spreadMs(party.peers, [0, EXTRAS_MS + 1250])).spread < SAME_FRAME_MS, { timeout: 2000, label: 'guest 1.25s further in' });
     } catch (e) { await dumpParty(party, 'episode start failure'); throw e; } finally { await party.close(); }
+  });
+
+  // Ads can be longer than 60 s. Taken as the copy's length, one told the room the copy
+  // had shrunk to the ad and left the longer copy unskipped for good.
+  test('ad pod: an ad over a minute long is not a new copy of the episode', async () => {
+    const party = await startParty({ n: 2, copies: ['plain', 'extras'] });
+    try {
+      const host = party.peers[0]!, guest = party.peers[1]!;
+      const guestCopy = async () => (await snapshot(host))?.peers.find((p) => p.peerId === guest.peerId)?.copy?.durationMs ?? null;
+      await waitForCondition(async () => (await guestCopy()) !== null, { label: 'host knows the guest\'s copy' });
+      const before = (await guestCopy())!;
+
+      // In a paused room. The fake ends its break on a timer; a real player waits for the paused ad.
+      await guest.page.click('#ad-pod');
+      await waitForCondition(() => guest.page.evaluate(() => {
+        const v = document.querySelector<HTMLVideoElement>('#player video');
+        return !!v && v.src.endsWith('/media/adpod') && v.duration > 0;
+      }), { label: 'ad pod element measured' });
+      await waitForCondition(() => guest.page.evaluate(() => !document.getElementById('player')!.dataset.adBreak), { timeout: 15_000, interval: 250, label: 'ad pod over' });
+
+      const heard = party.observer.ofType('duration').filter((f) => f.msg.from === guest.peerId).map((f) => f.msg.durationMs);
+      console.log(`guest's copy ${before}ms; the room heard ${heard.join(', ') || 'nothing new'} (ad pod ${AD_POD_SECONDS * 1000}ms)`);
+      expect(before).toBeGreaterThan(MAIN_SECONDS * 1000);
+      expect(heard.every((ms) => ms > MAIN_SECONDS * 1000)).toBe(true);
+      expect(await guestCopy()).toBe(before);
+    } catch (e) { await dumpParty(party, 'ad pod failure'); throw e; } finally { await party.close(); }
   });
 });
 

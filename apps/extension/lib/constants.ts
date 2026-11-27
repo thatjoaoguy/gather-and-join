@@ -5,4 +5,4 @@ export const BROWSER_NAME = import.meta.env.BROWSER === 'firefox' ? 'Firefox' : 
 export const HOST_GUIDE_URL = 'https://thatjoaoguy.github.io/gather-and-join/docs/host-a-server';
 export const STUN_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
 
-export type Sabotage = 'reattach' | 'drift' | 'offscreen' | 'echo-suppress' | 'episode-start' | null;
+export type Sabotage = 'reattach' | 'drift' | 'offscreen' | 'echo-suppress' | 'episode-start' | 'ad-pod' | null;

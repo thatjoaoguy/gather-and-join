@@ -112,19 +112,23 @@
     if (v) v.remove();
     setTimeout(() => createVideo(mainSrc(), { currentTime: t, autoplay: !!playing }), 50);
   };
-  document.getElementById('ad-break').onclick = () => {
+  function adBreak(src, ms) {
     if (adTimer) return;
     const v = video();
     const resumeAt = v ? v.currentTime : 0;
     const wasPlaying = v && !v.paused;
-    createVideo('/media/ad', { loop: false, autoplay: true });
+    createVideo(src, { loop: false, autoplay: true });
     playerEl.dataset.adBreak = '1';
     adTimer = setTimeout(() => {
       adTimer = null;
       delete playerEl.dataset.adBreak;
       createVideo(mainSrc(), { currentTime: resumeAt, autoplay: !!wasPlaying });
-    }, 15_000);
-  };
+    }, ms);
+  }
+  document.getElementById('ad-break').onclick = () => adBreak('/media/ad', 15_000);
+  // Ads can be longer than 60 s: one element whose length looks like an episode's.
+  // The break itself ends early; its element's length is the hazard.
+  document.getElementById('ad-pod').onclick = () => adBreak('/media/adpod', 5000);
   document.getElementById('next-push').onclick = () => goTo(nextUrn(), 'push');
   document.getElementById('next-load').onclick = () => goTo(nextUrn(), 'load');
   document.getElementById('show-up-next').onclick = startCountdown;

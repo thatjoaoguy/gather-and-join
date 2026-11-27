@@ -28,6 +28,8 @@ const FIXTURES = path.join(ROOT, 'fixtures');
 export const PLAYER_PORT = Number(process.env.PLAYER_PORT ?? 4173);
 export const MAIN_SECONDS = 330;
 export const AD_SECONDS = 15;
+/** Ads can be longer than 60 s: this one is longer than the shortest episode the extension accepts. */
+export const AD_POD_SECONDS = 90;
 /**
  * Two copies of one episode, as different regions get them: `?copy=plain` and
  * `?copy=extras` on a watch URL, the second with this much in front of the same
@@ -44,6 +46,7 @@ const MIME: Record<string, string> = {
 type Media = { body: Buffer; mime: string };
 let mainMedia: Media | null = null;
 let adMedia: Media | null = null;
+let adPodMedia: Media | null = null;
 let copies: { plain: Media; extras: Media } | null = null;
 
 function loadCopies() {
@@ -98,6 +101,7 @@ export function startPlayerServer(port = PLAYER_PORT): Promise<http.Server> {
     if (p === '/') { res.writeHead(302, { Location: '/watch/urn:hbo:episode:G0000001' }); return res.end(); }
     if (p === '/media/main') return serveMedia(req, res, loadMedia().main);
     if (p === '/media/ad') return serveMedia(req, res, loadMedia().ad);
+    if (p === '/media/adpod') return serveMedia(req, res, adPodMedia ??= { body: quietTrack(AD_POD_SECONDS), mime: 'audio/wav' });
     if (p === '/media/plain') return serveMedia(req, res, loadCopies().plain);
     if (p === '/media/extras') return serveMedia(req, res, loadCopies().extras);
     if (p.startsWith('/watch/urn:hbo:')) return serveFile(res, path.join(PLAYER_DIR, 'index.html'));

@@ -27,6 +27,8 @@ const MATRIX: Record<string, string[]> = {
   'echo-suppress': ['echo suppression', 'large drift', 'small drift', 'quality switch', 'disney-shaped seek'],
   // Without the skip, a copy with extras plays them on the room's timeline: a whole extras' length off the others.
   'episode-start': ['episode start'],
+  // Without holding the copy's length, an ad pod past a minute is reported to the room as the copy.
+  'ad-pod': ['ad pod'],
 };
 
 /**

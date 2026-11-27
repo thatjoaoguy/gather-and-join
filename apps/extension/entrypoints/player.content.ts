@@ -85,7 +85,7 @@ export default defineContentScript({
     const copy = new CopyTracker((cid, durationMs) => {
       log('page', 'copy of', cid, 'runs', Math.round(durationMs), 'ms');
       port.send({ type: 'duration', contentId: cid, durationMs });
-    });
+    }, cfg.sabotage !== 'ad-pod');
     // The room's episode start applies only on the room's episode, and only to the copy it describes.
     const applySkip = () => {
       const room = snapshot?.room;
