@@ -40,6 +40,18 @@ describe('the Disney+ facade', () => {
     expect(media.currentTime).toBeCloseTo(120.5 + 0.1234 - 20, 6);
   });
 
+  it('reports what is loaded on the program\'s clock, so seconds ahead come out the same as on the element', () => {
+    const { player, media, playingAt } = setup();
+    expect(media.buffered).toBeUndefined(); // no trusted offset yet: it cannot say where anything is
+    playingAt(100);
+    const v = player.video as unknown as { currentTime: number; buffered: unknown };
+    v.buffered = { length: 1, start: () => v.currentTime - 2, end: () => v.currentTime + 7 };
+    const b = media.buffered!;
+    expect(b.length).toBe(1);
+    expect(b.end(0) - media.currentTime).toBeCloseTo(7, 6);
+    expect(media.currentTime - b.start(0)).toBeCloseTo(2, 6);
+  });
+
   it('seeks through the player, reports the target until it lands, and lets none of the element\'s burst through', () => {
     const { player, ch, media, events, playingAt } = setup();
     playingAt(100);

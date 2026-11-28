@@ -124,6 +124,8 @@
   document.getElementById('pause').addEventListener('click', () => player.mediaPlayer.pause());
   v.addEventListener('loadedmetadata', () => { v.currentTime = 20; }, { once: true });
   v.loop = true;
-  v.src = '/media/main';
+  // The starved cut is in program seconds, and this media starts 20s in.
+  const copy = new URLSearchParams(location.search).get('copy');
+  v.src = !copy ? '/media/main' : copy === 'starved' ? `/media/starved?shift=20&session=${Math.random().toString(36).slice(2)}` : `/media/${copy}`;
 })();
 </script>

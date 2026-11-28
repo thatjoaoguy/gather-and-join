@@ -118,5 +118,7 @@ describe('protocol parsing', () => {
     expect(parseC2S({ type: 'explode' })).toBeNull();
     expect(parseC2S(null)).toBeNull();
     expect(parseC2S({ type: 'signal', to: 'x', payload: { sdp: 'v=0' } })).toMatchObject({ payload: { sdp: 'v=0' } });
+    expect(parseC2S({ type: 'bufferReady', ready: true, extra: 'dropped' })).toEqual({ type: 'bufferReady', ready: true });
+    expect(parseC2S({ type: 'bufferReady', ready: 'yes' })).toBeNull();
   });
 });

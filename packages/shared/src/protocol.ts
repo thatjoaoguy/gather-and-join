@@ -42,6 +42,7 @@ export type C2S =
   | { type: 'playback'; paused: boolean; positionMs: number; clientTime: number; reason?: 'stall' }
   | { type: 'navigate'; contentId: string; watchUrl?: string | null }
   | { type: 'media'; micOn: boolean; camOn: boolean }
+  | { type: 'bufferReady'; ready: boolean }
   | { type: 'duration'; contentId: string; durationMs: number }
   | { type: 'episodeStart'; contentId: string; start: EpisodeStart | null }
   | { type: 'ping'; clientTime: number }
@@ -69,6 +70,7 @@ export type S2C =
   | { type: 'playback'; paused: boolean; positionMs: number; serverTime: number; originPeerId: PeerId; reason?: 'stall' }
   | { type: 'navigate'; contentId: string; watchUrl: string | null; originPeerId: PeerId }
   | { type: 'media'; from: PeerId; micOn: boolean; camOn: boolean }
+  | { type: 'bufferReady'; from: PeerId; ready: boolean }
   | { type: 'duration'; from: PeerId; contentId: string; durationMs: number }
   | { type: 'episodeStart'; start: EpisodeStart | null; originPeerId: PeerId }
   | { type: 'pong'; clientTime: number; serverTime: number }
@@ -79,7 +81,7 @@ export type C2SType = C2S['type'];
 export type S2CType = S2C['type'];
 
 const C2S_TYPES: ReadonlySet<string> = new Set<C2SType>([
-  'join', 'hello', 'playback', 'navigate', 'media', 'duration', 'episodeStart', 'ping', 'signal', 'leave',
+  'join', 'hello', 'playback', 'navigate', 'media', 'bufferReady', 'duration', 'episodeStart', 'ping', 'signal', 'leave',
 ]);
 
 /** Structural validation of an inbound client frame. Cheap, not exhaustive. */
@@ -103,6 +105,9 @@ export function parseC2S(raw: unknown): C2S | null {
     case 'media':
       if (typeof m.micOn !== 'boolean' || typeof m.camOn !== 'boolean') return null;
       return { type: 'media', micOn: m.micOn, camOn: m.camOn };
+    case 'bufferReady':
+      if (typeof m.ready !== 'boolean') return null;
+      return { type: 'bufferReady', ready: m.ready };
     case 'duration':
       if (typeof m.contentId !== 'string' || !isPositiveNum(m.durationMs)) return null;
       return { type: 'duration', contentId: m.contentId, durationMs: m.durationMs };

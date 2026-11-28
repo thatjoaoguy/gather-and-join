@@ -46,28 +46,47 @@ describe('PerfectPeer', () => {
     expect(pc.candidates).toEqual([{ candidate: 'x' }]);
   });
 
-  it('restarts ICE when a connection is still not up after the stall budget', () => {
+  const negotiate = async (pc: FakePeerConnection) => { await pc.onnegotiationneeded?.(); };
+
+  it('restarts ICE when a connection is still not up after the stall budget', async () => {
     const { pc } = make(false);
+    await negotiate(pc);
     expect(pc.restartIce).not.toHaveBeenCalled();
     vi.advanceTimersByTime(ICE_STALL_MS + 1);
     expect(pc.restartIce).toHaveBeenCalledTimes(1);
   });
 
-  it('does not restart ICE once connected', () => {
+  it('counts the stall budget from the other side\'s offer too', async () => {
+    const { pp, pc } = make(false);
+    await pp.handle({ description: { type: 'offer' } as RTCSessionDescriptionInit });
+    vi.advanceTimersByTime(ICE_STALL_MS + 1);
+    expect(pc.restartIce).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves a connection with nothing to negotiate alone: it never started, so it is not stalled', () => {
     const { pc } = make(false);
+    vi.advanceTimersByTime(ICE_STALL_MS * 10);
+    expect(pc.restartIce).not.toHaveBeenCalled();
+  });
+
+  it('does not restart ICE once connected', async () => {
+    const { pc } = make(false);
+    await negotiate(pc);
     pc.setState('connected');
     vi.advanceTimersByTime(ICE_STALL_MS * 3);
     expect(pc.restartIce).not.toHaveBeenCalled();
   });
 
-  it('leaves the restart to the impolite side, so both do not re-offer at once', () => {
+  it('leaves the restart to the impolite side, so both do not re-offer at once', async () => {
     const { pc } = make(true);
+    await negotiate(pc);
     vi.advanceTimersByTime(ICE_STALL_MS + 1);
     expect(pc.restartIce).not.toHaveBeenCalled();
   });
 
-  it('stops its timer on close', () => {
+  it('stops its timer on close', async () => {
     const { pp, pc } = make(false);
+    await negotiate(pc);
     pp.close();
     vi.advanceTimersByTime(ICE_STALL_MS * 3);
     expect(pc.restartIce).not.toHaveBeenCalled();

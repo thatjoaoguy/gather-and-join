@@ -28,6 +28,10 @@ export const PING_SAMPLES = 5;
 export const OFFSET_REFRESH_MS = 60_000;
 export const HEARTBEAT_MS = 5_000;
 export const ECHO_SUPPRESS_MS = 500;
+/** A stalled player's own play/seeking are held this long after its pause comes back: players resume themselves when data returns (HBO Max did, 33ms after its stall). */
+export const OWN_STALL_HOLD_MS = 1000;
+/** Loaded ahead before a stalled player says it is ready. Under Disney+'s ~11s loading cap. */
+export const READY_AHEAD_MS = 5000;
 
 export const DRIFT_DEAD_ZONE_MS = 250;
 export const DRIFT_RATE_EXIT_MS = 100;

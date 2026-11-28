@@ -55,3 +55,6 @@ export function setupSummary(steps: SetupStep[]): string {
  * default is not answering either. Not an error — there is nothing to fix yet.
  */
 export const firstRun = (input: SetupInput): boolean => !input.serverConfigured && input.serverState !== 'reachable';
+
+/** On every render: the first run can end while the popup is open, and the tab's fields must come back. */
+export const lobbyFields = (fresh: boolean, tab: 'join' | 'create') => ({ code: !fresh && tab === 'join', createHelper: !fresh && tab === 'create' });

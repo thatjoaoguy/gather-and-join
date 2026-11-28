@@ -145,6 +145,13 @@ export class DisneyMedia extends MediaEvents {
   get ended(): boolean { return this.video()?.ended ?? false; }
   get readyState(): number { return this.video()?.readyState ?? 0; }
   get duration(): number { return this.durationMs === null ? NaN : this.durationMs / 1000; }
+  /** On the program's clock, like `currentTime`. */
+  get buffered(): TimeRanges | undefined {
+    const b = this.video()?.buffered;
+    const off = this.offsetSec;
+    if (!b || off === null) return undefined;
+    return { length: b.length, start: (i: number) => b.start(i) + off, end: (i: number) => b.end(i) + off } as unknown as TimeRanges;
+  }
 
   get playbackRate(): number { return this.rate; }
   set playbackRate(r: number) {

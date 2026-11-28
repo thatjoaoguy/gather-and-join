@@ -78,8 +78,8 @@ export type Snapshot = {
   server: ServerStatus;
   micPermission: 'unknown' | 'granted' | 'denied';
   camPermission: 'unknown' | 'granted' | 'denied';
-  /** Who last reported a stall, for the "X is buffering" UI. */
-  stalledBy: { peerId: PeerId; name: string } | null;
+  /** Who last reported a stall, and whether their player has caught up since. */
+  stalledBy: { peerId: PeerId; name: string; ready: boolean } | null;
   peerMedia: Record<PeerId, PeerMediaState>;
   lastError: { code: string; message: string } | null;
 };
@@ -88,7 +88,8 @@ export type Snapshot = {
 export type PlayerToOffscreen =
   | { type: 'hello'; contentId: string | null; url: string }
   | { type: 'playback'; paused: boolean; positionMs: number }
-  | { type: 'stalled' }
+  | { type: 'stalled'; positionMs: number }
+  | { type: 'bufferReady'; ready: boolean }
   | { type: 'navigateRequest'; contentId: string; url: string }
   /** The length of this page's copy of `contentId`, once the player knows it. */
   | { type: 'duration'; contentId: string; durationMs: number }

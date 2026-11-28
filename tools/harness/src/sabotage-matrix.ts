@@ -24,11 +24,15 @@ const MATRIX: Record<string, string[]> = {
   // Without tagging, the follower's own corrective seeks are rebroadcast and move the room, so
   // every test that expects the follower to converge onto a fixed room position also fails.
   // On the Disney shape the burst of the follower's applied seek reaches the room as pauses.
-  'echo-suppress': ['echo suppression', 'large drift', 'small drift', 'quality switch', 'disney-shaped seek'],
+  // On Drive the stall's pause reaches the embed after the seek back, which then goes out as a play.
+  'echo-suppress': ['echo suppression', 'large drift', 'disney-shaped seek', 'buffering stall (drive)'],
   // Without the skip, a copy with extras plays them on the room's timeline: a whole extras' length off the others.
   'episode-start': ['episode start'],
   // Without holding the copy's length, an ad pod past a minute is reported to the room as the copy.
   'ad-pod': ['ad pod'],
+  'stall-position': ['the room pauses where the stalled player stopped'],
+  // The HBO-shaped starved page (Wix frames it too) resumes itself when data returns.
+  'stall-guard': ['resumes itself', 'buffering stall (hbo): once', 'buffering stall (wix): once'],
 };
 
 /**
@@ -45,7 +49,15 @@ const SKIP_UNDER_SABOTAGE = ['sync accuracy', 'late join', 'ducking', 'perfect n
  * race inside Chrome: the test passes about one run in three under the flag. The offscreen
  * mechanism is demonstrated deterministically by the two tests that remain in its row.
  */
-const SKIP_UNDER_FLAG: Record<string, string[]> = { offscreen: ['service worker termination'] };
+const SKIP_UNDER_FLAG: Record<string, string[]> = {
+  offscreen: ['service worker termination'],
+  // Untagged, whether the follower's bouncing seek settles inside their windows is timing.
+  'echo-suppress': ['small drift', 'quality switch'],
+  // Seeked back while paused, the fake's plain file loads only ~4s ahead: short of READY_AHEAD_MS.
+  'stall-position': ['buffering stall (disney): once'],
+  // Every correction is a seek, so a starving guest seeks past its data: a stall these do not guard.
+  drift: ['buffering stall'],
+};
 
 type Result = { title: string; status: string };
 

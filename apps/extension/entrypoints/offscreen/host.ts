@@ -300,7 +300,8 @@ export function mountOffscreenHost(opts: HostOptions): OffscreenHost {
         post(port, { type: 'snapshot', snapshot: session.snapshot });
         return;
       case 'playback': session.playback(m.paused, m.positionMs); return;
-      case 'stalled': session.stalled(); return;
+      case 'stalled': session.stalled(m.positionMs); return;
+      case 'bufferReady': session.bufferReady(m.ready); return;
       case 'navigateRequest': session.navigateRequest(m.contentId, m.url); return;
       case 'duration': session.reportDuration(m.contentId, m.durationMs); return;
       case 'episodeStart': session.setEpisodeStart(m.contentId, m.start); return;

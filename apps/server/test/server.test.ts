@@ -147,6 +147,22 @@ describe('server', () => {
     c.close();
   });
 
+  it('a stalled player\'s readiness is relayed to the others, and not remembered', async () => {
+    const a = await client(); const b = await client(); const c = await client();
+    a.send({ type: 'join', code: 'RM0007', peerId: 'a', name: 'A', create: true });
+    await a.next('room');
+    b.send({ type: 'join', code: 'RM0007', peerId: 'b', name: 'B' });
+    await b.next('room'); await a.next('peerJoined');
+    const seenByA = a.next('bufferReady');
+    b.send({ type: 'bufferReady', ready: true });
+    expect(await seenByA).toEqual({ type: 'bufferReady', from: 'b', ready: true });
+    expect(b.inbox.some((m) => m.type === 'bufferReady')).toBe(false); // not echoed to the sender
+    c.send({ type: 'join', code: 'RM0007', peerId: 'c', name: 'C' });
+    const room = await c.next('room');
+    expect(JSON.stringify(room)).not.toContain('ready');
+    a.close(); b.close(); c.close();
+  });
+
   it('media state is relayed to the others and remembered for late joiners', async () => {
     const a = await client(); const b = await client(); const c = await client();
     a.send({ type: 'join', code: 'RM0005', peerId: 'a', name: 'A', create: true });

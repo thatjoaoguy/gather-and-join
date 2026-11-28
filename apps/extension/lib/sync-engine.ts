@@ -11,7 +11,7 @@
  *    taken off on the way out, and nothing before the episode is ever broadcast.
  */
 import {
-  decideCorrection, expectedPositionMs, ECHO_SUPPRESS_MS, HEARTBEAT_MS, DRIFT_DEAD_ZONE_MS, DRIFT_HARD_SEEK_MS,
+  decideCorrection, expectedPositionMs, ECHO_SUPPRESS_MS, HEARTBEAT_MS, DRIFT_DEAD_ZONE_MS, DRIFT_HARD_SEEK_MS, OWN_STALL_HOLD_MS, READY_AHEAD_MS,
   type RoomState,
 } from '@gj/shared';
 import type { Sabotage } from './constants';
@@ -22,6 +22,8 @@ export type OutboundPlayback = { paused: boolean; positionMs: number; stalled?: 
 
 export const TICK_MS = 250;
 const STALL_CONFIRM_MS = 750;
+/** Stop holding if the stall's pause never comes back (the socket may be down). */
+const OWN_STALL_ECHO_WAIT_MS = 10_000;
 /** How often the drift summary line is emitted while playing. */
 export const DRIFT_REPORT_MS = 30_000;
 
@@ -38,6 +40,9 @@ export class SyncEngine {
   private tickTimer: ReturnType<typeof setInterval> | null = null;
   private lastHeartbeat = 0;
   private stallTimer: ReturnType<typeof setTimeout> | null = null;
+  private ownStall: { at: number; until: number; echoed: boolean } | null = null;
+  private waitingOnSelf = false;
+  private reportedReady = false;
   /** |drift| samples since the last summary, plus the counters as they stood then. */
   private driftSamples: number[] = [];
   private lastReport = 0;
@@ -51,6 +56,9 @@ export class SyncEngine {
     private readonly sabotage: Sabotage,
     /** Diagnostics sink: one human-readable line per notable decision, plus a periodic drift summary. */
     private readonly diag: (line: string) => void = () => {},
+    /** `navigator.userActivation.isActive`, for diagnostics: a person's resume and a player's own look alike. */
+    private readonly userActive: () => boolean | null = () => null,
+    private readonly readiness: (ready: boolean) => void = () => {},
   ) {}
 
   serverNow() { return Date.now() + this.offsetMs; }
@@ -102,7 +110,15 @@ export class SyncEngine {
 
   onLocalPlay(v: HTMLVideoElement) {
     if (this.suppressed('play')) return;
+    if (this.holdingOwnStall('play')) {
+      if (this.room?.paused) this.reconcile(true);
+      return;
+    }
     this.cancelStall();
+    if (this.room?.paused) {
+      const active = this.userActive();
+      this.diag(`play while the room is paused (user activation: ${active === null ? 'unknown' : active ? 'yes' : 'no'}, readyState ${v.readyState})`);
+    }
     this.announce({ paused: false, positionMs: this.outboundPositionMs(v) }, 'play');
   }
   onLocalPause(v: HTMLVideoElement) {
@@ -113,6 +129,8 @@ export class SyncEngine {
   }
   onLocalSeeking(v: HTMLVideoElement) {
     if (this.suppressed('seeking')) return;
+    // Not reconciled: correcting a few-ms nudge would seek a stalled element.
+    if (this.holdingOwnStall('seeking')) return;
     this.announce({ paused: v.paused, positionMs: this.outboundPositionMs(v) }, 'seek');
   }
   onLocalEnded(_v: HTMLVideoElement) {
@@ -141,11 +159,26 @@ export class SyncEngine {
       const cur = this.binding.get();
       if (cur !== v || v.paused || v.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) return;
       if (!this.room || this.room.paused) return;
-      this.diag(`stalled at ${Math.round(this.outboundPositionMs(v))}ms (readyState ${v.readyState}); pausing the room`);
-      this.send({ paused: true, positionMs: this.outboundPositionMs(v), stalled: true });
+      const at = this.sabotage === 'stall-position' ? this.room.positionMs : this.outboundPositionMs(v);
+      this.diag(`stalled at ${Math.round(this.outboundPositionMs(v))}ms (readyState ${v.readyState}); pausing the room at ${Math.round(at)}ms`);
+      this.send({ paused: true, positionMs: at, stalled: true });
+      const now = Date.now();
+      this.ownStall = { at: now, until: now + OWN_STALL_ECHO_WAIT_MS, echoed: false };
+      this.waitingOnSelf = true;
+      this.reportedReady = false;
     }, STALL_CONFIRM_MS);
   }
   onLocalPlaying() { this.cancelStall(); }
+
+  private holdingOwnStall(kind: 'play' | 'seeking') {
+    const s = this.ownStall;
+    if (!s || this.sabotage === 'stall-guard') return false;
+    const now = Date.now();
+    if (now >= s.until) { this.ownStall = null; return false; }
+    const active = this.userActive();
+    this.diag(`held back the player's own ${kind} ${now - s.at}ms after our stall (user activation: ${active === null ? 'unknown' : active ? 'yes' : 'no'})`);
+    return true;
+  }
   private cancelStall() {
     if (this.stallTimer) { clearTimeout(this.stallTimer); this.stallTimer = null; }
   }
@@ -155,6 +188,14 @@ export class SyncEngine {
   /** A `playback` frame or a fresh room snapshot: adopt it and correct now. */
   applyRemote(room: RoomPlayback, offsetMs = this.offsetMs) {
     this.offsetMs = offsetMs;
+    // Every frame arrives twice (itself, then in the snapshot); a facade would get a second play or pause.
+    const r = this.room;
+    if (r && r.paused === room.paused && r.positionMs === room.positionMs && r.updatedAt === room.updatedAt) return;
+    if (!room.paused) this.waitingOnSelf = false; // resumed: nobody is waiting on this player any more
+    if (this.ownStall) {
+      if (!room.paused) this.ownStall = null;
+      else if (!this.ownStall.echoed) this.ownStall = { ...this.ownStall, until: Date.now() + OWN_STALL_HOLD_MS, echoed: true };
+    }
     this.room = room;
     this.reconcile(true);
   }
@@ -255,8 +296,32 @@ export class SyncEngine {
     this.reported = { ...this.counters };
   }
 
+  /** Null where the player cannot say. Same clock as `currentTime`, so the episode-start skip does not enter. */
+  private bufferedAheadMs(v: HTMLVideoElement): number | null {
+    const b = (v as { buffered?: TimeRanges | null }).buffered;
+    if (!b) return null;
+    const t = v.currentTime;
+    for (let i = 0; i < b.length; i++) {
+      // A paused element can sit a hair before its range.
+      if (b.start(i) <= t + 0.25 && t < b.end(i)) return (b.end(i) - t) * 1000;
+    }
+    return 0;
+  }
+
+  private checkReady(v: HTMLVideoElement) {
+    if (!this.waitingOnSelf || !this.room?.paused) return;
+    const ahead = this.bufferedAheadMs(v);
+    const ready = ahead !== null && ahead >= READY_AHEAD_MS;
+    if (ready === this.reportedReady) return;
+    this.reportedReady = ready;
+    this.diag(`${ready ? 'ready' : 'no longer ready'} after our stall: ${ahead === null ? '?' : Math.round(ahead)}ms loaded ahead (readyState ${v.readyState})`);
+    this.readiness(ready);
+  }
+
   private tick() {
     this.reconcile(false);
+    const cur = this.binding.get();
+    if (cur) this.checkReady(cur);
     this.report(Date.now());
     const v = this.binding.get();
     if (this.isLeader && v && !v.paused && this.room && !this.room.paused) {

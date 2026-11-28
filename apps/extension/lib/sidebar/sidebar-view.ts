@@ -17,7 +17,7 @@ import { clock, type CopiesModel } from './episode-start';
 import { SettingsPanel, SETTINGS_STYLE, type SettingsActions, type SettingsModel } from './settings-panel';
 import { StartField, START_FIELD_STYLE, keepKeysFromPlayer } from './start-field';
 
-export type TileModel = { peerId: PeerId; name: string; self: boolean; speaking: boolean; muted: boolean; lost: boolean };
+export type TileModel = { peerId: PeerId; name: string; self: boolean; speaking: boolean; muted: boolean; lost: boolean; buffering: boolean; ready: boolean };
 export type SidebarConnection = 'connected' | 'reconnecting';
 /** The room is on another episode; the sidebar offers the way there. */
 export type OffEpisode = { watchUrl: string } | null;
@@ -40,13 +40,15 @@ export type SidebarViewModel = {
  * :host(.overlay) is important for the same reason, against the `position` above.
  */
 const STYLE = `
-  :host { all: initial !important; --bg:#101014; --surface:#1c1922; --raised:#272130; --line:#44394e; --text:#f4f0fa; --muted:#c3bacf; --purple:#b9a0ff; --red:#fa8294; --warning:#f2c66d; --warning-bg:#2b2419; --success:#86d6b0; --r-tile:14px; --rail:${SIDEBAR_WIDTH}px;
+  :host { all: initial !important; --bg:#101014; --surface:#1c1922; --raised:#272130; --line:#44394e; --text:#f4f0fa; --muted:#c3bacf; --purple:#b9a0ff; --red:#fa8294; --warning:#f2c66d; --warning-bg:#2b2419; --success:#86d6b0; --success-bg:#192a24; --r-tile:14px; --rail:${SIDEBAR_WIDTH}px;
     position: fixed !important; top: 0 !important; bottom: 0 !important; right: 0 !important; width: ${SIDEBAR_WIDTH}px !important; background: #100e15 !important; box-shadow: inset 1px 0 0 #302837 !important; z-index: 2147483647 !important; font: 500 12px/1.5 Quicksand, system-ui, sans-serif !important; color: var(--text) !important; }
   :host(.overlay) { position: absolute !important; left: auto !important; right: 0 !important; }
   .column { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; padding: 50px 16px 16px; box-sizing: border-box; overflow-y: auto; }
   .column.has-status { justify-content: flex-start; }
   .tile { position: relative; width: ${SIDEBAR_WIDTH - 32}px; aspect-ratio: 4/3; box-sizing: border-box; border: 1px solid #51445e; border-radius: var(--r-tile); background: #211b2a; overflow: hidden; flex: none; display: flex; flex-direction: column; gap: 6px; align-items: center; justify-content: center; transition: opacity 120ms ease, border-color 120ms ease; }
   .tile::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1; box-shadow: inset 0 0 0 2px transparent; transition: box-shadow 120ms ease; }
+  .tile.buffering { border-color: var(--warning); }
+  .tile.buffering.ready { border-color: var(--success); }
   .tile.speaking::after { box-shadow: inset 0 0 0 2px var(--purple); }
   .tile.speaking { border-color: var(--purple); }
   .tile.lost { opacity: .55; }
@@ -59,10 +61,16 @@ const STYLE = `
   .tile.red .avatar { color: var(--red); }
   .name { font-size: 12px; font-weight: 700; color: var(--text); }
   .tile.has-video .name { position: absolute; left: 10px; bottom: 8px; padding: 2px 8px; border-radius: 10px; background: #08080cbf; font-weight: 500; }
-  .badge { position: absolute; top: 8px; left: 8px; z-index: 2; display: none; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--warning-bg); border: 1px solid var(--warning); color: var(--warning); }
+  .badges { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 2; display: flex; gap: 4px; pointer-events: none; }
+  .badge { display: none; place-items: center; width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; background: var(--warning-bg); border: 1px solid var(--warning); color: var(--warning); }
   .badge svg { width: 13px; height: 13px; }
   .tile.muted .badge.muted, .tile.lost .badge.lost { display: grid; }
-  .tile.lost .badge.muted { display: none; }
+  /* A dropped connection says more, so it wins. */
+  .pill { display: none; align-items: center; gap: 5px; height: 22px; box-sizing: border-box; padding: 0 9px 0 6px; border-radius: 11px; background: var(--warning-bg); border: 1px solid var(--warning); color: var(--warning); font-size: 11px; font-weight: 700; }
+  .pill svg { width: 13px; height: 13px; flex: none; }
+  .pill.ready { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+  .tile.buffering:not(.ready) .pill.buffering, .tile.buffering.ready .pill.ready { display: flex; }
+  .tile.lost .badge.muted, .tile.lost .pill { display: none; }
   .rail-status { display: none; margin: auto 0 0; align-items: center; gap: 7px; width: 100%; box-sizing: border-box; font-size: 11px; font-weight: 700; color: var(--warning); background: var(--warning-bg); border: 1px solid var(--warning); border-radius: 12px; padding: 6px 10px; }
   .rail-status svg { width: 14px; height: 14px; flex: none; }
   .column.has-status .rail-status { display: flex; }
@@ -237,7 +245,7 @@ export class SidebarView {
         tile = this.doc.createElement('div');
         tile.className = 'tile';
         tile.dataset.peerId = p.peerId;
-        tile.innerHTML = `<span class="badge muted" title="Muted">${ICONS.micOff}</span><span class="badge lost" title="Reconnecting">${ICONS.warn}</span><div class="placeholder"><span class="avatar" aria-hidden="true"></span></div><video autoplay muted playsinline disablepictureinpicture></video><span class="name"></span>`;
+        tile.innerHTML = `<div class="badges"><span class="pill buffering">${ICONS.hourglass}Buffering</span><span class="pill ready">${ICONS.ok}Ready</span><span class="badge muted" title="Muted">${ICONS.micOff}</span><span class="badge lost" title="Reconnecting">${ICONS.warn}</span></div><div class="placeholder"><span class="avatar" aria-hidden="true"></span></div><video autoplay muted playsinline disablepictureinpicture></video><span class="name"></span>`;
         if (p.self) tile.append(this.selfControls());
       }
       if (p.self) this.renderSelfControls(tile);
@@ -246,6 +254,8 @@ export class SidebarView {
       tile.classList.toggle('speaking', p.speaking && !p.lost);
       tile.classList.toggle('muted', p.muted);
       tile.classList.toggle('lost', p.lost);
+      tile.classList.toggle('buffering', p.buffering);
+      tile.classList.toggle('ready', p.ready);
       tile.classList.toggle('red', !p.self && hashHue(p.peerId));
       tile.querySelector('.avatar')!.textContent = initial(p.name);
       tile.querySelector('.name')!.textContent = p.name;

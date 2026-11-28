@@ -9,7 +9,7 @@ import { PORT_POPUP, type OffscreenToPopup, type PopupToOffscreen, type Snapshot
 import { participantsFrom, type Participant } from '../../lib/participants';
 import { cameraProblem, connectionLabel, serverState, updateNotice } from '../../lib/room-labels';
 import { BROWSER_NAME, HOST_GUIDE_URL } from '../../lib/constants';
-import { firstRun, type SetupInput } from '../../lib/setup-state';
+import { firstRun, lobbyFields, type SetupInput } from '../../lib/setup-state';
 import { ReconnectingPort } from '../../lib/port';
 import { ic, escapeHtml as esc } from '../../lib/ui/icons';
 import { ensureQuicksand } from '../../lib/ui/fonts';
@@ -61,8 +61,6 @@ function setTab(t: 'join' | 'create') {
   tab = t;
   $('tab-join').setAttribute('aria-selected', String(t === 'join'));
   $('tab-create').setAttribute('aria-selected', String(t === 'create'));
-  $('join-fields').hidden = t !== 'join';
-  $('create-helper').hidden = t !== 'create';
   $('readiness').setAttribute('aria-label', t === 'join' ? 'Ready to join' : 'Ready to host');
   render();
 }
@@ -111,7 +109,9 @@ function renderLobby(s: Snapshot) {
   // Before setup there is nowhere to join and nothing to be ready for: the lobby is
   // only the invitation. The three states live on the setup page, which owns them.
   for (const id of ['tabs', 'name-label', 'name', 'lobby-divider', 'readiness']) $(id).hidden = fresh;
-  if (fresh) { $('join-fields').hidden = true; $('create-helper').hidden = true; }
+  const fields = lobbyFields(fresh, tab);
+  $('join-fields').hidden = !fields.code;
+  $('create-helper').hidden = !fields.createHelper;
 
   // Notice and recovery
   let notice = ''; let recovery = '';
@@ -192,7 +192,7 @@ function peerRow(p: Participant, s: Snapshot): string {
   let stateText = '';
   if (!p.self) {
     stateText = reconnecting ? 'Reconnecting' : p.lost ? 'Connection lost' : p.media?.connectionState === 'connected' ? 'Connected' : 'Connecting…';
-    if (s.stalledBy?.peerId === p.peerId) stateText += ' · buffering';
+    if (p.buffering) stateText += p.ready ? ' · ready' : ' · buffering';
   }
   const cam = !p.self && p.media?.hasVideo ? `<span class="mini ok" title="Camera on" aria-label="Camera on">${ic('cam', 'sm')}</span>` : '';
   const muted = !p.self && p.micOn === false ? `<span class="mini warn" title="Muted" aria-label="Muted">${ic('micOff', 'sm')}</span>` : '';
@@ -214,7 +214,12 @@ function renderRoom(s: Snapshot) {
   let notice = ''; let actions = '';
   if (ungranted) actions += accessNotice(ungranted);
   if (!connected) notice += `<div class="notice warning" role="status"><strong>${ic('warn')} Reconnecting to your room…</strong><p>Your connection dropped. We’re trying again. Your friends stay where they are.</p></div>`;
-  if (s.stalledBy) notice += `<div class="notice warning" role="status"><strong>${ic('warn')} ${esc(s.stalledBy.name === 'you' ? 'You are' : s.stalledBy.name + ' is')} buffering</strong><p>The show is paused. Press play when everyone is ready.</p></div>`;
+  if (s.stalledBy) {
+    const who = s.stalledBy.name === 'you' ? 'You are' : s.stalledBy.name + ' is';
+    notice += s.stalledBy.ready
+      ? `<div class="notice success" role="status"><strong>${ic('ok')} ${esc(who)} ready</strong><p>The show is still paused. Press play to carry on.</p></div>`
+      : `<div class="notice warning" role="status"><strong>${ic('warn')} ${esc(who)} buffering</strong><p>The show is paused. Press play when everyone is ready.</p></div>`;
+  }
   const here = activePlayerUrl ? parseContentId(activePlayerUrl) : null;
   const goto = room.contentId ? trustedWatchUrl(room.contentId, room.watchUrl) : null;
   if (room.contentId && goto && here !== room.contentId) {

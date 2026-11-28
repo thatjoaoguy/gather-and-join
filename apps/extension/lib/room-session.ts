@@ -378,8 +378,22 @@ export class RoomSession {
     this.client.send({ type: 'playback', paused, positionMs, clientTime: this.now() });
   }
 
-  stalled() {
-    this.client.send({ type: 'playback', paused: true, positionMs: this.snapshot.room?.positionMs ?? 0, clientTime: this.now(), reason: 'stall' });
+  /** The player's own position: the room's can be a heartbeat old, and pausing there rewinds everyone. */
+  stalled(positionMs: number) {
+    this.client.send({ type: 'playback', paused: true, positionMs, clientTime: this.now(), reason: 'stall' });
+  }
+
+  /** The server does not echo it, so ours is set here. */
+  bufferReady(ready: boolean) {
+    this.client.send({ type: 'bufferReady', ready });
+    this.markReady(this.snapshot.yourPeerId, ready);
+  }
+
+  private markReady(peerId: PeerId | null, ready: boolean) {
+    const s = this.snapshot;
+    if (!peerId || s.stalledBy?.peerId !== peerId || s.stalledBy.ready === ready) return;
+    s.stalledBy = { ...s.stalledBy, ready };
+    this.broadcast();
   }
 
   // ---- media ---------------------------------------------------------------------
@@ -680,7 +694,7 @@ export class RoomSession {
         return;
       case 'playback': {
         if (s.room) s.room = { ...s.room, paused: msg.paused, positionMs: msg.positionMs, updatedAt: msg.serverTime };
-        if (msg.reason === 'stall') s.stalledBy = { peerId: msg.originPeerId, name: msg.originPeerId === s.yourPeerId ? 'you' : this.peerName(msg.originPeerId) };
+        if (msg.reason === 'stall') s.stalledBy = { peerId: msg.originPeerId, name: msg.originPeerId === s.yourPeerId ? 'you' : this.peerName(msg.originPeerId), ready: false };
         else if (!msg.paused) s.stalledBy = null;
         this.events.playback({ paused: msg.paused, positionMs: msg.positionMs, serverTime: msg.serverTime, originPeerId: msg.originPeerId, offsetMs: this.client.offsetMs });
         this.broadcast();
@@ -690,6 +704,9 @@ export class RoomSession {
         if (s.room) s.room = { ...s.room, contentId: msg.contentId, watchUrl: msg.watchUrl, positionMs: 0, paused: true, updatedAt: this.now() + this.client.offsetMs, episodeStart: null };
         this.events.navigate({ contentId: msg.contentId, watchUrl: msg.watchUrl, originPeerId: msg.originPeerId });
         this.broadcast();
+        return;
+      case 'bufferReady':
+        this.markReady(msg.from, msg.ready);
         return;
       case 'media':
         this.peerFlags.set(msg.from, { micOn: msg.micOn, camOn: msg.camOn });

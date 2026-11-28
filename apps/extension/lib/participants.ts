@@ -21,6 +21,8 @@ export type Participant = {
   camOn: boolean | null;
   /** The mesh connection to this peer dropped (never true for self). */
   lost: boolean;
+  buffering: boolean;
+  ready: boolean;
 };
 
 export type ParticipantsOptions = {
@@ -31,11 +33,13 @@ export type ParticipantsOptions = {
 };
 
 export function participantsFrom(
-  s: Pick<Snapshot, 'peers' | 'yourPeerId' | 'room' | 'peerMedia'> & Partial<Pick<Snapshot, 'speaking' | 'micOn' | 'camOn'>>,
+  s: Pick<Snapshot, 'peers' | 'yourPeerId' | 'room' | 'peerMedia'> & Partial<Pick<Snapshot, 'speaking' | 'micOn' | 'camOn' | 'stalledBy'>>,
   { selfFirst = false, selfName = 'You' }: ParticipantsOptions = {},
 ): Participant[] {
   const me = s.yourPeerId;
   const leaderId = s.room?.leaderId ?? null;
+  const stalled = s.stalledBy?.peerId ?? null;
+  const ready = s.stalledBy?.ready ?? false;
   const out: Participant[] = [];
   for (const p of s.peers) {
     if (isObserver(p.peerId)) continue;
@@ -47,11 +51,13 @@ export function participantsFrom(
       micOn: self ? s.micOn ?? null : media?.micOn ?? null,
       camOn: self ? s.camOn ?? null : media?.camOn ?? null,
       lost: !self && !!media && (media.connectionState === 'disconnected' || media.connectionState === 'failed'),
+      buffering: p.peerId === stalled,
+      ready: p.peerId === stalled && ready,
     });
   }
   if (me && !out.some((p) => p.self)) {
     // Between "join sent" and the server's room frame we are not in the peer list yet.
-    out.unshift({ peerId: me, name: selfName, self: true, leader: leaderId === me, media: null, speaking: s.speaking ?? false, micOn: s.micOn ?? null, camOn: s.camOn ?? null, lost: false });
+    out.unshift({ peerId: me, name: selfName, self: true, leader: leaderId === me, media: null, speaking: s.speaking ?? false, micOn: s.micOn ?? null, camOn: s.camOn ?? null, lost: false, buffering: me === stalled, ready: me === stalled && ready });
   }
   if (selfFirst) out.sort((a, b) => Number(b.self) - Number(a.self));
   return out;

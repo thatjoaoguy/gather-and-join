@@ -37,6 +37,12 @@ export const AD_POD_SECONDS = 90;
  * the video fixtures exist.
  */
 export const EXTRAS_SECONDS = 60;
+/**
+ * `?copy=starved` stops sending at this second (program time; `shift` moves it) and holds
+ * the connection, so the player buffers for real. Unlike a real service's Media Source,
+ * its `readyState` is honest: see lib/providers/hbomax.ts.
+ */
+export const STARVE_AT_SECONDS = 13;
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css',
@@ -68,8 +74,22 @@ function loadMedia(): { main: Media; ad: Media } {
   return { main: mainMedia, ad: adMedia! };
 }
 
-function serveMedia(req: http.IncomingMessage, res: http.ServerResponse, media: Media) {
+/** 44-byte header, 48 kHz mono 16-bit (see wav.ts). */
+const wavOffset = (seconds: number) => 44 + Math.floor(seconds * 48_000) * 2;
+
+const held = new Map<() => void, string>();
+/** Per page: a Disney-shaped seek after a release reloads its media and must not starve again. */
+const released = new Set<string>();
+
+function serveMedia(req: http.IncomingMessage, res: http.ServerResponse, media: Media, holdFrom = Infinity, session = '') {
   const total = media.body.length;
+  const send = (start: number, end: number) => {
+    if (end < holdFrom) return res.end(media.body.subarray(start, end + 1));
+    res.write(media.body.subarray(start, Math.max(start, holdFrom)));
+    const rest = () => { held.delete(rest); res.end(media.body.subarray(Math.max(start, holdFrom), end + 1)); };
+    held.set(rest, session);
+    res.on('close', () => held.delete(rest));
+  };
   const range = req.headers.range;
   const headers: Record<string, string | number> = {
     'Content-Type': media.mime, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store',
@@ -82,10 +102,10 @@ function serveMedia(req: http.IncomingMessage, res: http.ServerResponse, media: 
     if (start >= total) { res.writeHead(416, { 'Content-Range': `bytes */${total}` }); return res.end(); }
     end = Math.min(end, total - 1);
     res.writeHead(206, { ...headers, 'Content-Range': `bytes ${start}-${end}/${total}`, 'Content-Length': end - start + 1 });
-    return res.end(media.body.subarray(start, end + 1));
+    return send(start, end);
   }
   res.writeHead(200, { ...headers, 'Content-Length': total });
-  res.end(media.body);
+  send(0, total - 1);
 }
 
 function serveFile(res: http.ServerResponse, file: string) {
@@ -104,6 +124,12 @@ export function startPlayerServer(port = PLAYER_PORT): Promise<http.Server> {
     if (p === '/media/adpod') return serveMedia(req, res, adPodMedia ??= { body: quietTrack(AD_POD_SECONDS), mime: 'audio/wav' });
     if (p === '/media/plain') return serveMedia(req, res, loadCopies().plain);
     if (p === '/media/extras') return serveMedia(req, res, loadCopies().extras);
+    if (p === '/media/starved/release') { const n = held.size; for (const [rest, s] of [...held]) { released.add(s); rest(); } res.writeHead(200); return res.end(String(n)); }
+    if (p === '/media/starved') {
+      const session = url.searchParams.get('session') ?? '';
+      const cut = session && released.has(session) ? Infinity : wavOffset(STARVE_AT_SECONDS + Number(url.searchParams.get('shift') ?? 0));
+      return serveMedia(req, res, loadCopies().plain, cut, session);
+    }
     if (p.startsWith('/watch/urn:hbo:')) return serveFile(res, path.join(PLAYER_DIR, 'index.html'));
     // Drive-shaped variant: no <video> in the top document, playback in a
     // cross-origin iframe driven by the YouTube widget postMessage protocol.

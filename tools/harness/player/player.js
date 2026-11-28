@@ -32,9 +32,10 @@
   const urnFromPath = () => (decodeURIComponent(location.pathname).match(/urn:hbo:episode:([A-Za-z0-9]+)/) || [])[1] || EPISODES[0];
   const nextUrn = () => EPISODES[(EPISODES.indexOf(urnFromPath()) + 1) % EPISODES.length];
   const video = () => playerEl.querySelector('video');
-  // `?copy=plain|extras` picks a copy of the episode; the query is dropped by an
+  // `?copy=plain|extras|starved` picks a copy of the episode; the query is dropped by an
   // episode change, since the next episode need not come with extras.
-  const mainSrc = () => { const c = new URLSearchParams(location.search).get('copy'); return c ? `/media/${c}` : '/media/main'; };
+  const session = Math.random().toString(36).slice(2);
+  const mainSrc = () => { const c = new URLSearchParams(location.search).get('copy'); return c === 'starved' ? `/media/starved?session=${session}` : c ? `/media/${c}` : '/media/main'; };
 
   function createVideo(src, { currentTime = 0, autoplay = false, loop = true } = {}) {
     const old = video();
@@ -141,6 +142,21 @@
     const v = video();
     if (v && v.duration && !v.paused && v.duration - v.currentTime < 30) startCountdown();
   }, 1000);
+
+  // The starved copy resumes itself when data comes back, as real players do.
+  if (new URLSearchParams(location.search).get('copy') === 'starved') {
+    let wasPlaying = false;
+    window.__selfResumes = [];
+    document.addEventListener('waiting', (e) => { if (e.target === video()) wasPlaying = !e.target.paused; }, true);
+    document.addEventListener('playing', () => { wasPlaying = false; }, true); // recovered on its own: nothing to pick up
+    document.addEventListener('canplay', (e) => {
+      const v = e.target;
+      if (v !== video() || !wasPlaying || !v.paused) return;
+      wasPlaying = false;
+      window.__selfResumes.push(Date.now());
+      v.play().catch(() => {});
+    }, true);
+  }
 
   // Status readout (for humans looking at the page).
   setInterval(() => {
