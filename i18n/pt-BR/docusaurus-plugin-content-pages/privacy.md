@@ -38,13 +38,18 @@ Quando você cria uma sala ou entra em uma, a extensão envia ao servidor:
 - o **nome de exibição** que você digitou,
 - o **código da sala**,
 - um **identificador do episódio ou do arquivo** que a sala está assistindo
-  (obtido do endereço da página, nunca o próprio vídeo),
+  (obtido do endereço da página, nunca o próprio vídeo), e esse **endereço da
+  página**,
 - a duração da **sua cópia** dele, já que algumas regiões recebem uma cópia mais
   longa, com extras no início, e, quando as cópias são diferentes, **quanto da
   mais longa deve ser pulado**, conforme definido por alguém da sala,
-- eventos de **play, pausa e posição**, e avisos de travamento,
+- eventos de **play, pausa e posição**, avisos de travamento e, quando um player
+  travado se recupera, um aviso de que ele está **pronto**,
+- se o seu **microfone e a sua câmera estão ligados**, para que os outros vejam,
 - as mensagens de configuração de conexão necessárias para alcançar os outros
-  participantes.
+  participantes, que incluem o seu **endereço de rede**.
+
+Como qualquer servidor, ele também vê o endereço a partir do qual você se conecta.
 
 O servidor mantém esses dados apenas na memória, somente enquanto a sala
 existir, e não grava nada em disco. Ele imprime um log de eventos, uma linha por

@@ -27,7 +27,10 @@ frames only) is worth more than usage numbers. What there is instead:
   document, and every player page via the offscreen document) keeps a ring buffer
   of its last 400 events in `chrome.storage.session`: room frames in and out,
   socket status, peer connection state changes, mic/camera outcomes, video
-  (re)attaches, every hard seek and rate nudge, and a drift summary every 30 s
+  (re)attaches, every hard seek and rate nudge, stalls with where the player stopped,
+  a play that reaches a paused room and whether a user gesture came with it, the
+  plays and seeks a stalled player's own recovery made that were held back, when it
+  is ready again, and a drift summary every 30 s
   while playing (`drift 30s: n=118 p50=32ms max=410ms seeks=0 nudges=1`). The
   buffers survive Chrome restarting the worker or the offscreen document (a
   `--- restarted ---` marker separates incarnations) and are cleared when Chrome

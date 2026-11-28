@@ -26,8 +26,10 @@ sharing your screen.
 - **Anyone can play, pause, or seek.** Everyone follows.
 - **Only the room leader changes episodes.** The leader is whoever created the
   room; if they leave, the person who has been in the room longest takes over.
-- **If someone buffers, the room pauses** and the popup says who. Resume is a
-  manual press by anyone, on purpose: automatic resume thrashes.
+- **If someone buffers, the room pauses** where their picture stopped, and a
+  yellow **Buffering** pill on their tile says who. It turns to a green
+  **Ready** once their player has caught up. Resume is a manual press by anyone,
+  on purpose: automatic resume thrashes.
 - **The participant rail** sits beside the player, also in fullscreen. Cameras
   that are on show live video; otherwise you see initials.
 - **Mic** is on when you join. **Camera** is off until you turn it on.

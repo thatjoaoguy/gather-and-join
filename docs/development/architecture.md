@@ -135,10 +135,10 @@ media-track stand-ins):
 | `sidebar/settings-panel.ts` + `settings-model.ts` | the gear's room settings popover and what it shows | the sidebar's actions |
 | `room-labels.ts` | how the connection, server and camera state are worded, shared by the popup and the settings panel | — |
 | `copy-tracker.ts` | the length of this page's copy, held across element swaps and ads, however long | a report callback |
-| `participants.ts` | the one derivation of "who is in the room", used by the popup and the sidebar | — |
+| `participants.ts` | the one derivation of "who is in the room", used by the popup and the sidebar, including who stalled the room and whether they have caught up | — |
 | `badge.ts` | the toolbar dot: which state the snapshot means, and the circle drawn onto the icon for it | a `chrome.action` slice, a canvas |
 | `player-access.ts` | which services the user granted, the player script registered for exactly those, and the pages open when a grant or revocation lands | `chrome.permissions`, `chrome.scripting`, tab and frame lookups |
-| `setup-state.ts` | the one derivation of "what is still to set up" — microphone, camera, address — shared by the popup's first run and the setup page | — |
+| `setup-state.ts` | the one derivation of "what is still to set up" — microphone, camera, address — shared by the popup's first run and the setup page, and which of the lobby's fields show while it lasts | — |
 | `sync-engine.ts`, `video-binding.ts`, `ducking.ts`, `up-next.ts` | per-page playback behaviour | a video locator, callbacks |
 
 ## Streaming providers
