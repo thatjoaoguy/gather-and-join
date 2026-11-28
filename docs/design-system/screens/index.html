@@ -14,6 +14,7 @@
   <symbol id="i-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m7 12 3 3 7-7"/></symbol>
   <symbol id="i-err" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v8M12 17v.2"/></symbol>
   <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></symbol>
+  <symbol id="i-hourglass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10M7 21h10M8 3v3.5a4 4 0 0 0 8 0V3M8 21v-3.5a4 4 0 0 1 8 0V21"/></symbol>
   <symbol id="i-mic-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 9.5V6a3 3 0 0 0-6 0v1M9 11v3a3 3 0 0 0 5 2.2M5 11a7 7 0 0 0 10.6 6M19 11a7 7 0 0 1-.7 3M12 18v3M9 21h6M4 4l16 16"/></symbol>
   <symbol id="i-cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="13" height="10" rx="2.5"/><path d="m16 10 5-2.5v9L16 14"/></symbol>
   <symbol id="i-cam-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7h5.5A2.5 2.5 0 0 1 16 9.5v1l5-2.5v9l-2.5-1.3M16 15.5a2.5 2.5 0 0 1-2.5 1.5H5.5A2.5 2.5 0 0 1 3 14.5v-5A2.5 2.5 0 0 1 5.5 7M4 4l16 16"/></symbol>
@@ -533,6 +534,19 @@
 </aside>
 </div></div>
 <p class="drives">Drives: a peer whose <code>connectionState</code> is <code>disconnected</code> or <code>failed</code> dims and gets a warning badge; the last frame stays so the tile does not jump. It clears itself when ICE restarts, and the tile is removed only on <code>peerLeft</code>.</p>
+</div>
+<div>
+<div class="surface-label"><span>HUD / Someone is buffering</span><span>stalledBy</span></div>
+<div class="hud-frame"><div class="player">
+<div class="film"><span class="eyebrow">Streaming player · paused</span><div class="subtitle">“Glad we did this.”</div></div>
+<aside class="rail current" aria-label="Participants">
+<button class="gear" type="button" aria-label="Room settings" aria-expanded="false"><svg aria-hidden="true"><use href="#i-settings"/></svg></button>
+<div class="tile video self mirrored"><span class="name">You</span></div>
+<div class="tile video buffering"><span class="badges"><span class="pill-buffering"><svg aria-hidden="true"><use href="#i-hourglass"/></svg>Buffering</span><span class="badge-muted inline" title="Muted"><svg aria-hidden="true"><use href="#i-mic-off"/></svg><span class="sr">Muted</span></span></span><span class="name">Alex</span></div>
+<div class="tile"><div class="peerlabel"><div class="avatar" aria-hidden="true">S</div><strong>Sam</strong></div></div>
+</aside>
+</div></div>
+<p class="drives">Drives: <code>stalledBy = { peerId, name }</code>, as <code>participants[].buffering</code>. A "Buffering" pill on the tile of whoever's player ran dry, everyone's sidebar alike, theirs too; the tile edge takes the warning tone. It says why the show stopped without a notice over it, and stays until a play frame clears <code>stalledBy</code>: resume is manual, on the streaming player. It shares the corner with the muted badge; a dropped connection hides both, since it says more. No motion.</p>
 </div>
 </div>
 

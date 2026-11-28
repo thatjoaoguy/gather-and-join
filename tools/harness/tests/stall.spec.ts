@@ -34,6 +34,9 @@ const IN_SYNC_MS: Partial<Record<PlayerShape, number>> = { drive: 400 };
  * Disney shape the program clock is the page's own (`__dp.exactMs`), since a facade that
  * is wrong the same way on every peer would agree with itself.
  */
+/** The buffering pill on `whose` tile, in `viewer`'s sidebar (a shadow root, which locators pierce). */
+const pill = (viewer: Peer, whose: Peer) => viewer.player().locator(`#gj-tiles .tile[data-peer-id="${whose.peerId}"] .pill.buffering`);
+
 async function where(p: Peer, shape: PlayerShape): Promise<{ ms: number | null; paused: boolean | null }> {
   if (shape === 'disney') {
     return p.player().evaluate(() => ({ ms: (window as any).__dp.exactMs() as number, paused: (document.getElementById('main') as HTMLVideoElement).paused }));
@@ -75,6 +78,12 @@ test.describe('buffering stall', () => {
       const resumed = party.observer.frames.slice(stallAt + 1).filter((f) => f.msg.type === 'playback' && !f.msg.paused);
       expect(resumed).toHaveLength(0);
       expect(h.paused && g.paused).toBe(true);
+
+      // Both sidebars say who stopped the show: on the guest's tile, and only there.
+      await expect(pill(host, guest)).toBeVisible();
+      await expect(pill(guest, guest)).toBeVisible();
+      await expect(pill(host, host)).toBeHidden();
+      await expect(pill(guest, host)).toBeHidden();
     } catch (e) { await dumpParty(party, `stall failure (${shape})`); throw e; } finally { await party.close(); }
   });
 
@@ -113,6 +122,13 @@ test.describe('buffering stall', () => {
       expect(resumed).toHaveLength(0);
       expect(h.paused && g.paused).toBe(true);
       expect(Math.abs(g.positionMs! - stall.msg.positionMs)).toBeLessThan(SAME_SPOT_MS);
+
+      // Data is back; a person resumes, and the pill leaves both sidebars with the pause.
+      await expect(pill(host, guest)).toBeVisible();
+      await pressPlay(host);
+      await waitForCondition(async () => (await state(guest)).paused === false, { label: 'guest resumed with the room' });
+      await expect(pill(host, guest)).toBeHidden();
+      await expect(pill(guest, guest)).toBeHidden();
     } catch (e) { await dumpParty(party, 'self-resume failure'); throw e; } finally { await party.close(); }
   });
 });

@@ -192,7 +192,7 @@ function peerRow(p: Participant, s: Snapshot): string {
   let stateText = '';
   if (!p.self) {
     stateText = reconnecting ? 'Reconnecting' : p.lost ? 'Connection lost' : p.media?.connectionState === 'connected' ? 'Connected' : 'Connecting…';
-    if (s.stalledBy?.peerId === p.peerId) stateText += ' · buffering';
+    if (p.buffering) stateText += ' · buffering';
   }
   const cam = !p.self && p.media?.hasVideo ? `<span class="mini ok" title="Camera on" aria-label="Camera on">${ic('cam', 'sm')}</span>` : '';
   const muted = !p.self && p.micOn === false ? `<span class="mini warn" title="Muted" aria-label="Muted">${ic('micOff', 'sm')}</span>` : '';
