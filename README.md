@@ -92,10 +92,15 @@ What it does and does not do:
   microphones and cameras, exchanged directly between them.
 - It does not circumvent DRM, region restrictions, concurrent-stream limits,
   or advertising. Ads play as served.
-- The signaling server carries display names, room codes, an episode identifier,
-  the length of each viewer's copy of it, where the episode starts in a longer
-  copy, playback position, and, when a viewer's player has paused everyone to
-  buffer, whether it has caught up — nothing else — and stores nothing on disk.
+- The signaling server carries display names and room codes; the episode's
+  identifier and page address; the length of each viewer's copy of it and where
+  the episode starts in a longer copy; playback position, and, when a viewer's
+  player has paused everyone to buffer, whether it has caught up; whether each
+  viewer's microphone and camera are on; and the messages that set up the call
+  between viewers (WebRTC offers, answers and network candidates, which include
+  each viewer's network addresses). Like any server, it also sees the address
+  each viewer connects from. Nothing else passes through it, and it stores
+  nothing on disk.
 
 Use of a streaming service through this extension remains subject to that
 service's terms; each viewer is responsible for their own account. The software
