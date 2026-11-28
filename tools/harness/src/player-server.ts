@@ -44,6 +44,12 @@ export const EXTRAS_SECONDS = 60;
  * tell apart from a slow network. Past the first heartbeats, and not on one.
  * In the program's seconds: a page whose media runs ahead of the program (the
  * Disney shape's starts 20s in) asks for `/media/starved?shift=20`.
+ *
+ * What it does not reproduce: a real service feeds its element through Media
+ * Source, whose `readyState` does not follow what is loaded (lib/providers/hbomax.ts
+ * has the measurements). Here the element downloads a plain file, so `readyState`
+ * is honest. Test anything that reads `readyState` for readiness against those
+ * measured values, not against this.
  */
 export const STARVE_AT_SECONDS = 13;
 
