@@ -81,6 +81,7 @@ export default defineContentScript({
       },
       cfg.sabotage,
       (line) => log('sync', line),
+      () => (navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation?.isActive ?? null,
     );
     const copy = new CopyTracker((cid, durationMs) => {
       log('page', 'copy of', cid, 'runs', Math.round(durationMs), 'ms');

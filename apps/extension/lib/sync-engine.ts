@@ -51,6 +51,12 @@ export class SyncEngine {
     private readonly sabotage: Sabotage,
     /** Diagnostics sink: one human-readable line per notable decision, plus a periodic drift summary. */
     private readonly diag: (line: string) => void = () => {},
+    /**
+     * Whether the page has a fresh user gesture (`navigator.userActivation.isActive`), or
+     * null where the browser cannot say. Diagnostics only, for now: it tells a person's
+     * resume from a player resuming itself after a rebuffer, which look the same otherwise.
+     */
+    private readonly userActive: () => boolean | null = () => null,
   ) {}
 
   serverNow() { return Date.now() + this.offsetMs; }
@@ -103,6 +109,10 @@ export class SyncEngine {
   onLocalPlay(v: HTMLVideoElement) {
     if (this.suppressed('play')) return;
     this.cancelStall();
+    if (this.room?.paused) {
+      const active = this.userActive();
+      this.diag(`play while the room is paused (user activation: ${active === null ? 'unknown' : active ? 'yes' : 'no'}, readyState ${v.readyState})`);
+    }
     this.announce({ paused: false, positionMs: this.outboundPositionMs(v) }, 'play');
   }
   onLocalPause(v: HTMLVideoElement) {

@@ -48,6 +48,25 @@ describe('SyncEngine', () => {
     }
   });
 
+  it('says whether a play into a paused room came with a user gesture', () => {
+    const v = fakeVideo();
+    const lines: string[] = [];
+    let active: boolean | null = false;
+    const e = new SyncEngine(bindingFor(v), () => {}, null, (l) => lines.push(l), () => active);
+    e.applyRemote({ paused: true, positionMs: 0, updatedAt: Date.now() }, 0);
+    vi.advanceTimersByTime(600); // past the echo window of the applied pause
+    e.onLocalPlay(v as never);
+    // That play was announced and resumed the room; pause it again for the second.
+    e.applyRemote({ paused: true, positionMs: 0, updatedAt: Date.now() }, 0);
+    vi.advanceTimersByTime(600);
+    active = true;
+    e.onLocalPlay(v as never);
+    expect(lines.filter((l) => l.startsWith('play while'))).toEqual([
+      'play while the room is paused (user activation: no, readyState 4)',
+      'play while the room is paused (user activation: yes, readyState 4)',
+    ]);
+  });
+
   it('adopts a local seek optimistically so the drift tick does not revert it', () => {
     const v = fakeVideo();
     v.paused = false;
