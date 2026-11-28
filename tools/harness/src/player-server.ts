@@ -37,6 +37,15 @@ export const AD_POD_SECONDS = 90;
  * the video fixtures exist.
  */
 export const EXTRAS_SECONDS = 60;
+/**
+ * `?copy=starved`: the plain copy, but the server stops sending at this second and
+ * holds the connection open, so the player runs dry there and buffers for real —
+ * `waiting`, `readyState` down — rather than through anything the extension could
+ * tell apart from a slow network. Past the first heartbeats, and not on one.
+ * In the program's seconds: a page whose media runs ahead of the program (the
+ * Disney shape's starts 20s in) asks for `/media/starved?shift=20`.
+ */
+export const STARVE_AT_SECONDS = 13;
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css',
@@ -68,8 +77,16 @@ function loadMedia(): { main: Media; ad: Media } {
   return { main: mainMedia, ad: adMedia! };
 }
 
-function serveMedia(req: http.IncomingMessage, res: http.ServerResponse, media: Media) {
+/** A WAV's byte offset for a time: 44-byte header, 48 kHz mono 16-bit (see wav.ts). */
+const wavOffset = (seconds: number) => 44 + Math.floor(seconds * 48_000) * 2;
+
+/** `holdFrom`: send nothing at or past this byte; the response stays open until the player gives up on it. */
+function serveMedia(req: http.IncomingMessage, res: http.ServerResponse, media: Media, holdFrom = Infinity) {
   const total = media.body.length;
+  const send = (start: number, end: number) => {
+    if (end < holdFrom) return res.end(media.body.subarray(start, end + 1));
+    res.write(media.body.subarray(start, Math.max(start, holdFrom)));
+  };
   const range = req.headers.range;
   const headers: Record<string, string | number> = {
     'Content-Type': media.mime, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store',
@@ -82,10 +99,10 @@ function serveMedia(req: http.IncomingMessage, res: http.ServerResponse, media: 
     if (start >= total) { res.writeHead(416, { 'Content-Range': `bytes */${total}` }); return res.end(); }
     end = Math.min(end, total - 1);
     res.writeHead(206, { ...headers, 'Content-Range': `bytes ${start}-${end}/${total}`, 'Content-Length': end - start + 1 });
-    return res.end(media.body.subarray(start, end + 1));
+    return send(start, end);
   }
   res.writeHead(200, { ...headers, 'Content-Length': total });
-  res.end(media.body);
+  send(0, total - 1);
 }
 
 function serveFile(res: http.ServerResponse, file: string) {
@@ -104,6 +121,7 @@ export function startPlayerServer(port = PLAYER_PORT): Promise<http.Server> {
     if (p === '/media/adpod') return serveMedia(req, res, adPodMedia ??= { body: quietTrack(AD_POD_SECONDS), mime: 'audio/wav' });
     if (p === '/media/plain') return serveMedia(req, res, loadCopies().plain);
     if (p === '/media/extras') return serveMedia(req, res, loadCopies().extras);
+    if (p === '/media/starved') return serveMedia(req, res, loadCopies().plain, wavOffset(STARVE_AT_SECONDS + Number(url.searchParams.get('shift') ?? 0)));
     if (p.startsWith('/watch/urn:hbo:')) return serveFile(res, path.join(PLAYER_DIR, 'index.html'));
     // Drive-shaped variant: no <video> in the top document, playback in a
     // cross-origin iframe driven by the YouTube widget postMessage protocol.

@@ -12,7 +12,7 @@ const bindingFor = (v: FV | null) => ({ get: () => v as unknown as HTMLVideoElem
 
 describe('SyncEngine', () => {
   beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(1_000_000); });
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
   it('applies a remote play with a seek only at ≥1500ms drift, and tags the echoes', () => {
     const v = fakeVideo();
@@ -27,6 +27,25 @@ describe('SyncEngine', () => {
     expect(sent).toHaveLength(0);
     e.onLocalPause(v as never);
     expect(sent).toEqual([{ paused: true, positionMs: 10_000 }]);
+  });
+
+  it('pauses the room where this player stopped, not at the room\'s last anchor; the stall-position sabotage reports the anchor', () => {
+    vi.stubGlobal('HTMLMediaElement', { HAVE_FUTURE_DATA: 3 }); // no DOM under vitest
+    for (const sabotage of [null, 'stall-position'] as const) {
+      const v = fakeVideo();
+      const sent: Array<{ positionMs: number; stalled?: boolean }> = [];
+      const e = new SyncEngine(bindingFor(v), (o) => sent.push(o), sabotage);
+      // The last frame anchored the room at 10s; 3.2s of playback later the buffer runs dry.
+      e.applyRemote({ paused: false, positionMs: 10_000, updatedAt: Date.now() }, 0);
+      vi.advanceTimersByTime(3200);
+      v.currentTime = 13.2;
+      v.readyState = 2; // HAVE_CURRENT_DATA
+      e.onLocalWaiting(v as never);
+      vi.advanceTimersByTime(749);
+      expect(sent).toHaveLength(0); // a seek's brief `waiting` must not pause anyone
+      vi.advanceTimersByTime(1);
+      expect(sent).toEqual([{ paused: true, positionMs: sabotage ? 10_000 : 13_200, stalled: true }]);
+    }
   });
 
   it('adopts a local seek optimistically so the drift tick does not revert it', () => {

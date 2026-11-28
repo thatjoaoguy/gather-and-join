@@ -38,7 +38,7 @@
     ? location.origin.replace('localhost', '127.0.0.1')
     : location.origin.replace('127.0.0.1', 'localhost');
   const frame = document.getElementById('embed');
-  frame.src = embedOrigin + '/ytembed';
+  frame.src = embedOrigin + '/ytembed' + location.search; // `?copy=` is the embed's to honour
 
   // The page's own controls speak the same widget protocol the extension uses.
   const cmd = (func, args = []) =>

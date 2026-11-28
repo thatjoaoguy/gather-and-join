@@ -88,7 +88,8 @@ export type Snapshot = {
 export type PlayerToOffscreen =
   | { type: 'hello'; contentId: string | null; url: string }
   | { type: 'playback'; paused: boolean; positionMs: number }
-  | { type: 'stalled' }
+  /** Where this player stopped, on the room's timeline: the room pauses everyone there. */
+  | { type: 'stalled'; positionMs: number }
   | { type: 'navigateRequest'; contentId: string; url: string }
   /** The length of this page's copy of `contentId`, once the player knows it. */
   | { type: 'duration'; contentId: string; durationMs: number }

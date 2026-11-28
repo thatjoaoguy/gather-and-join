@@ -378,8 +378,13 @@ export class RoomSession {
     this.client.send({ type: 'playback', paused, positionMs, clientTime: this.now() });
   }
 
-  stalled() {
-    this.client.send({ type: 'playback', paused: true, positionMs: this.snapshot.room?.positionMs ?? 0, clientTime: this.now(), reason: 'stall' });
+  /**
+   * The player's own position, never the room's: the room's is where the last frame
+   * left it, up to a heartbeat (5s) old, and pausing everyone there rewinds the room
+   * and throws away the buffer the stalled player was waiting on.
+   */
+  stalled(positionMs: number) {
+    this.client.send({ type: 'playback', paused: true, positionMs, clientTime: this.now(), reason: 'stall' });
   }
 
   // ---- media ---------------------------------------------------------------------

@@ -24,11 +24,15 @@ const MATRIX: Record<string, string[]> = {
   // Without tagging, the follower's own corrective seeks are rebroadcast and move the room, so
   // every test that expects the follower to converge onto a fixed room position also fails.
   // On the Disney shape the burst of the follower's applied seek reaches the room as pauses.
-  'echo-suppress': ['echo suppression', 'large drift', 'small drift', 'quality switch', 'disney-shaped seek'],
+  // On the Drive shape a stall's pause reaches the embed a message later than the seek back to the stall
+  // position, so untagged, that seek goes out as a play from a player that still reads as playing.
+  'echo-suppress': ['echo suppression', 'large drift', 'small drift', 'quality switch', 'disney-shaped seek', 'buffering stall (drive): the room pauses'],
   // Without the skip, a copy with extras plays them on the room's timeline: a whole extras' length off the others.
   'episode-start': ['episode start'],
   // Without holding the copy's length, an ad pod past a minute is reported to the room as the copy.
   'ad-pod': ['ad pod'],
+  // Reporting the room's last anchor as the stall position rewinds everyone to the last heartbeat.
+  'stall-position': ['the room pauses where the stalled player stopped'],
 };
 
 /**
@@ -45,7 +49,13 @@ const SKIP_UNDER_SABOTAGE = ['sync accuracy', 'late join', 'ducking', 'perfect n
  * race inside Chrome: the test passes about one run in three under the flag. The offscreen
  * mechanism is demonstrated deterministically by the two tests that remain in its row.
  */
-const SKIP_UNDER_FLAG: Record<string, string[]> = { offscreen: ['service worker termination'] };
+const SKIP_UNDER_FLAG: Record<string, string[]> = {
+  offscreen: ['service worker termination'],
+  // The drift flag turns every correction past the dead zone into a hard seek, so a starving guest
+  // 250ms behind seeks past the end of its data and stalls there instead: a stall from a seek, which
+  // these do not guard. Small drift is the row's demonstration.
+  drift: ['buffering stall'],
+};
 
 type Result = { title: string; status: string };
 

@@ -32,7 +32,7 @@
   const urnFromPath = () => (decodeURIComponent(location.pathname).match(/urn:hbo:episode:([A-Za-z0-9]+)/) || [])[1] || EPISODES[0];
   const nextUrn = () => EPISODES[(EPISODES.indexOf(urnFromPath()) + 1) % EPISODES.length];
   const video = () => playerEl.querySelector('video');
-  // `?copy=plain|extras` picks a copy of the episode; the query is dropped by an
+  // `?copy=plain|extras|starved` picks a copy of the episode; the query is dropped by an
   // episode change, since the next episode need not come with extras.
   const mainSrc = () => { const c = new URLSearchParams(location.search).get('copy'); return c ? `/media/${c}` : '/media/main'; };
 

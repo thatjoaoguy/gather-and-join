@@ -5,7 +5,7 @@
 import { test } from '@playwright/test';
 import { generateRoomCode, isValidRoomCode } from '@gj/shared';
 import { Observer } from './observer.ts';
-import { launchPeer, openPlayer, closePeers, waitForCondition, EPISODE, SERVER_URL, type Peer, type Sabotage, type PlayerShape } from './peers.ts';
+import { launchPeer, openPlayer, closePeers, waitForCondition, EPISODE, SERVER_URL, type Peer, type Sabotage, type PlayerShape, type Copy } from './peers.ts';
 
 export type Party = {
   peers: Peer[];
@@ -15,7 +15,7 @@ export type Party = {
   close(): Promise<void>;
 };
 
-export type PartyOptions = { n: number; /** Defaults to a fresh code: the server holds a room for ROOM_TTL_MS after the last peer leaves, so a re-run must not reuse one. */ code?: string; sabotage?: Sabotage; headless?: boolean; contentId?: string; withObserver?: boolean; continuousTone?: boolean; shape?: PlayerShape; /** Per peer, by index: which copy of the episode it plays. */ copies?: Array<'plain' | 'extras' | undefined> };
+export type PartyOptions = { n: number; /** Defaults to a fresh code: the server holds a room for ROOM_TTL_MS after the last peer leaves, so a re-run must not reuse one. */ code?: string; sabotage?: Sabotage; headless?: boolean; contentId?: string; withObserver?: boolean; continuousTone?: boolean; shape?: PlayerShape; /** Per peer, by index: which copy of the episode it plays. */ copies?: Array<Copy | undefined> };
 
 export async function startParty({ n, code = generateRoomCode(), sabotage, headless, contentId = EPISODE(1), withObserver = true, continuousTone = false, shape = 'hbo', copies = [] }: PartyOptions): Promise<Party> {
   if (!isValidRoomCode(code)) throw new Error(`test room code ${code} is not Crockford base32 (no I, L, O, U)`);

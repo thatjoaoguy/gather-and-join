@@ -141,8 +141,10 @@ export class SyncEngine {
       const cur = this.binding.get();
       if (cur !== v || v.paused || v.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) return;
       if (!this.room || this.room.paused) return;
-      this.diag(`stalled at ${Math.round(this.outboundPositionMs(v))}ms (readyState ${v.readyState}); pausing the room`);
-      this.send({ paused: true, positionMs: this.outboundPositionMs(v), stalled: true });
+      // Sabotage reports the room's last anchor instead, which is what this once did.
+      const at = this.sabotage === 'stall-position' ? this.room.positionMs : this.outboundPositionMs(v);
+      this.diag(`stalled at ${Math.round(this.outboundPositionMs(v))}ms (readyState ${v.readyState}); pausing the room at ${Math.round(at)}ms`);
+      this.send({ paused: true, positionMs: at, stalled: true });
     }, STALL_CONFIRM_MS);
   }
   onLocalPlaying() { this.cancelStall(); }

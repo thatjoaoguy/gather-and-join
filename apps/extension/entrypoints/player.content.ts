@@ -77,7 +77,7 @@ export default defineContentScript({
         // (or one that wandered to a different episode) must not broadcast its playback.
         const roomContent = snapshot?.room?.contentId ?? null;
         if (roomContent !== null && roomContent !== contentId()) return;
-        port.send(out.stalled ? { type: 'stalled' } : { type: 'playback', paused: out.paused, positionMs: out.positionMs });
+        port.send(out.stalled ? { type: 'stalled', positionMs: out.positionMs } : { type: 'playback', paused: out.paused, positionMs: out.positionMs });
       },
       cfg.sabotage,
       (line) => log('sync', line),

@@ -43,7 +43,7 @@
 <div id="app-layer">
   <ytd-watch-flexy>
     <div id="movie_player" class="html5-video-player">
-      <video class="video-stream html5-main-video" preload="auto" src="/media/main"></video>
+      <video class="video-stream html5-main-video" preload="auto"></video>
     </div>
   </ytd-watch-flexy>
   <div id="status"></div>
@@ -53,10 +53,14 @@
   const AD_MS = 6000;
   const contentId = (decodeURIComponent(location.pathname).match(/\/ytwatch\/(.+)$/) || [])[1] || 'urn:hbo:episode:G0000001';
   document.getElementById('title').textContent = contentId;
+  // `?copy=` as on the HBO page (player.js).
+  const copy = new URLSearchParams(location.search).get('copy');
+  const mainSrc = copy ? `/media/${copy}` : '/media/main';
   document.title = 'Fake YouTube — ' + contentId;
 
   const player = document.getElementById('movie_player');
   const video = player.querySelector('video');
+  video.src = mainSrc;
   document.getElementById('play').addEventListener('click', () => video.play());
   // On <html>, the way YouTube does it — not on the player.
   document.getElementById('fullscreen').addEventListener('click', () => document.documentElement.requestFullscreen());
@@ -78,7 +82,7 @@
       video.load();
       player.classList.remove('ad-showing');
       setTimeout(() => {
-        video.src = '/media/main';
+        video.src = mainSrc;
         video.addEventListener('loadedmetadata', () => {
           // Where the viewer left off, not where the room has got to; catching up is the extension's job.
           video.currentTime = resumeAt;

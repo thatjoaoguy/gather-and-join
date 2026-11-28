@@ -178,10 +178,11 @@ describe('RoomSession', () => {
     expect(events.navigate).toHaveBeenLastCalledWith({ contentId: 'urn:hbo:episode:G2', watchUrl: 'http://l/G2', originPeerId: 'me' });
     expect(session.snapshot.room).toMatchObject({ contentId: 'urn:hbo:episode:G2', positionMs: 0, paused: true });
     session.playback(true, 7000);
-    session.stalled();
+    // The room's last anchor is 0 here; the stall must carry the player's own position, not that.
+    session.stalled(9400);
     expect(client.sent.slice(-2)).toEqual([
       { type: 'playback', paused: true, positionMs: 7000, clientTime: 1_000_000 },
-      { type: 'playback', paused: true, positionMs: 0, clientTime: 1_000_000, reason: 'stall' },
+      { type: 'playback', paused: true, positionMs: 9400, clientTime: 1_000_000, reason: 'stall' },
     ]);
   });
 

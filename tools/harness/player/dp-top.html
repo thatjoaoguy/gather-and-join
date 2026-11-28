@@ -124,6 +124,8 @@
   document.getElementById('pause').addEventListener('click', () => player.mediaPlayer.pause());
   v.addEventListener('loadedmetadata', () => { v.currentTime = 20; }, { once: true });
   v.loop = true;
-  v.src = '/media/main';
+  // `?copy=` as on the HBO page; a starved copy's cut is in program seconds, and this media starts 20s in.
+  const copy = new URLSearchParams(location.search).get('copy');
+  v.src = !copy ? '/media/main' : copy === 'starved' ? '/media/starved?shift=20' : `/media/${copy}`;
 })();
 </script>
