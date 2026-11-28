@@ -11,7 +11,7 @@
  *    taken off on the way out, and nothing before the episode is ever broadcast.
  */
 import {
-  decideCorrection, expectedPositionMs, ECHO_SUPPRESS_MS, HEARTBEAT_MS, DRIFT_DEAD_ZONE_MS, DRIFT_HARD_SEEK_MS,
+  decideCorrection, expectedPositionMs, ECHO_SUPPRESS_MS, HEARTBEAT_MS, DRIFT_DEAD_ZONE_MS, DRIFT_HARD_SEEK_MS, OWN_STALL_HOLD_MS,
   type RoomState,
 } from '@gj/shared';
 import type { Sabotage } from './constants';
@@ -22,6 +22,8 @@ export type OutboundPlayback = { paused: boolean; positionMs: number; stalled?: 
 
 export const TICK_MS = 250;
 const STALL_CONFIRM_MS = 750;
+/** How long to wait for that pause to come back before giving up on holding (the socket may be down). */
+const OWN_STALL_ECHO_WAIT_MS = 10_000;
 /** How often the drift summary line is emitted while playing. */
 export const DRIFT_REPORT_MS = 30_000;
 
@@ -38,6 +40,8 @@ export class SyncEngine {
   private tickTimer: ReturnType<typeof setInterval> | null = null;
   private lastHeartbeat = 0;
   private stallTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Our own stall: until when this player's own play and seeking are held back, and whether the room's pause has come back yet. */
+  private ownStall: { at: number; until: number; echoed: boolean } | null = null;
   /** |drift| samples since the last summary, plus the counters as they stood then. */
   private driftSamples: number[] = [];
   private lastReport = 0;
@@ -108,6 +112,11 @@ export class SyncEngine {
 
   onLocalPlay(v: HTMLVideoElement) {
     if (this.suppressed('play')) return;
+    if (this.holdingOwnStall('play')) {
+      // Put the room's state back: after the pause came back, that means pausing again.
+      if (this.room?.paused) this.reconcile(true);
+      return;
+    }
     this.cancelStall();
     if (this.room?.paused) {
       const active = this.userActive();
@@ -123,6 +132,8 @@ export class SyncEngine {
   }
   onLocalSeeking(v: HTMLVideoElement) {
     if (this.suppressed('seeking')) return;
+    // Not reconciled: a player's own nudge is a few ms, and correcting it would seek a stalled element.
+    if (this.holdingOwnStall('seeking')) return;
     this.announce({ paused: v.paused, positionMs: this.outboundPositionMs(v) }, 'seek');
   }
   onLocalEnded(_v: HTMLVideoElement) {
@@ -155,9 +166,22 @@ export class SyncEngine {
       const at = this.sabotage === 'stall-position' ? this.room.positionMs : this.outboundPositionMs(v);
       this.diag(`stalled at ${Math.round(this.outboundPositionMs(v))}ms (readyState ${v.readyState}); pausing the room at ${Math.round(at)}ms`);
       this.send({ paused: true, positionMs: at, stalled: true });
+      const now = Date.now();
+      this.ownStall = { at: now, until: now + OWN_STALL_ECHO_WAIT_MS, echoed: false };
     }, STALL_CONFIRM_MS);
   }
   onLocalPlaying() { this.cancelStall(); }
+
+  /** Whether an event of this player's is its own recovery from the stall it just reported, and so not passed on. */
+  private holdingOwnStall(kind: 'play' | 'seeking') {
+    const s = this.ownStall;
+    if (!s || this.sabotage === 'stall-guard') return false;
+    const now = Date.now();
+    if (now >= s.until) { this.ownStall = null; return false; }
+    const active = this.userActive();
+    this.diag(`held back the player's own ${kind} ${now - s.at}ms after our stall (user activation: ${active === null ? 'unknown' : active ? 'yes' : 'no'})`);
+    return true;
+  }
   private cancelStall() {
     if (this.stallTimer) { clearTimeout(this.stallTimer); this.stallTimer = null; }
   }
@@ -167,6 +191,11 @@ export class SyncEngine {
   /** A `playback` frame or a fresh room snapshot: adopt it and correct now. */
   applyRemote(room: RoomPlayback, offsetMs = this.offsetMs) {
     this.offsetMs = offsetMs;
+    if (this.ownStall) {
+      // Someone resumed: from here on this player's events are what they look like.
+      if (!room.paused) this.ownStall = null;
+      else if (!this.ownStall.echoed) this.ownStall = { ...this.ownStall, until: Date.now() + OWN_STALL_HOLD_MS, echoed: true };
+    }
     this.room = room;
     this.reconcile(true);
   }

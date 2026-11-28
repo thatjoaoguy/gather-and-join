@@ -80,12 +80,18 @@ function loadMedia(): { main: Media; ad: Media } {
 /** A WAV's byte offset for a time: 44-byte header, 48 kHz mono 16-bit (see wav.ts). */
 const wavOffset = (seconds: number) => 44 + Math.floor(seconds * 48_000) * 2;
 
-/** `holdFrom`: send nothing at or past this byte; the response stays open until the player gives up on it. */
+/** Responses waiting at their `holdFrom`, each with the rest it still owes. `/media/starved/release` sends them. */
+const held = new Set<() => void>();
+
+/** `holdFrom`: send nothing at or past this byte; the response stays open until released or the player gives up on it. */
 function serveMedia(req: http.IncomingMessage, res: http.ServerResponse, media: Media, holdFrom = Infinity) {
   const total = media.body.length;
   const send = (start: number, end: number) => {
     if (end < holdFrom) return res.end(media.body.subarray(start, end + 1));
     res.write(media.body.subarray(start, Math.max(start, holdFrom)));
+    const rest = () => { held.delete(rest); res.end(media.body.subarray(Math.max(start, holdFrom), end + 1)); };
+    held.add(rest);
+    res.on('close', () => held.delete(rest));
   };
   const range = req.headers.range;
   const headers: Record<string, string | number> = {
@@ -121,6 +127,8 @@ export function startPlayerServer(port = PLAYER_PORT): Promise<http.Server> {
     if (p === '/media/adpod') return serveMedia(req, res, adPodMedia ??= { body: quietTrack(AD_POD_SECONDS), mime: 'audio/wav' });
     if (p === '/media/plain') return serveMedia(req, res, loadCopies().plain);
     if (p === '/media/extras') return serveMedia(req, res, loadCopies().extras);
+    // The network coming back, for every starved response open now. A player that asks again afterwards is starved again.
+    if (p === '/media/starved/release') { const n = held.size; for (const rest of [...held]) rest(); res.writeHead(200); return res.end(String(n)); }
     if (p === '/media/starved') return serveMedia(req, res, loadCopies().plain, wavOffset(STARVE_AT_SECONDS + Number(url.searchParams.get('shift') ?? 0)));
     if (p.startsWith('/watch/urn:hbo:')) return serveFile(res, path.join(PLAYER_DIR, 'index.html'));
     // Drive-shaped variant: no <video> in the top document, playback in a

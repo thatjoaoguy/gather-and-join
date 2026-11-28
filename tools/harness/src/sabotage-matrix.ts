@@ -33,6 +33,8 @@ const MATRIX: Record<string, string[]> = {
   'ad-pod': ['ad pod'],
   // Reporting the room's last anchor as the stall position rewinds everyone to the last heartbeat.
   'stall-position': ['the room pauses where the stalled player stopped'],
+  // Without the hold, a player picking itself up after its own stall resumes the room for everyone.
+  'stall-guard': ['resumes itself'],
 };
 
 /**

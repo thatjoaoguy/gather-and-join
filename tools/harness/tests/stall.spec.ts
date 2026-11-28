@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { startParty, spreadMs, pressPlay, state, dumpParty } from '../src/party.ts';
-import { waitForCondition, type Peer, type PlayerShape } from '../src/peers.ts';
+import { OWN_STALL_HOLD_MS } from '@gj/shared';
+import { waitForCondition, PLAYER_ORIGIN, type Peer, type PlayerShape } from '../src/peers.ts';
 import { STARVE_AT_SECONDS } from '../src/player-server.ts';
 
 /**
@@ -77,4 +78,41 @@ test.describe('buffering stall', () => {
     } catch (e) { await dumpParty(party, `stall failure (${shape})`); throw e; } finally { await party.close(); }
   });
 
+  /**
+   * The player picks itself up when data returns (player.js, starved copy), as GGG's HBO
+   * Max did 33ms after its stall reached the room. Inside the hold that is not a resume:
+   * the guest goes back to the room's pause, and nobody else moves.
+   */
+  test('buffering stall (hbo): a player that resumes itself when data returns does not resume the room', async () => {
+    const party = await startParty({ n: 2, copies: ['plain', 'starved'] });
+    try {
+      const host = party.leader, guest = party.peers[1]!;
+      await pressPlay(host);
+      await waitForCondition(async () => (await state(guest)).paused === false, { label: 'guest playing' });
+      await waitForCondition(async () => (await spreadMs(party.peers)).spread < 150, { timeout: 10_000, label: 'initial convergence' });
+
+      const isStall = (f: (typeof party.observer.frames)[number]) => f.msg.type === 'playback' && f.msg.reason === 'stall';
+      // Polled tightly: the network has to come back inside the hold, which starts when the pause does.
+      await waitForCondition(() => party.observer.frames.some(isStall), { timeout: STARVE_AT_MS + 10_000, interval: 10, label: 'guest reports a stall' });
+      const stallAt = party.observer.frames.findIndex(isStall);
+      const stall = party.observer.frames[stallAt]!;
+      if (stall.msg.type !== 'playback') throw new Error('unreachable');
+      const released = Number(await (await fetch(`${PLAYER_ORIGIN}/media/starved/release`)).text());
+      expect(released).toBeGreaterThan(0);
+
+      const selfResumes = () => guest.player().evaluate(() => (window as any).__selfResumes as number[]);
+      await waitForCondition(async () => (await selfResumes()).length > 0, { timeout: 3000, label: 'the guest\'s player resumed itself' });
+      const resumedAfterMs = (await selfResumes())[0]! - stall.t;
+      console.log(`the guest's player resumed itself ${resumedAfterMs}ms after the stall reached the room (hold: ${OWN_STALL_HOLD_MS}ms)`);
+      // Past the hold the guard is meant to let a play through; landing there would test nothing.
+      expect(resumedAfterMs).toBeLessThan(OWN_STALL_HOLD_MS);
+
+      await waitForCondition(() => Date.now() - stall.t > HOLD_MS, { timeout: HOLD_MS + 1000, label: 'hold' });
+      const [h, g] = await Promise.all([state(host), state(guest)]);
+      const resumed = party.observer.frames.slice(stallAt + 1).filter((f) => f.msg.type === 'playback' && !f.msg.paused);
+      expect(resumed).toHaveLength(0);
+      expect(h.paused && g.paused).toBe(true);
+      expect(Math.abs(g.positionMs! - stall.msg.positionMs)).toBeLessThan(SAME_SPOT_MS);
+    } catch (e) { await dumpParty(party, 'self-resume failure'); throw e; } finally { await party.close(); }
+  });
 });

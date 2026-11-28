@@ -48,6 +48,60 @@ describe('SyncEngine', () => {
     }
   });
 
+  /** A playing engine whose player has just reported a stall at 13.2s; `sent` holds that stall. */
+  function stalledEngine(sabotage: 'stall-guard' | null) {
+    vi.stubGlobal('HTMLMediaElement', { HAVE_FUTURE_DATA: 3 }); // no DOM under vitest
+    const v = fakeVideo();
+    const sent: Array<{ paused: boolean; positionMs: number; stalled?: boolean }> = [];
+    const e = new SyncEngine(bindingFor(v), (o) => sent.push(o), sabotage);
+    e.applyRemote({ paused: false, positionMs: 10_000, updatedAt: Date.now() }, 0);
+    vi.advanceTimersByTime(3200);
+    v.currentTime = 13.2;
+    v.readyState = 2;
+    e.onLocalWaiting(v as never);
+    vi.advanceTimersByTime(750);
+    expect(sent).toEqual([{ paused: true, positionMs: 13_200, stalled: true }]);
+    return { v, e, sent };
+  }
+
+  it('holds back the player\'s own play and seeking from its stall until a second after the pause comes back; the stall-guard sabotage passes them on', () => {
+    for (const sabotage of [null, 'stall-guard'] as const) {
+      const { v, e, sent } = stalledEngine(sabotage);
+      // Data returns before the room's pause does: the player nudges itself on (GGG's case).
+      v.readyState = 4;
+      e.onLocalSeeking(v as never);
+      expect(sent.slice(1)).toEqual(sabotage ? [{ paused: false, positionMs: 13_200 }] : []);
+      sent.length = 1;
+
+      e.applyRemote({ paused: true, positionMs: 13_200, updatedAt: Date.now() }, 0);
+      expect(v.paused).toBe(true);
+      // Past the echo window of that applied pause, still inside the hold: the player plays itself.
+      vi.advanceTimersByTime(600);
+      v.paused = false;
+      e.onLocalPlay(v as never);
+      if (sabotage) expect(sent.slice(1)).toEqual([{ paused: false, positionMs: 13_200 }]);
+      else { expect(sent).toHaveLength(1); expect(v.paused).toBe(true); } // put back to the room's pause
+      sent.length = 1;
+
+      // A second after the pause came back, a play is somebody's again.
+      vi.advanceTimersByTime(401);
+      v.paused = false;
+      e.onLocalPlay(v as never);
+      expect(sent.slice(1)).toEqual([{ paused: false, positionMs: 13_200 }]);
+    }
+  });
+
+  it('ends the hold when someone else resumes the room', () => {
+    const { v, e, sent } = stalledEngine(null);
+    e.applyRemote({ paused: true, positionMs: 13_200, updatedAt: Date.now() }, 0);
+    e.applyRemote({ paused: false, positionMs: 13_200, updatedAt: Date.now() }, 0);
+    expect(v.paused).toBe(false);
+    vi.advanceTimersByTime(600);
+    v.currentTime = 20; // the viewer seeks, inside what would have been the hold
+    e.onLocalSeeking(v as never);
+    expect(sent.at(-1)).toEqual({ paused: false, positionMs: 20_000 });
+  });
+
   it('says whether a play into a paused room came with a user gesture', () => {
     const v = fakeVideo();
     const lines: string[] = [];

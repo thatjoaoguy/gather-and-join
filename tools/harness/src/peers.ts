@@ -30,7 +30,7 @@ export type PlayerShape = 'hbo' | 'drive' | 'youtube' | 'wix' | 'disney';
 /** Which copy of the episode a peer plays (`?copy=`); `starved` runs dry at STARVE_AT_SECONDS. */
 export type Copy = 'plain' | 'extras' | 'starved';
 
-export type Sabotage = 'reattach' | 'drift' | 'offscreen' | 'echo-suppress' | 'episode-start' | 'stall-position' | null;
+export type Sabotage = 'reattach' | 'drift' | 'offscreen' | 'echo-suppress' | 'episode-start' | 'stall-position' | 'stall-guard' | null;
 
 export type Peer = {
   index: number;

@@ -142,6 +142,23 @@
     if (v && v.duration && !v.paused && v.duration - v.currentTime < 30) startCountdown();
   }, 1000);
 
+  // The starved copy's player picks itself up when data comes back, as real ones do:
+  // its own idea of the state is still "playing", whoever paused the element during
+  // the stall. HBO Max was seen resuming a room 33ms after its stall reached the others.
+  if (new URLSearchParams(location.search).get('copy') === 'starved') {
+    let wasPlaying = false;
+    window.__selfResumes = [];
+    document.addEventListener('waiting', (e) => { if (e.target === video()) wasPlaying = !e.target.paused; }, true);
+    document.addEventListener('playing', () => { wasPlaying = false; }, true); // recovered on its own: nothing to pick up
+    document.addEventListener('canplay', (e) => {
+      const v = e.target;
+      if (v !== video() || !wasPlaying || !v.paused) return;
+      wasPlaying = false;
+      window.__selfResumes.push(Date.now());
+      v.play().catch(() => {});
+    }, true);
+  }
+
   // Status readout (for humans looking at the page).
   setInterval(() => {
     const v = video();

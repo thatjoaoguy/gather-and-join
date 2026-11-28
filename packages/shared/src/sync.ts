@@ -28,6 +28,14 @@ export const PING_SAMPLES = 5;
 export const OFFSET_REFRESH_MS = 60_000;
 export const HEARTBEAT_MS = 5_000;
 export const ECHO_SUPPRESS_MS = 500;
+/**
+ * After a player reports its own stall, its own play and seeking events are not
+ * broadcast until the room's pause has come back and this much longer. A player
+ * picks itself up the moment data returns, and HBO Max was seen doing it 33ms after
+ * its stall reached the others: passed on, that resumes the room for everyone.
+ * Nobody means to press play a second after their own picture froze.
+ */
+export const OWN_STALL_HOLD_MS = 1000;
 
 export const DRIFT_DEAD_ZONE_MS = 250;
 export const DRIFT_RATE_EXIT_MS = 100;
