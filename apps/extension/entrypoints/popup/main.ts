@@ -9,7 +9,7 @@ import { PORT_POPUP, type OffscreenToPopup, type PopupToOffscreen, type Snapshot
 import { participantsFrom, type Participant } from '../../lib/participants';
 import { cameraProblem, connectionLabel, serverState, updateNotice } from '../../lib/room-labels';
 import { BROWSER_NAME, HOST_GUIDE_URL } from '../../lib/constants';
-import { firstRun, type SetupInput } from '../../lib/setup-state';
+import { firstRun, lobbyFields, type SetupInput } from '../../lib/setup-state';
 import { ReconnectingPort } from '../../lib/port';
 import { ic, escapeHtml as esc } from '../../lib/ui/icons';
 import { ensureQuicksand } from '../../lib/ui/fonts';
@@ -61,8 +61,6 @@ function setTab(t: 'join' | 'create') {
   tab = t;
   $('tab-join').setAttribute('aria-selected', String(t === 'join'));
   $('tab-create').setAttribute('aria-selected', String(t === 'create'));
-  $('join-fields').hidden = t !== 'join';
-  $('create-helper').hidden = t !== 'create';
   $('readiness').setAttribute('aria-label', t === 'join' ? 'Ready to join' : 'Ready to host');
   render();
 }
@@ -111,7 +109,9 @@ function renderLobby(s: Snapshot) {
   // Before setup there is nowhere to join and nothing to be ready for: the lobby is
   // only the invitation. The three states live on the setup page, which owns them.
   for (const id of ['tabs', 'name-label', 'name', 'lobby-divider', 'readiness']) $(id).hidden = fresh;
-  if (fresh) { $('join-fields').hidden = true; $('create-helper').hidden = true; }
+  const fields = lobbyFields(fresh, tab);
+  $('join-fields').hidden = !fields.code;
+  $('create-helper').hidden = !fields.createHelper;
 
   // Notice and recovery
   let notice = ''; let recovery = '';

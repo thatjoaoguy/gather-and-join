@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { firstRun, nextStep, outstanding, setupComplete, setupSteps, setupSummary, type SetupInput } from '../lib/setup-state';
+import { firstRun, lobbyFields, nextStep, outstanding, setupComplete, setupSteps, setupSummary, type SetupInput } from '../lib/setup-state';
 
 /** A profile that has just been installed: nothing answered, nothing saved. */
 const fresh: SetupInput = { serverConfigured: false, serverState: 'unknown', mic: 'unknown', cam: 'unknown' };
@@ -63,5 +63,15 @@ describe('firstRun', () => {
     // Someone running the default server on their own machine can just join.
     expect(firstRun({ ...fresh, serverState: 'reachable' })).toBe(false);
     expect(firstRun({ ...fresh, serverConfigured: true })).toBe(false);
+  });
+});
+
+describe('lobbyFields', () => {
+  it('hides both tabs\' fields in the first run, and gives the chosen tab its own back once it ends', () => {
+    expect(lobbyFields(true, 'join')).toEqual({ code: false, createHelper: false });
+    expect(lobbyFields(true, 'create')).toEqual({ code: false, createHelper: false });
+    // The default server answered while the popup was open: the room code field is back on Join.
+    expect(lobbyFields(false, 'join')).toEqual({ code: true, createHelper: false });
+    expect(lobbyFields(false, 'create')).toEqual({ code: false, createHelper: true });
   });
 });

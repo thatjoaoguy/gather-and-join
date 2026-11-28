@@ -55,3 +55,11 @@ export function setupSummary(steps: SetupStep[]): string {
  * default is not answering either. Not an error — there is nothing to fix yet.
  */
 export const firstRun = (input: SetupInput): boolean => !input.serverConfigured && input.serverState !== 'reachable';
+
+/**
+ * Which of the lobby's tab fields show: none in the first run, else the chosen tab's.
+ * Worked out on every render, not only on a tab click: the first run ends by itself
+ * when the default server answers while the popup is open, and the room code field
+ * the first run hid has to come back without anyone touching the tabs.
+ */
+export const lobbyFields = (fresh: boolean, tab: 'join' | 'create') => ({ code: !fresh && tab === 'join', createHelper: !fresh && tab === 'create' });
