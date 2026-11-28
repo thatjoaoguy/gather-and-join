@@ -10,7 +10,9 @@ export type SignalPayload = { description?: RTCSessionDescriptionInit; candidate
 /**
  * A connection stuck in `checking` is never reported as `failed` by Chrome until its
  * consent checks run out (tens of seconds), and one that never gathered a usable pair
- * may never be reported at all. Restart ICE ourselves once this long has passed.
+ * may never be reported at all. Restart ICE ourselves once this long has passed,
+ * counted from the first negotiation: a connection with nothing to send (the page
+ * loopback while nobody has a camera on) never starts, and is not stalled.
  */
 export const ICE_STALL_MS = 5000;
 
@@ -26,6 +28,7 @@ export class PerfectPeer {
    */
   private pendingCandidates: RTCIceCandidateInit[] = [];
   private stallTimer: ReturnType<typeof setTimeout> | null = null;
+  private negotiating = false;
 
   constructor(
     readonly polite: boolean,
@@ -34,6 +37,7 @@ export class PerfectPeer {
   ) {
     this.pc = new RTCPeerConnection(config);
     this.pc.onnegotiationneeded = async () => {
+      this.startedNegotiating();
       try {
         this.makingOffer = true;
         await this.pc.setLocalDescription();
@@ -53,6 +57,12 @@ export class PerfectPeer {
     this.pc.onconnectionstatechange = () => {
       if (this.pc.connectionState === 'connected') this.clearStallTimer();
     };
+  }
+
+  /** The stall budget starts here, once, whichever side offers first. */
+  private startedNegotiating() {
+    if (this.negotiating) return;
+    this.negotiating = true;
     this.armStallTimer();
   }
 
@@ -101,6 +111,7 @@ export class PerfectPeer {
         const offerCollision = description.type === 'offer' && !readyForOffer;
         this.ignoreOffer = !this.polite && offerCollision;
         if (this.ignoreOffer) return;
+        this.startedNegotiating();
         this.isSettingRemoteAnswerPending = description.type === 'answer';
         await pc.setRemoteDescription(description); // implicit rollback for the polite peer
         this.isSettingRemoteAnswerPending = false;
