@@ -78,8 +78,10 @@ two of them usually fixes it. Everyone else in the room is unaffected.
 
 ## The room keeps pausing
 
-Someone is buffering. The popup names who. Their connection to the streaming
-service is the issue, not the room.
+Someone is buffering. Their tile shows a **Buffering** pill, and the popup names
+them too. Their connection to the streaming service is the issue, not the room.
+When the pill turns to **Ready**, their player has caught up and anyone can press
+play.
 
 ## Google Drive says "Unable to load video"
 

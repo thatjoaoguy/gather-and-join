@@ -30,8 +30,10 @@ endereço, para quando você estiver compartilhando a tela.
   acompanha.
 - **Só o líder da sala troca de episódio.** O líder é quem criou a sala; se ele
   sair, a pessoa que está na sala há mais tempo assume.
-- **Se o vídeo de alguém travar carregando (buffering), a sala pausa** e o pop-up
-  diz de quem é. Retomar é sempre manual, e qualquer pessoa pode fazer isso: é de
+- **Se o vídeo de alguém travar carregando (buffering), a sala pausa** onde a
+  imagem dessa pessoa parou, e uma etiqueta amarela **Buffering** no quadro dela
+  diz quem é. Ela vira um **Ready** verde quando o player dessa pessoa se
+  recupera. Retomar é sempre manual, e qualquer pessoa pode fazer isso: é de
   propósito, porque retomar automaticamente faz a sala ficar pausando e
   retomando o tempo todo.
 - **A faixa de participantes** fica ao lado do player, inclusive em tela cheia.

@@ -10,7 +10,7 @@ const FEATURES: Array<{id: string; title: string; body: string}> = [
   {
     id: 'in-step',
     title: translate({id: 'home.feature.inStep.title', message: 'Everyone stays in step'}),
-    body: translate({id: 'home.feature.inStep.body', message: 'Play, pause, or seek and the whole room follows. If someone buffers, the room pauses and says who.'}),
+    body: translate({id: 'home.feature.inStep.body', message: 'Play, pause, or seek and the whole room follows. If someone buffers, the room pauses, says who, and says when they have caught up.'}),
   },
   {
     id: 'call',

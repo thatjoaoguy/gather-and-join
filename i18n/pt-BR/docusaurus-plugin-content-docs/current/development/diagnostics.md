@@ -29,8 +29,11 @@ sinalização) vale mais do que números de uso. O que existe no lugar:
   buffer circular com seus últimos 400 eventos em `chrome.storage.session`: frames da
   sala que entram e saem, status do socket, mudanças de estado das conexões
   peer-to-peer, resultados de microfone/câmera, (re)anexações de vídeo, cada salto
-  forçado (hard seek) e cada ajuste de velocidade, e um resumo do desvio (drift) a
-  cada 30 s enquanto o vídeo toca (`drift 30s: n=118 p50=32ms max=410ms seeks=0 nudges=1`).
+  forçado (hard seek) e cada ajuste de velocidade, os travamentos com onde o player
+  parou, um play que chega a uma sala pausada e se veio com um gesto do usuário, os
+  plays e seeks da recuperação do próprio player travado que foram retidos, quando
+  ele fica pronto de novo, e um resumo do desvio (drift) a cada 30 s enquanto o
+  vídeo toca (`drift 30s: n=118 p50=32ms max=410ms seeks=0 nudges=1`).
   Os buffers sobrevivem ao Chrome reiniciar o worker ou o documento offscreen (um
   marcador `--- restarted ---` separa as encarnações) e são apagados quando o Chrome
   fecha. No Firefox, a background page persistente faz o papel do worker e do

@@ -83,8 +83,10 @@ não é afetado.
 
 ## A sala fica pausando {/* #the-room-keeps-pausing */}
 
-Alguém está com o vídeo carregando (buffering). O pop-up mostra quem é. O
-problema é a conexão dessa pessoa com o serviço de streaming, não a sala.
+Alguém está com o vídeo carregando (buffering). O quadro dessa pessoa mostra uma
+etiqueta **Buffering**, e o pop-up também diz quem é. O problema é a conexão
+dessa pessoa com o serviço de streaming, não a sala. Quando a etiqueta vira
+**Ready**, o player dela se recuperou e qualquer pessoa pode dar play.
 
 ## O Google Drive diz "Unable to load video" {/* #google-drive-says-unable-to-load-video */}
 

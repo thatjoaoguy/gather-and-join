@@ -34,12 +34,17 @@ When you create or join a room, the extension sends the server:
 - the **display name** you typed,
 - the **room code**,
 - an **identifier of the episode or file** the room is watching (taken from the
-  page address, never the video itself),
+  page address, never the video itself), and that **page address**,
 - how long **your copy** of it runs, since some regions get a longer copy with
   extras in front, and, when copies differ, **how much of the longer one to
   skip**, as set by someone in the room,
-- **play, pause, and position** events, and stall notices,
-- the connection setup messages needed to reach the other participants.
+- **play, pause, and position** events, stall notices, and, once a stalled
+  player has caught up, a note that it is **ready**,
+- whether your **microphone and camera are on**, so the others can see it,
+- the connection setup messages needed to reach the other participants, which
+  include your **network address**.
+
+Like any server, it also sees the address you connect to it from.
 
 The server keeps this in memory only while the room exists and writes nothing
 to disk. It prints a one-line event log (room created, someone joined, someone

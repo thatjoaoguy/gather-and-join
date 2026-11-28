@@ -26,6 +26,14 @@ referência (ground truth) de um observador headless, contadores de saltos forç
 (hard seeks) e de reanexações, o bin de frequência de pico de cada par, a cor de
 pixels amostrados, `framesDecoded`, `video.volume`.
 
+Toda página falsa também aceita `?copy=starved`: o servidor do player para de enviar
+aos 13 s do episódio e mantém a conexão aberta, então o player trava carregando de
+verdade (`waiting`, `readyState` caindo), e não por algo que a extensão conseguiria
+distinguir de uma rede lenta. `/media/starved/release` devolve os dados às páginas
+que estão esperando, e a com formato de HBO então se retoma sozinha, como os
+players reais fazem. Isso não reproduz o `readyState` do Media Source de um serviço
+real, que não diz nada sobre o que está carregado.
+
 `make -C tools/harness fixtures` gera as fixtures completas com ffmpeg (rótulos
 gravados no vídeo, uma fonte de padrão de teste de 5,5 minutos para o player falso).
 Quando elas não existem, a suíte escreve equivalentes mínimos dentro do próprio
@@ -46,11 +54,13 @@ e cada chamada do dump esperaria esgotar o próprio timeout contra ela.
 | flag | desativa | deve falhar |
 |---|---|---|
 | `reattach` | a religação via `MutationObserver` de um `<video>` recriado | element re-attach, quality switch |
-| `drift` | a zona morta / faixa de velocidade (tudo vira salto forçado) | small drift |
+| `drift` | a zona morta / faixa de velocidade (tudo vira salto forçado) | small drift. Os testes de travamento por buffering são pulados: a flag faz um convidado sem dados saltar para além do fim deles assim que fica 250 ms atrás, um travamento causado por um salto, que eles não protegem |
 | `offscreen` | a persistência do documento offscreen entre navegações | navigation survival, leader authority (ambos verificam que a sala sobrevive a uma transição de episódio). O encerramento do service worker é pulado com esta flag: ele mata o worker logo antes dessa navegação, e se o worker que está reiniciando fecha o documento antes que o novo content script o alcance é uma condição de corrida |
-| `echo-suppress` | a marcação de comandos remotos aplicados localmente | echo suppression, large drift, small drift, quality switch (os próprios seeks corretivos do seguidor movem a sala), disney-shaped seek (a rajada do seek aplicado pelo seguidor chega à sala como pausas) |
+| `echo-suppress` | a marcação de comandos remotos aplicados localmente | echo suppression, large drift (os próprios seeks corretivos do seguidor movem a sala), disney-shaped seek (a rajada do seek aplicado pelo seguidor chega à sala como pausas), e os dois testes de travamento por buffering com formato de Drive (a pausa do travamento chega ao embed uma mensagem depois do seek de volta, que sai como um play). Small drift e quality switch são pulados: sem marcação, se o seek do seguidor que vai e volta se acomoda dentro das janelas deles é questão de tempo |
 | `episode-start` | o salto que uma cópia mais longa aplica a partir do início do episódio da sala | início do episódio |
 | `ad-pod` | manter a duração de uma cópia durante um anúncio mais curto que o episódio | ad pod |
+| `stall-position` | pausar a sala na posição do próprio player travado (ela informa a última âncora da sala no lugar) | the room pauses where the stalled player stopped, em todos os formatos. O teste de pronto com formato de Disney é pulado: depois de voltar com a mídia pausada, o arquivo simples do fake carrega só ~4 s à frente, abaixo do limite de pronto |
+| `stall-guard` | reter o play e os seeks do próprio player travado depois do travamento | a player that resumes itself when data returns does not resume the room, e os testes de pronto com formato de HBO e de Wix (a página deles se retoma sozinha quando os dados voltam) |
 
 ## Firefox {/* #firefox */}
 

@@ -3,7 +3,7 @@
     "message": "Todo mundo no mesmo ritmo"
   },
   "home.feature.inStep.body": {
-    "message": "Dê play, pause ou pule para outro ponto, e a sala inteira acompanha. Se alguém travar carregando, a sala pausa e diz quem foi."
+    "message": "Dê play, pause ou pule para outro ponto, e a sala inteira acompanha. Se alguém travar carregando, a sala pausa, diz quem foi e avisa quando a pessoa se recuperou."
   },
   "home.feature.call.title": {
     "message": "Uma chamada junto com o programa"

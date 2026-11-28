@@ -139,10 +139,10 @@ em classes com colaboradores injetados, então cada uma roda no vitest com fakes
 | `sidebar/settings-panel.ts` + `settings-model.ts` | o popover de configurações da sala, aberto pela engrenagem, e o que ele mostra | as ações da barra lateral |
 | `room-labels.ts` | como o estado da conexão, do servidor e da câmera é escrito, compartilhado pelo pop-up e pelo painel de configurações | — |
 | `copy-tracker.ts` | a duração da cópia desta página, mantida entre trocas de elemento e anúncios, por mais longos que sejam | um callback de relatório |
-| `participants.ts` | a única derivação de "quem está na sala", usada pelo pop-up e pela barra lateral | — |
+| `participants.ts` | a única derivação de "quem está na sala", usada pelo pop-up e pela barra lateral, incluindo quem travou a sala e se já se recuperou | — |
 | `badge.ts` | o ponto na barra de ferramentas: qual estado o snapshot representa e o círculo desenhado no ícone para ele | uma fatia de `chrome.action`, um canvas |
 | `player-access.ts` | quais serviços o usuário autorizou, o script do player registrado exatamente para esses, e as páginas abertas quando uma autorização ou revogação acontece | `chrome.permissions`, `chrome.scripting`, buscas de abas e frames |
-| `setup-state.ts` | a única derivação de "o que ainda falta configurar" — microfone, câmera, endereço — compartilhada pela primeira execução do pop-up e pela página de configuração | — |
+| `setup-state.ts` | a única derivação de "o que ainda falta configurar" — microfone, câmera, endereço — compartilhada pela primeira execução do pop-up e pela página de configuração, e quais campos do lobby aparecem enquanto isso dura | — |
 | `sync-engine.ts`, `video-binding.ts`, `ducking.ts`, `up-next.ts` | comportamento de reprodução por página | um localizador de vídeo, callbacks |
 
 ## Provedores de streaming {/* #streaming-providers */}

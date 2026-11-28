@@ -24,6 +24,14 @@ numbers: pairwise position spread from a headless observer's ground-truth frame
 log, hard-seek and re-attach counters, per-peer peak frequency bin, sampled pixel
 colour, `framesDecoded`, `video.volume`.
 
+Every fake page also takes `?copy=starved`: the player server stops sending at
+13 s of the episode and holds the connection open, so the player buffers for real
+(`waiting`, `readyState` down) rather than through anything the extension could
+tell apart from a slow network. `/media/starved/release` brings the data back for
+the pages waiting on it, and the HBO-shaped one then resumes itself, as real players
+do. It does not reproduce a real service's Media Source `readyState`, which says
+nothing about what is loaded.
+
 `make -C tools/harness fixtures` builds the full fixtures with ffmpeg (labels
 burned into the video, a 5.5-minute test-pattern source for the fake player).
 When they are absent the suite writes minimal in-process equivalents, so ffmpeg is
@@ -43,11 +51,13 @@ dump's calls would each wait out their own timeouts against it.
 | flag | disables | must fail |
 |---|---|---|
 | `reattach` | `MutationObserver` re-wiring of a recreated `<video>` | element re-attach, quality switch |
-| `drift` | the dead zone / rate band (everything hard-seeks) | small drift |
+| `drift` | the dead zone / rate band (everything hard-seeks) | small drift. The buffering stall tests are skipped: the flag seeks a starving guest past the end of its data as soon as it falls 250 ms behind, a stall from a seek, which they do not guard |
 | `offscreen` | the offscreen document's persistence across navigation | navigation survival, leader authority (both assert the room survives an episode transition). Service-worker termination is skipped under this flag: it kills the worker right before that navigation, and whether the restarting worker closes the document before the new content script reaches it is a race |
-| `echo-suppress` | tagging of locally-applied remote commands | echo suppression, large drift, small drift, quality switch (the follower's own corrective seeks move the room), disney-shaped seek (the burst of the follower's applied seek reaches the room as pauses) |
+| `echo-suppress` | tagging of locally-applied remote commands | echo suppression, large drift (the follower's own corrective seeks move the room), disney-shaped seek (the burst of the follower's applied seek reaches the room as pauses), and both Drive-shaped buffering stall tests (the stall's pause reaches the embed a message after the seek back, which goes out as a play). Small drift and quality switch are skipped: untagged, whether the follower's bouncing seek settles inside their windows is timing |
 | `episode-start` | the skip a longer copy applies from the room's episode start | episode start |
 | `ad-pod` | holding a copy's length through an ad shorter than the episode | ad pod |
+| `stall-position` | pausing the room at the stalled player's own position (it reports the room's last anchor instead) | the room pauses where the stalled player stopped, on every shape. The Disney-shaped ready test is skipped: seeked back while paused, the fake's plain file loads only ~4 s ahead, short of the ready threshold |
+| `stall-guard` | holding back a stalled player's own play and seeking after its stall | a player that resumes itself when data returns does not resume the room, and the HBO- and Wix-shaped ready tests (their page resumes itself when data returns) |
 
 ## Firefox
 
