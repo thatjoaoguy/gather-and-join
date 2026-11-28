@@ -40,7 +40,7 @@ Gather & Join keeps a small group in sync while they watch the same thing on Dis
 Works with Disney+, with HBO Max, with YouTube, with video files on Google Drive, and with the video widget on Wix sites. More services are on the way.
 
 What it does
-Play, pause, and seek are shared: when anyone presses play, everyone plays. If someone's stream buffers, the room pauses and the popup says who. When the room leader changes episodes, everyone is taken to the same one. A voice call runs alongside the show and survives episode changes. Camera is opt-in, and small video tiles appear over the player when it is on. An optional setting lowers the show's volume while you speak.
+Play, pause, and seek are shared: when anyone presses play, everyone plays. If someone's stream buffers, the room pauses where they stopped and their tile says so, then turns to Ready once they have caught up; anyone presses play to carry on. When the room leader changes episodes, everyone is taken to the same one. A voice call runs alongside the show and survives episode changes. Camera is opt-in, and small video tiles appear over the player when it is on. An optional setting lowers the show's volume while you speak.
 
 How to use it
 1. One person hosts the companion server (included in the project, open source) at an address everyone can reach, and shares that address. Each participant enters it once on the extension's setup page.
@@ -49,7 +49,7 @@ How to use it
 4. Use headphones. Echo cancellation is tuned for the call, not for a show playing out of speakers.
 
 Privacy
-Your video and audio go directly between the people in the room, never through a server. The companion server sees only your chosen display name, the room code, which episode the room is on, how long each viewer's copy of it runs, and the play/pause position. Nothing is recorded, nothing is sold, and there are no analytics. Playback itself is untouched: every viewer streams from their own Disney+ or HBO Max account, their own YouTube session, their own Google Drive, or the Wix site's own player, as usual. The extension never downloads, copies, or relays the video. It does not skip, block, hide or interfere with ads: while an ad is playing, that viewer is simply left out of sync until it ends.
+Your video and audio go directly between the people in the room, never through a server. The companion server sees only your chosen display name, the room code, which episode the room is on, how long each viewer's copy of it runs, the play/pause position, whether a viewer who paused everyone to buffer has caught up, whether your microphone and camera are on, and the messages that set up the call, which include your network address as any call's do. Nothing is recorded, nothing is sold, and there are no analytics. Playback itself is untouched: every viewer streams from their own Disney+ or HBO Max account, their own YouTube session, their own Google Drive, or the Wix site's own player, as usual. The extension never downloads, copies, or relays the video. It does not skip, block, hide or interfere with ads: while an ad is playing, that viewer is simply left out of sync until it ends.
 
 Support
 Questions and bug reports: https://github.com/thatjoaoguy/gather-and-join/issues
@@ -134,12 +134,15 @@ exist only in the `GJ_TEST=1` build for the test harness.
 | Personal communications | Yes: microphone and (opt-in) camera streams | Yes, peer-to-peer between room members only; never through a server; never recorded | Voice/video call | No |
 | Location | No | | | |
 | Web history | No | | | |
-| User activity | Yes: play/pause/seek events and playback position; when copies of an episode differ in length, how much of the longer one to skip, as set by a participant | Yes, to the companion server and room peers | Keep playback in sync | No |
-| Website content | Yes: the episode identifier from the Disney+ or HBO Max page URL, the video id from the YouTube URL, the file id from the Google Drive URL, or the video id from the Wix Video widget's URL, and the length of the viewer's copy of it | Yes, to the companion server and room peers | Take everyone to the same episode or file, and line up copies of different lengths | No |
+| User activity | Yes: play/pause/seek events and playback position; when a viewer's player has paused the room to buffer, whether it has caught up; whether each viewer's microphone and camera are on; when copies of an episode differ in length, how much of the longer one to skip, as set by a participant | Yes, to the companion server and room peers | Keep playback in sync | No |
+| Website content | Yes: the page's address and the episode identifier from the Disney+ or HBO Max page URL, the video id from the YouTube URL, the file id from the Google Drive URL, or the video id from the Wix Video widget's URL, and the length of the viewer's copy of it | Yes, to the companion server and room peers | Take everyone to the same episode or file, and line up copies of different lengths | No |
 
 Notes for the form: the server is hosted by the users themselves, not operated by the
 developer. No `chrome.storage.sync` (nothing goes to Google). No analytics, no telemetry,
-no crash reporting, no remote code.
+no crash reporting, no remote code. Setting up the call passes WebRTC offers, answers and
+network candidates between participants through that server; the candidates include each
+participant's network address, which the form has no category for and the privacy policy
+covers.
 
 Certifications: data is not sold to third parties, not used for purposes unrelated to
 the extension's core functionality, and not used for creditworthiness or lending.
