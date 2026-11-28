@@ -46,7 +46,6 @@ describe('PerfectPeer', () => {
     expect(pc.candidates).toEqual([{ candidate: 'x' }]);
   });
 
-  /** Something to connect: this side's first offer, as adding a track starts it. */
   const negotiate = async (pc: FakePeerConnection) => { await pc.onnegotiationneeded?.(); };
 
   it('restarts ICE when a connection is still not up after the stall budget', async () => {
@@ -65,7 +64,6 @@ describe('PerfectPeer', () => {
   });
 
   it('leaves a connection with nothing to negotiate alone: it never started, so it is not stalled', () => {
-    // The page loopback while nobody has a camera on: it used to restart ICE every 5s, forever.
     const { pc } = make(false);
     vi.advanceTimersByTime(ICE_STALL_MS * 10);
     expect(pc.restartIce).not.toHaveBeenCalled();

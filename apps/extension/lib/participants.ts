@@ -21,9 +21,7 @@ export type Participant = {
   camOn: boolean | null;
   /** The mesh connection to this peer dropped (never true for self). */
   lost: boolean;
-  /** Their player ran dry and paused the room, until somebody presses play. Self included. */
   buffering: boolean;
-  /** Buffering, and their player has since loaded enough to go on: someone can press play. */
   ready: boolean;
 };
 

@@ -39,7 +39,6 @@
     playerState: state,
     playbackRate: v.playbackRate,
     duration: isFinite(v.duration) ? v.duration : 0,
-    // How much of the video is loaded, as the real embed reports it: the furthest loaded point over the length.
     videoLoadedFraction: isFinite(v.duration) && v.duration > 0 && v.buffered.length ? v.buffered.end(v.buffered.length - 1) / v.duration : 0,
   });
 

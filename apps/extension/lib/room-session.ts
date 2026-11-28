@@ -378,22 +378,17 @@ export class RoomSession {
     this.client.send({ type: 'playback', paused, positionMs, clientTime: this.now() });
   }
 
-  /**
-   * The player's own position, never the room's: the room's is where the last frame
-   * left it, up to a heartbeat (5s) old, and pausing everyone there rewinds the room
-   * and throws away the buffer the stalled player was waiting on.
-   */
+  /** The player's own position: the room's can be a heartbeat old, and pausing there rewinds everyone. */
   stalled(positionMs: number) {
     this.client.send({ type: 'playback', paused: true, positionMs, clientTime: this.now(), reason: 'stall' });
   }
 
-  /** Our player, which stalled the room, can go on. The server does not echo it, so ours is set here. */
+  /** The server does not echo it, so ours is set here. */
   bufferReady(ready: boolean) {
     this.client.send({ type: 'bufferReady', ready });
     this.markReady(this.snapshot.yourPeerId, ready);
   }
 
-  /** Readiness counts only for whoever stalled the room last: anyone else's is about a stall nobody is waiting on. */
   private markReady(peerId: PeerId | null, ready: boolean) {
     const s = this.snapshot;
     if (!peerId || s.stalledBy?.peerId !== peerId || s.stalledBy.ready === ready) return;

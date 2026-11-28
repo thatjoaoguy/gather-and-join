@@ -70,7 +70,6 @@ describe('lobbyFields', () => {
   it('hides both tabs\' fields in the first run, and gives the chosen tab its own back once it ends', () => {
     expect(lobbyFields(true, 'join')).toEqual({ code: false, createHelper: false });
     expect(lobbyFields(true, 'create')).toEqual({ code: false, createHelper: false });
-    // The default server answered while the popup was open: the room code field is back on Join.
     expect(lobbyFields(false, 'join')).toEqual({ code: true, createHelper: false });
     expect(lobbyFields(false, 'create')).toEqual({ code: false, createHelper: true });
   });

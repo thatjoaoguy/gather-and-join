@@ -34,7 +34,6 @@
   const video = () => playerEl.querySelector('video');
   // `?copy=plain|extras|starved` picks a copy of the episode; the query is dropped by an
   // episode change, since the next episode need not come with extras.
-  // A starved copy carries this page's own session: a release brings the network back for it alone.
   const session = Math.random().toString(36).slice(2);
   const mainSrc = () => { const c = new URLSearchParams(location.search).get('copy'); return c === 'starved' ? `/media/starved?session=${session}` : c ? `/media/${c}` : '/media/main'; };
 
@@ -144,9 +143,7 @@
     if (v && v.duration && !v.paused && v.duration - v.currentTime < 30) startCountdown();
   }, 1000);
 
-  // The starved copy's player picks itself up when data comes back, as real ones do:
-  // its own idea of the state is still "playing", whoever paused the element during
-  // the stall. HBO Max was seen resuming a room 33ms after its stall reached the others.
+  // The starved copy resumes itself when data comes back, as real players do.
   if (new URLSearchParams(location.search).get('copy') === 'starved') {
     let wasPlaying = false;
     window.__selfResumes = [];

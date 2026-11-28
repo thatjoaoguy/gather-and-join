@@ -38,19 +38,9 @@ export const AD_POD_SECONDS = 90;
  */
 export const EXTRAS_SECONDS = 60;
 /**
- * `?copy=starved`: the plain copy, but the server stops sending at this second and
- * holds the connection open, so the player runs dry there and buffers for real —
- * `waiting`, `readyState` down — rather than through anything the extension could
- * tell apart from a slow network. Past the first heartbeats, and not on one.
- * In the program's seconds: a page whose media runs ahead of the program (the
- * Disney shape's starts 20s in) asks for `/media/starved?shift=20`. Each page load adds a
- * `session` of its own, which is what a release brings the network back for.
- *
- * What it does not reproduce: a real service feeds its element through Media
- * Source, whose `readyState` does not follow what is loaded (lib/providers/hbomax.ts
- * has the measurements). Here the element downloads a plain file, so `readyState`
- * is honest. Test anything that reads `readyState` for readiness against those
- * measured values, not against this.
+ * `?copy=starved` stops sending at this second (program time; `shift` moves it) and holds
+ * the connection, so the player buffers for real. Unlike a real service's Media Source,
+ * its `readyState` is honest: see lib/providers/hbomax.ts.
  */
 export const STARVE_AT_SECONDS = 13;
 
@@ -84,19 +74,13 @@ function loadMedia(): { main: Media; ad: Media } {
   return { main: mainMedia, ad: adMedia! };
 }
 
-/** A WAV's byte offset for a time: 44-byte header, 48 kHz mono 16-bit (see wav.ts). */
+/** 44-byte header, 48 kHz mono 16-bit (see wav.ts). */
 const wavOffset = (seconds: number) => 44 + Math.floor(seconds * 48_000) * 2;
 
-/** Responses waiting at their `holdFrom`, each with the rest it still owes and the page session it belongs to. */
 const held = new Map<() => void, string>();
-/**
- * Page sessions whose network has come back (`/media/starved/release`): they are served
- * in full from then on, so a player that asks again right away (a Disney-shaped seek
- * reloads its media) is not starved again. A new page brings a new session, and starves.
- */
+/** Per page: a Disney-shaped seek after a release reloads its media and must not starve again. */
 const released = new Set<string>();
 
-/** `holdFrom`: send nothing at or past this byte; the response stays open until released or the player gives up on it. */
 function serveMedia(req: http.IncomingMessage, res: http.ServerResponse, media: Media, holdFrom = Infinity, session = '') {
   const total = media.body.length;
   const send = (start: number, end: number) => {
@@ -140,7 +124,6 @@ export function startPlayerServer(port = PLAYER_PORT): Promise<http.Server> {
     if (p === '/media/adpod') return serveMedia(req, res, adPodMedia ??= { body: quietTrack(AD_POD_SECONDS), mime: 'audio/wav' });
     if (p === '/media/plain') return serveMedia(req, res, loadCopies().plain);
     if (p === '/media/extras') return serveMedia(req, res, loadCopies().extras);
-    // The network coming back, for every starved response open now. A player that asks again afterwards is starved again.
     if (p === '/media/starved/release') { const n = held.size; for (const [rest, s] of [...held]) { released.add(s); rest(); } res.writeHead(200); return res.end(String(n)); }
     if (p === '/media/starved') {
       const session = url.searchParams.get('session') ?? '';

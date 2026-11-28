@@ -78,7 +78,7 @@ export type Snapshot = {
   server: ServerStatus;
   micPermission: 'unknown' | 'granted' | 'denied';
   camPermission: 'unknown' | 'granted' | 'denied';
-  /** Who last reported a stall, for the "X is buffering" UI, and whether their player has since loaded enough to go on. */
+  /** Who last reported a stall, and whether their player has caught up since. */
   stalledBy: { peerId: PeerId; name: string; ready: boolean } | null;
   peerMedia: Record<PeerId, PeerMediaState>;
   lastError: { code: string; message: string } | null;
@@ -88,9 +88,7 @@ export type Snapshot = {
 export type PlayerToOffscreen =
   | { type: 'hello'; contentId: string | null; url: string }
   | { type: 'playback'; paused: boolean; positionMs: number }
-  /** Where this player stopped, on the room's timeline: the room pauses everyone there. */
   | { type: 'stalled'; positionMs: number }
-  /** This page's player stalled the room, and can now go on (or no longer can). */
   | { type: 'bufferReady'; ready: boolean }
   | { type: 'navigateRequest'; contentId: string; url: string }
   /** The length of this page's copy of `contentId`, once the player knows it. */

@@ -22,7 +22,7 @@ export type OutboundPlayback = { paused: boolean; positionMs: number; stalled?: 
 
 export const TICK_MS = 250;
 const STALL_CONFIRM_MS = 750;
-/** How long to wait for that pause to come back before giving up on holding (the socket may be down). */
+/** Stop holding if the stall's pause never comes back (the socket may be down). */
 const OWN_STALL_ECHO_WAIT_MS = 10_000;
 /** How often the drift summary line is emitted while playing. */
 export const DRIFT_REPORT_MS = 30_000;
@@ -40,9 +40,7 @@ export class SyncEngine {
   private tickTimer: ReturnType<typeof setInterval> | null = null;
   private lastHeartbeat = 0;
   private stallTimer: ReturnType<typeof setTimeout> | null = null;
-  /** Our own stall: until when this player's own play and seeking are held back, and whether the room's pause has come back yet. */
   private ownStall: { at: number; until: number; echoed: boolean } | null = null;
-  /** The room is paused on this player's stall: watch what it has loaded, and say when it could go on. */
   private waitingOnSelf = false;
   private reportedReady = false;
   /** |drift| samples since the last summary, plus the counters as they stood then. */
@@ -58,13 +56,8 @@ export class SyncEngine {
     private readonly sabotage: Sabotage,
     /** Diagnostics sink: one human-readable line per notable decision, plus a periodic drift summary. */
     private readonly diag: (line: string) => void = () => {},
-    /**
-     * Whether the page has a fresh user gesture (`navigator.userActivation.isActive`), or
-     * null where the browser cannot say. Diagnostics only, for now: it tells a person's
-     * resume from a player resuming itself after a rebuffer, which look the same otherwise.
-     */
+    /** `navigator.userActivation.isActive`, for diagnostics: a person's resume and a player's own look alike. */
     private readonly userActive: () => boolean | null = () => null,
-    /** This player, which stalled the room, can go on (or no longer can). Informs people; resumes nothing. */
     private readonly readiness: (ready: boolean) => void = () => {},
   ) {}
 
@@ -118,7 +111,6 @@ export class SyncEngine {
   onLocalPlay(v: HTMLVideoElement) {
     if (this.suppressed('play')) return;
     if (this.holdingOwnStall('play')) {
-      // Put the room's state back: after the pause came back, that means pausing again.
       if (this.room?.paused) this.reconcile(true);
       return;
     }
@@ -137,7 +129,7 @@ export class SyncEngine {
   }
   onLocalSeeking(v: HTMLVideoElement) {
     if (this.suppressed('seeking')) return;
-    // Not reconciled: a player's own nudge is a few ms, and correcting it would seek a stalled element.
+    // Not reconciled: correcting a few-ms nudge would seek a stalled element.
     if (this.holdingOwnStall('seeking')) return;
     this.announce({ paused: v.paused, positionMs: this.outboundPositionMs(v) }, 'seek');
   }
@@ -167,7 +159,6 @@ export class SyncEngine {
       const cur = this.binding.get();
       if (cur !== v || v.paused || v.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) return;
       if (!this.room || this.room.paused) return;
-      // Sabotage reports the room's last anchor instead, which is what this once did.
       const at = this.sabotage === 'stall-position' ? this.room.positionMs : this.outboundPositionMs(v);
       this.diag(`stalled at ${Math.round(this.outboundPositionMs(v))}ms (readyState ${v.readyState}); pausing the room at ${Math.round(at)}ms`);
       this.send({ paused: true, positionMs: at, stalled: true });
@@ -179,7 +170,6 @@ export class SyncEngine {
   }
   onLocalPlaying() { this.cancelStall(); }
 
-  /** Whether an event of this player's is its own recovery from the stall it just reported, and so not passed on. */
   private holdingOwnStall(kind: 'play' | 'seeking') {
     const s = this.ownStall;
     if (!s || this.sabotage === 'stall-guard') return false;
@@ -198,14 +188,11 @@ export class SyncEngine {
   /** A `playback` frame or a fresh room snapshot: adopt it and correct now. */
   applyRemote(room: RoomPlayback, offsetMs = this.offsetMs) {
     this.offsetMs = offsetMs;
-    // Every frame arrives twice, as itself and in the snapshot that follows it. The second
-    // copy would command the player again: a facade (Drive, Disney+) still reads the old
-    // state then, and is sent a second play or pause.
+    // Every frame arrives twice (itself, then in the snapshot); a facade would get a second play or pause.
     const r = this.room;
     if (r && r.paused === room.paused && r.positionMs === room.positionMs && r.updatedAt === room.updatedAt) return;
     if (!room.paused) this.waitingOnSelf = false; // resumed: nobody is waiting on this player any more
     if (this.ownStall) {
-      // Someone resumed: from here on this player's events are what they look like.
       if (!room.paused) this.ownStall = null;
       else if (!this.ownStall.echoed) this.ownStall = { ...this.ownStall, until: Date.now() + OWN_STALL_HOLD_MS, echoed: true };
     }
@@ -309,17 +296,13 @@ export class SyncEngine {
     this.reported = { ...this.counters };
   }
 
-  /**
-   * How much this player has loaded past where it is, or null where the player cannot say
-   * (a facade without that knowledge). On the element's own `buffered`, the same clock as
-   * its `currentTime`, so the episode-start skip does not enter into it.
-   */
+  /** Null where the player cannot say. Same clock as `currentTime`, so the episode-start skip does not enter. */
   private bufferedAheadMs(v: HTMLVideoElement): number | null {
     const b = (v as { buffered?: TimeRanges | null }).buffered;
     if (!b) return null;
     const t = v.currentTime;
     for (let i = 0; i < b.length; i++) {
-      // A little slack at the start: a paused element can sit a hair before its range.
+      // A paused element can sit a hair before its range.
       if (b.start(i) <= t + 0.25 && t < b.end(i)) return (b.end(i) - t) * 1000;
     }
     return 0;

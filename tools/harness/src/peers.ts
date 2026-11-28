@@ -27,7 +27,6 @@ export const wixSiteUrl = (contentId: string) => `${PLAYER_ORIGIN.replace('://lo
 /** The Disney+-shaped page: the <video> runs on its own clock; the program's is on a page-world player object. */
 export const disneyWatchUrl = (contentId: string) => `${PLAYER_ORIGIN}/dpwatch/${contentId}`;
 export type PlayerShape = 'hbo' | 'drive' | 'youtube' | 'wix' | 'disney';
-/** Which copy of the episode a peer plays (`?copy=`); `starved` runs dry at STARVE_AT_SECONDS. */
 export type Copy = 'plain' | 'extras' | 'starved';
 
 export type Sabotage = 'reattach' | 'drift' | 'offscreen' | 'echo-suppress' | 'episode-start' | 'stall-position' | 'stall-guard' | null;

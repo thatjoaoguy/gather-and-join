@@ -89,7 +89,6 @@ export type Snap = {
 };
 export const snapshot = (p: Peer) => p.gj<Snap | null>('getSnapshot');
 
-/** A peer's diagnostics log: every realm's lines, the ones the setup page assembles into a report. */
 export async function logLines(p: Peer): Promise<string[]> {
   const sess = (await p.extPage.evaluate(() => chrome.storage.session.get(null))) as Record<string, unknown>;
   return Object.keys(sess).filter((k) => k.startsWith('gjLog')).flatMap((k) => sess[k] as string[]);

@@ -65,11 +65,10 @@ const STYLE = `
   .badge { display: none; place-items: center; width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; background: var(--warning-bg); border: 1px solid var(--warning); color: var(--warning); }
   .badge svg { width: 13px; height: 13px; }
   .tile.muted .badge.muted, .tile.lost .badge.lost { display: grid; }
-  /* Says why the show stopped, on whoever stopped it. A dropped connection says more, so it wins. */
+  /* A dropped connection says more, so it wins. */
   .pill { display: none; align-items: center; gap: 5px; height: 22px; box-sizing: border-box; padding: 0 9px 0 6px; border-radius: 11px; background: var(--warning-bg); border: 1px solid var(--warning); color: var(--warning); font-size: 11px; font-weight: 700; }
   .pill svg { width: 13px; height: 13px; flex: none; }
   .pill.ready { background: var(--success-bg); border-color: var(--success); color: var(--success); }
-  /* Caught up: the same corner says the show can go on. Play is still somebody's to press. */
   .tile.buffering:not(.ready) .pill.buffering, .tile.buffering.ready .pill.ready { display: flex; }
   .tile.lost .badge.muted, .tile.lost .pill { display: none; }
   .rail-status { display: none; margin: auto 0 0; align-items: center; gap: 7px; width: 100%; box-sizing: border-box; font-size: 11px; font-weight: 700; color: var(--warning); background: var(--warning-bg); border: 1px solid var(--warning); border-radius: 12px; padding: 6px 10px; }

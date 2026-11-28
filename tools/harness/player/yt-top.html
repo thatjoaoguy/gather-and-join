@@ -53,9 +53,7 @@
   const AD_MS = 6000;
   const contentId = (decodeURIComponent(location.pathname).match(/\/ytwatch\/(.+)$/) || [])[1] || 'urn:hbo:episode:G0000001';
   document.getElementById('title').textContent = contentId;
-  // `?copy=` as on the HBO page (player.js).
   const copy = new URLSearchParams(location.search).get('copy');
-  // A starved copy carries this page's own session (see player.js).
   const mainSrc = copy === 'starved' ? `/media/starved?session=${Math.random().toString(36).slice(2)}` : copy ? `/media/${copy}` : '/media/main';
   document.title = 'Fake YouTube — ' + contentId;
 

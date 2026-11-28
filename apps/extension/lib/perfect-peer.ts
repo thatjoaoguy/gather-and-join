@@ -10,9 +10,8 @@ export type SignalPayload = { description?: RTCSessionDescriptionInit; candidate
 /**
  * A connection stuck in `checking` is never reported as `failed` by Chrome until its
  * consent checks run out (tens of seconds), and one that never gathered a usable pair
- * may never be reported at all. Restart ICE ourselves once this long has passed,
- * counted from the first negotiation: a connection with nothing to send (the page
- * loopback while nobody has a camera on) never starts, and is not stalled.
+ * may never be reported at all. Restart ICE ourselves once this long has passed since
+ * the first negotiation: a connection with nothing to send never starts, and is not stalled.
  */
 export const ICE_STALL_MS = 5000;
 
@@ -59,7 +58,6 @@ export class PerfectPeer {
     };
   }
 
-  /** The stall budget starts here, once, whichever side offers first. */
   private startedNegotiating() {
     if (this.negotiating) return;
     this.negotiating = true;

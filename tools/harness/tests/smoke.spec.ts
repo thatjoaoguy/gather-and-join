@@ -25,9 +25,7 @@ test('two peers join a room, play propagates, observer sees frames', async () =>
     expect(pb[0]!.msg.originPeerId).toBe('peer1');
     expect(pb[0]!.msg.paused).toBe(false);
 
-    // Each frame is applied once, though it reaches the page twice: as itself and in the
-    // snapshot after it. The play and the first heartbeat; the log is written on a debounce
-    // through the worker, so wait for it to catch up, then give a doubled copy time to land.
+    // The log is written on a debounce: wait for it, then give a doubled copy time to land.
     await waitForCondition(() => party.observer.ofType('playback').length >= 2, { timeout: HEARTBEAT_MS + 3000, label: 'a heartbeat after the play' });
     const frames = party.observer.ofType('playback');
     expect(frames.every((f) => f.msg.type === 'playback' && !f.msg.paused)).toBe(true);
@@ -35,7 +33,6 @@ test('two peers join a room, play propagates, observer sees frames', async () =>
     await waitForCondition(async () => (await applied()).length >= frames.length, { timeout: 5000, label: 'every frame in the guest\'s log' });
     const settledFrom = Date.now();
     await waitForCondition(() => Date.now() - settledFrom >= 1500, { timeout: 2500, label: 'time for a second copy to land' });
-    // Heartbeats are 5s apart, so nothing new arrives in that time; a doubled log would read 2 per frame.
     const lines = await applied();
     expect(lines.length, lines.join('\n')).toBeLessThanOrEqual(party.observer.ofType('playback').length);
     party.observer.writeJsonl(test.info().outputPath('smoke.jsonl'));

@@ -28,20 +28,9 @@ export const PING_SAMPLES = 5;
 export const OFFSET_REFRESH_MS = 60_000;
 export const HEARTBEAT_MS = 5_000;
 export const ECHO_SUPPRESS_MS = 500;
-/**
- * After a player reports its own stall, its own play and seeking events are not
- * broadcast until the room's pause has come back and this much longer. A player
- * picks itself up the moment data returns, and HBO Max was seen doing it 33ms after
- * its stall reached the others: passed on, that resumes the room for everyone.
- * Nobody means to press play a second after their own picture froze.
- */
+/** A stalled player's own play/seeking are held this long after its pause comes back: players resume themselves when data returns (HBO Max did, 33ms after its stall). */
 export const OWN_STALL_HOLD_MS = 1000;
-/**
- * A player that stalled the room reports itself ready once it has this much loaded past
- * where it stopped. Under Disney+'s ~11s loading cap; HBO Max refilled past it within 3s
- * of its network coming back (2026-11-27). Read from what is loaded, never `readyState`:
- * HBO Max said 4 with 1s loaded and 2 with 12s. It only informs; resuming stays manual.
- */
+/** Loaded ahead before a stalled player says it is ready. Under Disney+'s ~11s loading cap. */
 export const READY_AHEAD_MS = 5000;
 
 export const DRIFT_DEAD_ZONE_MS = 250;

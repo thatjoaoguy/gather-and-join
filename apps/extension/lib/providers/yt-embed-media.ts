@@ -106,11 +106,7 @@ export class YtEmbedMedia extends MediaEvents {
 
   get duration(): number { return this.durationSec; }
 
-  /**
-   * What is loaded, as the one range the embed describes: from the start to the loaded
-   * fraction of the length. Undefined until the embed has said, so a player that never
-   * says is never taken for one that can go on.
-   */
+  /** From the embed's loaded fraction; undefined until it has reported one. */
   get buffered(): TimeRanges | undefined {
     if (this.loadedFraction === null || !(this.durationSec > 0)) return undefined;
     const end = this.loadedFraction * this.durationSec;

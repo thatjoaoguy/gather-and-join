@@ -178,7 +178,6 @@ describe('RoomSession', () => {
     expect(events.navigate).toHaveBeenLastCalledWith({ contentId: 'urn:hbo:episode:G2', watchUrl: 'http://l/G2', originPeerId: 'me' });
     expect(session.snapshot.room).toMatchObject({ contentId: 'urn:hbo:episode:G2', positionMs: 0, paused: true });
     session.playback(true, 7000);
-    // The room's last anchor is 0 here; the stall must carry the player's own position, not that.
     session.stalled(9400);
     expect(client.sent.slice(-2)).toEqual([
       { type: 'playback', paused: true, positionMs: 7000, clientTime: 1_000_000 },
@@ -196,7 +195,6 @@ describe('RoomSession', () => {
     expect(session.snapshot.stalledBy).toEqual({ peerId: 'p2', name: 'Bea', ready: false });
     client.frame({ type: 'bufferReady', from: 'p2', ready: true });
     expect(session.snapshot.stalledBy).toEqual({ peerId: 'p2', name: 'Bea', ready: true });
-    // A new stall starts over, and play clears it all.
     client.frame({ type: 'playback', paused: true, positionMs: 5200, serverTime: 44, originPeerId: 'me', reason: 'stall' });
     expect(session.snapshot.stalledBy).toEqual({ peerId: 'me', name: 'you', ready: false });
     session.bufferReady(true);

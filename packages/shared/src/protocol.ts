@@ -42,7 +42,6 @@ export type C2S =
   | { type: 'playback'; paused: boolean; positionMs: number; clientTime: number; reason?: 'stall' }
   | { type: 'navigate'; contentId: string; watchUrl?: string | null }
   | { type: 'media'; micOn: boolean; camOn: boolean }
-  /** After this peer stalled the room: whether its player has loaded enough to go on. Never resumes anything. */
   | { type: 'bufferReady'; ready: boolean }
   | { type: 'duration'; contentId: string; durationMs: number }
   | { type: 'episodeStart'; contentId: string; start: EpisodeStart | null }

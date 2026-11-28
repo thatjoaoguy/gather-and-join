@@ -228,7 +228,7 @@ button.not-ready{cursor:not-allowed;opacity:.45}
 .badge-lost{position:absolute;top:8px;left:8px;z-index:2;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--warning-bg);border:1px solid var(--warning);color:var(--warning)}
 .badge-lost svg{width:13px;height:13px}
 .tile.lost .badge-lost{opacity:1}
-/* HUD: buffering pill, sharing the top-left corner with the badges */
+/* HUD: buffering pill */
 .badges{position:absolute;top:8px;left:8px;z-index:2;display:flex;gap:4px}
 .badges .badge-muted.inline{position:static}
 .tile.buffering{border-color:var(--warning)}
