@@ -191,6 +191,11 @@ export class SyncEngine {
   /** A `playback` frame or a fresh room snapshot: adopt it and correct now. */
   applyRemote(room: RoomPlayback, offsetMs = this.offsetMs) {
     this.offsetMs = offsetMs;
+    // Every frame arrives twice, as itself and in the snapshot that follows it. The second
+    // copy would command the player again: a facade (Drive, Disney+) still reads the old
+    // state then, and is sent a second play or pause.
+    const r = this.room;
+    if (r && r.paused === room.paused && r.positionMs === room.positionMs && r.updatedAt === room.updatedAt) return;
     if (this.ownStall) {
       // Someone resumed: from here on this player's events are what they look like.
       if (!room.paused) this.ownStall = null;

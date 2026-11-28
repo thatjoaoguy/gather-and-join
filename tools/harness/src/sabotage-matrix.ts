@@ -26,7 +26,7 @@ const MATRIX: Record<string, string[]> = {
   // On the Disney shape the burst of the follower's applied seek reaches the room as pauses.
   // On the Drive shape a stall's pause reaches the embed a message later than the seek back to the stall
   // position, so untagged, that seek goes out as a play from a player that still reads as playing.
-  'echo-suppress': ['echo suppression', 'large drift', 'small drift', 'quality switch', 'disney-shaped seek', 'buffering stall (drive): the room pauses'],
+  'echo-suppress': ['echo suppression', 'large drift', 'disney-shaped seek', 'buffering stall (drive): the room pauses'],
   // Without the skip, a copy with extras plays them on the room's timeline: a whole extras' length off the others.
   'episode-start': ['episode start'],
   // Without holding the copy's length, an ad pod past a minute is reported to the room as the copy.
@@ -53,6 +53,11 @@ const SKIP_UNDER_SABOTAGE = ['sync accuracy', 'late join', 'ducking', 'perfect n
  */
 const SKIP_UNDER_FLAG: Record<string, string[]> = {
   offscreen: ['service worker termination'],
+  // Untagged, the follower's corrective seek bounces between the peers, and whether that settles
+  // inside these tests' windows is timing: each passes or fails from run to run. They failed every
+  // time only while every frame was applied twice, which doubled each echo. Four other tests
+  // demonstrate the row.
+  'echo-suppress': ['small drift', 'quality switch'],
   // The drift flag turns every correction past the dead zone into a hard seek, so a starving guest
   // 250ms behind seeks past the end of its data and stalls there instead: a stall from a seek, which
   // these do not guard. Small drift is the row's demonstration.

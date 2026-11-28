@@ -121,6 +121,22 @@ describe('SyncEngine', () => {
     ]);
   });
 
+  it('applies a frame once when it arrives again in the snapshot after it, even to a player that pauses and plays late', () => {
+    // A facade's play goes out over a message: `paused` still reads true when the copy arrives.
+    const v = { ...fakeVideo(), plays: 0, play() { this.plays++; return Promise.resolve(); } };
+    const lines: string[] = [];
+    const e = new SyncEngine(bindingFor(v as never), () => {}, null, (l) => lines.push(l));
+    const frame = { paused: false, positionMs: 10_000, updatedAt: Date.now() };
+    e.applyRemote(frame, 0);
+    e.applyRemote({ ...frame }, 0); // the snapshot's copy
+    expect(v.plays).toBe(1);
+    expect(e.counters.hardSeeks).toBe(1);
+    expect(lines.filter((l) => l.startsWith('apply '))).toHaveLength(1);
+    // A new anchor with the same values a moment later is a new frame: a heartbeat.
+    e.applyRemote({ ...frame, updatedAt: frame.updatedAt + 5000 }, 0);
+    expect(lines.filter((l) => l.startsWith('apply '))).toHaveLength(2);
+  });
+
   it('adopts a local seek optimistically so the drift tick does not revert it', () => {
     const v = fakeVideo();
     v.paused = false;
