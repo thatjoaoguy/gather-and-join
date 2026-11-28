@@ -36,6 +36,13 @@ export const ECHO_SUPPRESS_MS = 500;
  * Nobody means to press play a second after their own picture froze.
  */
 export const OWN_STALL_HOLD_MS = 1000;
+/**
+ * A player that stalled the room reports itself ready once it has this much loaded past
+ * where it stopped. Under Disney+'s ~11s loading cap; HBO Max refilled past it within 3s
+ * of its network coming back (2026-11-27). Read from what is loaded, never `readyState`:
+ * HBO Max said 4 with 1s loaded and 2 with 12s. It only informs; resuming stays manual.
+ */
+export const READY_AHEAD_MS = 5000;
 
 export const DRIFT_DEAD_ZONE_MS = 250;
 export const DRIFT_RATE_EXIT_MS = 100;

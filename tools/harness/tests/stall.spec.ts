@@ -36,6 +36,7 @@ const IN_SYNC_MS: Partial<Record<PlayerShape, number>> = { drive: 400 };
  */
 /** The buffering pill on `whose` tile, in `viewer`'s sidebar (a shadow root, which locators pierce). */
 const pill = (viewer: Peer, whose: Peer) => viewer.player().locator(`#gj-tiles .tile[data-peer-id="${whose.peerId}"] .pill.buffering`);
+const readyPill = (viewer: Peer, whose: Peer) => viewer.player().locator(`#gj-tiles .tile[data-peer-id="${whose.peerId}"] .pill.ready`);
 
 async function where(p: Peer, shape: PlayerShape): Promise<{ ms: number | null; paused: boolean | null }> {
   if (shape === 'disney') {
@@ -123,12 +124,54 @@ test.describe('buffering stall', () => {
       expect(h.paused && g.paused).toBe(true);
       expect(Math.abs(g.positionMs! - stall.msg.positionMs)).toBeLessThan(SAME_SPOT_MS);
 
-      // Data is back; a person resumes, and the pill leaves both sidebars with the pause.
-      await expect(pill(host, guest)).toBeVisible();
+      // Data is back, so the guest has said it can go on; a person resumes, and the pill leaves both sidebars with the pause.
+      await expect(readyPill(host, guest)).toBeVisible();
       await pressPlay(host);
       await waitForCondition(async () => (await state(guest)).paused === false, { label: 'guest resumed with the room' });
-      await expect(pill(host, guest)).toBeHidden();
-      await expect(pill(guest, guest)).toBeHidden();
+      for (const p of [pill(host, guest), pill(guest, guest), readyPill(host, guest), readyPill(guest, guest)]) await expect(p).toBeHidden();
     } catch (e) { await dumpParty(party, 'self-resume failure'); throw e; } finally { await party.close(); }
+  });
+
+  /**
+   * The data comes back while the room is paused: the stalled player says it can go on,
+   * everyone's pill turns to Ready, and the show stays paused until somebody presses play.
+   * Read from what the player has loaded (a facade's own account on Drive and Disney+).
+   */
+  for (const shape of SHAPES) test(`buffering stall (${shape}): once the stalled player has caught up, everyone sees it is ready, and nothing resumes`, async () => {
+    const party = await startParty({ n: 2, shape, copies: ['plain', 'starved'] });
+    try {
+      const host = party.leader, guest = party.peers[1]!;
+      await waitForCondition(async () => (await Promise.all(party.peers.map(state))).every((s) => s.positionMs !== null), { label: 'every player attached' });
+      await pressPlay(host);
+      await waitForCondition(async () => (await state(guest)).paused === false, { label: 'guest playing' });
+      await waitForCondition(async () => (await spreadMs(party.peers)).spread < (IN_SYNC_MS[shape] ?? 150), { timeout: 10_000, label: 'initial convergence' });
+
+      const isStall = (f: (typeof party.observer.frames)[number]) => f.msg.type === 'playback' && f.msg.reason === 'stall';
+      await waitForCondition(() => party.observer.frames.some(isStall), { timeout: STARVE_AT_MS + 10_000, label: 'guest reports a stall' });
+      const stallAt = party.observer.frames.findIndex(isStall);
+      await expect(pill(host, guest)).toBeVisible();
+      await expect(readyPill(host, guest)).toBeHidden(); // nothing loaded past the cut yet
+
+      const releasedAt = Date.now();
+      expect(Number(await (await fetch(`${PLAYER_ORIGIN}/media/starved/release`)).text())).toBeGreaterThan(0);
+      const readyFrame = () => party.observer.frames.find((f) => f.msg.type === 'bufferReady' && f.msg.from === guest.peerId && f.msg.ready);
+      await waitForCondition(() => !!readyFrame(), { timeout: 10_000, label: 'the guest says it can go on' });
+      console.log(`${shape}: ready ${readyFrame()!.t - releasedAt}ms after the data came back`);
+      await expect(readyPill(host, guest)).toBeVisible();
+      await expect(readyPill(guest, guest)).toBeVisible();
+      await expect(pill(host, guest)).toBeHidden();
+
+      // Ready is information: the show is still paused, everywhere.
+      await waitForCondition(() => Date.now() - releasedAt > HOLD_MS, { timeout: HOLD_MS + 1000, label: 'hold' });
+      const resumed = party.observer.frames.slice(stallAt + 1).filter((f) => f.msg.type === 'playback' && !f.msg.paused);
+      expect(resumed).toHaveLength(0);
+      const [h, g] = await Promise.all([where(host, shape), where(guest, shape)]);
+      expect(h.paused && g.paused).toBe(true);
+
+      await pressPlay(host);
+      await waitForCondition(async () => (await where(guest, shape)).paused === false, { label: 'guest resumed with the room' });
+      await expect(readyPill(host, guest)).toBeHidden();
+      await expect(readyPill(guest, guest)).toBeHidden();
+    } catch (e) { await dumpParty(party, `ready failure (${shape})`); throw e; } finally { await party.close(); }
   });
 });

@@ -34,7 +34,9 @@
   const video = () => playerEl.querySelector('video');
   // `?copy=plain|extras|starved` picks a copy of the episode; the query is dropped by an
   // episode change, since the next episode need not come with extras.
-  const mainSrc = () => { const c = new URLSearchParams(location.search).get('copy'); return c ? `/media/${c}` : '/media/main'; };
+  // A starved copy carries this page's own session: a release brings the network back for it alone.
+  const session = Math.random().toString(36).slice(2);
+  const mainSrc = () => { const c = new URLSearchParams(location.search).get('copy'); return c === 'starved' ? `/media/starved?session=${session}` : c ? `/media/${c}` : '/media/main'; };
 
   function createVideo(src, { currentTime = 0, autoplay = false, loop = true } = {}) {
     const old = video();

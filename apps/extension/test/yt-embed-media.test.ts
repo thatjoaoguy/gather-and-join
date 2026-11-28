@@ -12,8 +12,9 @@ function embed() {
   vi.stubGlobal('window', { addEventListener: (_: string, fn: typeof onMessage) => { onMessage = fn; }, removeEventListener: () => {} });
   const contentWindow = { postMessage: () => {} };
   const media = new YtEmbedMedia({ contentWindow, isConnected: true } as unknown as HTMLIFrameElement, 'https://embed.test');
-  const state = (playerState: number) => onMessage!({ source: contentWindow, data: JSON.stringify({ event: 'infoDelivery', info: { playerState } }) } as unknown as MessageEvent);
-  return { media, state };
+  const info = (i: Record<string, number>) => onMessage!({ source: contentWindow, data: JSON.stringify({ event: 'infoDelivery', info: i }) } as unknown as MessageEvent);
+  const state = (playerState: number) => info({ playerState });
+  return { media, state, info };
 }
 
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
@@ -50,5 +51,17 @@ describe('YtEmbedMedia events', () => {
     media.currentTime = 12;
     expect(after).toHaveBeenCalledTimes(1);
     expect(() => vi.runAllTimers()).toThrow('boom');
+  });
+});
+
+describe('YtEmbedMedia buffered', () => {
+  it('describes what is loaded from the embed\'s loaded fraction, and nothing until the embed has said', () => {
+    const { media, info } = embed();
+    expect(media.buffered).toBeUndefined();
+    info({ duration: 300 });
+    expect(media.buffered).toBeUndefined(); // a length but no fraction: it cannot say
+    info({ videoLoadedFraction: 0.25 });
+    const b = media.buffered!;
+    expect([b.length, b.start(0), b.end(0)]).toEqual([1, 0, 75]);
   });
 });

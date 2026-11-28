@@ -21,7 +21,7 @@
 (() => {
   const v = document.getElementById('v');
   const copy = new URLSearchParams(location.search).get('copy');
-  v.src = copy ? `/media/${copy}` : '/media/main';
+  v.src = copy === 'starved' ? `/media/starved?session=${Math.random().toString(36).slice(2)}` : copy ? `/media/${copy}` : '/media/main';
   const TICK_MS = 266; // measured cadence of the real embed
   const parentOrigin = '*';
 
@@ -39,6 +39,8 @@
     playerState: state,
     playbackRate: v.playbackRate,
     duration: isFinite(v.duration) ? v.duration : 0,
+    // How much of the video is loaded, as the real embed reports it: the furthest loaded point over the length.
+    videoLoadedFraction: isFinite(v.duration) && v.duration > 0 && v.buffered.length ? v.buffered.end(v.buffered.length - 1) / v.duration : 0,
   });
 
   // The real embed pushes on a timer, not per frame. That coarseness is the

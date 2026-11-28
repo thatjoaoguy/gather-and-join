@@ -192,7 +192,7 @@ function peerRow(p: Participant, s: Snapshot): string {
   let stateText = '';
   if (!p.self) {
     stateText = reconnecting ? 'Reconnecting' : p.lost ? 'Connection lost' : p.media?.connectionState === 'connected' ? 'Connected' : 'Connecting…';
-    if (p.buffering) stateText += ' · buffering';
+    if (p.buffering) stateText += p.ready ? ' · ready' : ' · buffering';
   }
   const cam = !p.self && p.media?.hasVideo ? `<span class="mini ok" title="Camera on" aria-label="Camera on">${ic('cam', 'sm')}</span>` : '';
   const muted = !p.self && p.micOn === false ? `<span class="mini warn" title="Muted" aria-label="Muted">${ic('micOff', 'sm')}</span>` : '';
@@ -214,7 +214,12 @@ function renderRoom(s: Snapshot) {
   let notice = ''; let actions = '';
   if (ungranted) actions += accessNotice(ungranted);
   if (!connected) notice += `<div class="notice warning" role="status"><strong>${ic('warn')} Reconnecting to your room…</strong><p>Your connection dropped. We’re trying again. Your friends stay where they are.</p></div>`;
-  if (s.stalledBy) notice += `<div class="notice warning" role="status"><strong>${ic('warn')} ${esc(s.stalledBy.name === 'you' ? 'You are' : s.stalledBy.name + ' is')} buffering</strong><p>The show is paused. Press play when everyone is ready.</p></div>`;
+  if (s.stalledBy) {
+    const who = s.stalledBy.name === 'you' ? 'You are' : s.stalledBy.name + ' is';
+    notice += s.stalledBy.ready
+      ? `<div class="notice success" role="status"><strong>${ic('ok')} ${esc(who)} ready</strong><p>The show is still paused. Press play to carry on.</p></div>`
+      : `<div class="notice warning" role="status"><strong>${ic('warn')} ${esc(who)} buffering</strong><p>The show is paused. Press play when everyone is ready.</p></div>`;
+  }
   const here = activePlayerUrl ? parseContentId(activePlayerUrl) : null;
   const goto = room.contentId ? trustedWatchUrl(room.contentId, room.watchUrl) : null;
   if (room.contentId && goto && here !== room.contentId) {

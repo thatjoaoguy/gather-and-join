@@ -84,7 +84,7 @@ export class PartySidebar {
   private render() {
     if (!this.model.inRoom) return;
     this.view.update({
-      tiles: this.model.participants.map(({ peerId, name, self, speaking, micOn, lost, buffering }) => ({ peerId, name, self, speaking, muted: micOn === false, lost, buffering })),
+      tiles: this.model.participants.map(({ peerId, name, self, speaking, micOn, lost, buffering, ready }) => ({ peerId, name, self, speaking, muted: micOn === false, lost, buffering, ready })),
       streamFor: (id) => this.loopback.streamFor(id),
       connection: this.model.connection,
       offEpisode: this.model.offEpisode ?? null,

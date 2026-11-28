@@ -126,6 +126,6 @@
   v.loop = true;
   // `?copy=` as on the HBO page; a starved copy's cut is in program seconds, and this media starts 20s in.
   const copy = new URLSearchParams(location.search).get('copy');
-  v.src = !copy ? '/media/main' : copy === 'starved' ? '/media/starved?shift=20' : `/media/${copy}`;
+  v.src = !copy ? '/media/main' : copy === 'starved' ? `/media/starved?shift=20&session=${Math.random().toString(36).slice(2)}` : `/media/${copy}`;
 })();
 </script>

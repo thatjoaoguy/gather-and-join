@@ -43,7 +43,8 @@ export const EXTRAS_SECONDS = 60;
  * `waiting`, `readyState` down — rather than through anything the extension could
  * tell apart from a slow network. Past the first heartbeats, and not on one.
  * In the program's seconds: a page whose media runs ahead of the program (the
- * Disney shape's starts 20s in) asks for `/media/starved?shift=20`.
+ * Disney shape's starts 20s in) asks for `/media/starved?shift=20`. Each page load adds a
+ * `session` of its own, which is what a release brings the network back for.
  *
  * What it does not reproduce: a real service feeds its element through Media
  * Source, whose `readyState` does not follow what is loaded (lib/providers/hbomax.ts
@@ -86,17 +87,23 @@ function loadMedia(): { main: Media; ad: Media } {
 /** A WAV's byte offset for a time: 44-byte header, 48 kHz mono 16-bit (see wav.ts). */
 const wavOffset = (seconds: number) => 44 + Math.floor(seconds * 48_000) * 2;
 
-/** Responses waiting at their `holdFrom`, each with the rest it still owes. `/media/starved/release` sends them. */
-const held = new Set<() => void>();
+/** Responses waiting at their `holdFrom`, each with the rest it still owes and the page session it belongs to. */
+const held = new Map<() => void, string>();
+/**
+ * Page sessions whose network has come back (`/media/starved/release`): they are served
+ * in full from then on, so a player that asks again right away (a Disney-shaped seek
+ * reloads its media) is not starved again. A new page brings a new session, and starves.
+ */
+const released = new Set<string>();
 
 /** `holdFrom`: send nothing at or past this byte; the response stays open until released or the player gives up on it. */
-function serveMedia(req: http.IncomingMessage, res: http.ServerResponse, media: Media, holdFrom = Infinity) {
+function serveMedia(req: http.IncomingMessage, res: http.ServerResponse, media: Media, holdFrom = Infinity, session = '') {
   const total = media.body.length;
   const send = (start: number, end: number) => {
     if (end < holdFrom) return res.end(media.body.subarray(start, end + 1));
     res.write(media.body.subarray(start, Math.max(start, holdFrom)));
     const rest = () => { held.delete(rest); res.end(media.body.subarray(Math.max(start, holdFrom), end + 1)); };
-    held.add(rest);
+    held.set(rest, session);
     res.on('close', () => held.delete(rest));
   };
   const range = req.headers.range;
@@ -134,8 +141,12 @@ export function startPlayerServer(port = PLAYER_PORT): Promise<http.Server> {
     if (p === '/media/plain') return serveMedia(req, res, loadCopies().plain);
     if (p === '/media/extras') return serveMedia(req, res, loadCopies().extras);
     // The network coming back, for every starved response open now. A player that asks again afterwards is starved again.
-    if (p === '/media/starved/release') { const n = held.size; for (const rest of [...held]) rest(); res.writeHead(200); return res.end(String(n)); }
-    if (p === '/media/starved') return serveMedia(req, res, loadCopies().plain, wavOffset(STARVE_AT_SECONDS + Number(url.searchParams.get('shift') ?? 0)));
+    if (p === '/media/starved/release') { const n = held.size; for (const [rest, s] of [...held]) { released.add(s); rest(); } res.writeHead(200); return res.end(String(n)); }
+    if (p === '/media/starved') {
+      const session = url.searchParams.get('session') ?? '';
+      const cut = session && released.has(session) ? Infinity : wavOffset(STARVE_AT_SECONDS + Number(url.searchParams.get('shift') ?? 0));
+      return serveMedia(req, res, loadCopies().plain, cut, session);
+    }
     if (p.startsWith('/watch/urn:hbo:')) return serveFile(res, path.join(PLAYER_DIR, 'index.html'));
     // Drive-shaped variant: no <video> in the top document, playback in a
     // cross-origin iframe driven by the YouTube widget postMessage protocol.

@@ -213,6 +213,9 @@ function handleMessage(socket: WebSocket, raw: RawData) {
       peer.media = { micOn: msg.micOn, camOn: msg.camOn };
       return broadcast(room, { type: 'media', from: peer.peerId, micOn: msg.micOn, camOn: msg.camOn }, peer.peerId);
     }
+    case 'bufferReady':
+      // Relayed, not remembered: it describes a stall in progress, and a late joiner never saw that stall.
+      return broadcast(room, { type: 'bufferReady', from: peer.peerId, ready: msg.ready }, peer.peerId);
     case 'duration': {
       // Self-reported length of this peer's copy, remembered and relayed like media. Tagged with
       // its content, so a report from before an episode change is never compared with the new one.

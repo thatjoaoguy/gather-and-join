@@ -11,7 +11,7 @@
  *    taken off on the way out, and nothing before the episode is ever broadcast.
  */
 import {
-  decideCorrection, expectedPositionMs, ECHO_SUPPRESS_MS, HEARTBEAT_MS, DRIFT_DEAD_ZONE_MS, DRIFT_HARD_SEEK_MS, OWN_STALL_HOLD_MS,
+  decideCorrection, expectedPositionMs, ECHO_SUPPRESS_MS, HEARTBEAT_MS, DRIFT_DEAD_ZONE_MS, DRIFT_HARD_SEEK_MS, OWN_STALL_HOLD_MS, READY_AHEAD_MS,
   type RoomState,
 } from '@gj/shared';
 import type { Sabotage } from './constants';
@@ -42,6 +42,9 @@ export class SyncEngine {
   private stallTimer: ReturnType<typeof setTimeout> | null = null;
   /** Our own stall: until when this player's own play and seeking are held back, and whether the room's pause has come back yet. */
   private ownStall: { at: number; until: number; echoed: boolean } | null = null;
+  /** The room is paused on this player's stall: watch what it has loaded, and say when it could go on. */
+  private waitingOnSelf = false;
+  private reportedReady = false;
   /** |drift| samples since the last summary, plus the counters as they stood then. */
   private driftSamples: number[] = [];
   private lastReport = 0;
@@ -61,6 +64,8 @@ export class SyncEngine {
      * resume from a player resuming itself after a rebuffer, which look the same otherwise.
      */
     private readonly userActive: () => boolean | null = () => null,
+    /** This player, which stalled the room, can go on (or no longer can). Informs people; resumes nothing. */
+    private readonly readiness: (ready: boolean) => void = () => {},
   ) {}
 
   serverNow() { return Date.now() + this.offsetMs; }
@@ -168,6 +173,8 @@ export class SyncEngine {
       this.send({ paused: true, positionMs: at, stalled: true });
       const now = Date.now();
       this.ownStall = { at: now, until: now + OWN_STALL_ECHO_WAIT_MS, echoed: false };
+      this.waitingOnSelf = true;
+      this.reportedReady = false;
     }, STALL_CONFIRM_MS);
   }
   onLocalPlaying() { this.cancelStall(); }
@@ -196,6 +203,7 @@ export class SyncEngine {
     // state then, and is sent a second play or pause.
     const r = this.room;
     if (r && r.paused === room.paused && r.positionMs === room.positionMs && r.updatedAt === room.updatedAt) return;
+    if (!room.paused) this.waitingOnSelf = false; // resumed: nobody is waiting on this player any more
     if (this.ownStall) {
       // Someone resumed: from here on this player's events are what they look like.
       if (!room.paused) this.ownStall = null;
@@ -301,8 +309,36 @@ export class SyncEngine {
     this.reported = { ...this.counters };
   }
 
+  /**
+   * How much this player has loaded past where it is, or null where the player cannot say
+   * (a facade without that knowledge). On the element's own `buffered`, the same clock as
+   * its `currentTime`, so the episode-start skip does not enter into it.
+   */
+  private bufferedAheadMs(v: HTMLVideoElement): number | null {
+    const b = (v as { buffered?: TimeRanges | null }).buffered;
+    if (!b) return null;
+    const t = v.currentTime;
+    for (let i = 0; i < b.length; i++) {
+      // A little slack at the start: a paused element can sit a hair before its range.
+      if (b.start(i) <= t + 0.25 && t < b.end(i)) return (b.end(i) - t) * 1000;
+    }
+    return 0;
+  }
+
+  private checkReady(v: HTMLVideoElement) {
+    if (!this.waitingOnSelf || !this.room?.paused) return;
+    const ahead = this.bufferedAheadMs(v);
+    const ready = ahead !== null && ahead >= READY_AHEAD_MS;
+    if (ready === this.reportedReady) return;
+    this.reportedReady = ready;
+    this.diag(`${ready ? 'ready' : 'no longer ready'} after our stall: ${ahead === null ? '?' : Math.round(ahead)}ms loaded ahead (readyState ${v.readyState})`);
+    this.readiness(ready);
+  }
+
   private tick() {
     this.reconcile(false);
+    const cur = this.binding.get();
+    if (cur) this.checkReady(cur);
     this.report(Date.now());
     const v = this.binding.get();
     if (this.isLeader && v && !v.paused && this.room && !this.room.paused) {

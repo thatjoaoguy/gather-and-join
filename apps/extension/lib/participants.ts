@@ -23,6 +23,8 @@ export type Participant = {
   lost: boolean;
   /** Their player ran dry and paused the room, until somebody presses play. Self included. */
   buffering: boolean;
+  /** Buffering, and their player has since loaded enough to go on: someone can press play. */
+  ready: boolean;
 };
 
 export type ParticipantsOptions = {
@@ -39,6 +41,7 @@ export function participantsFrom(
   const me = s.yourPeerId;
   const leaderId = s.room?.leaderId ?? null;
   const stalled = s.stalledBy?.peerId ?? null;
+  const ready = s.stalledBy?.ready ?? false;
   const out: Participant[] = [];
   for (const p of s.peers) {
     if (isObserver(p.peerId)) continue;
@@ -51,11 +54,12 @@ export function participantsFrom(
       camOn: self ? s.camOn ?? null : media?.camOn ?? null,
       lost: !self && !!media && (media.connectionState === 'disconnected' || media.connectionState === 'failed'),
       buffering: p.peerId === stalled,
+      ready: p.peerId === stalled && ready,
     });
   }
   if (me && !out.some((p) => p.self)) {
     // Between "join sent" and the server's room frame we are not in the peer list yet.
-    out.unshift({ peerId: me, name: selfName, self: true, leader: leaderId === me, media: null, speaking: s.speaking ?? false, micOn: s.micOn ?? null, camOn: s.camOn ?? null, lost: false, buffering: me === stalled });
+    out.unshift({ peerId: me, name: selfName, self: true, leader: leaderId === me, media: null, speaking: s.speaking ?? false, micOn: s.micOn ?? null, camOn: s.camOn ?? null, lost: false, buffering: me === stalled, ready: me === stalled && ready });
   }
   if (selfFirst) out.sort((a, b) => Number(b.self) - Number(a.self));
   return out;

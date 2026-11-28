@@ -91,6 +91,65 @@ describe('SyncEngine', () => {
     }
   });
 
+  describe('readiness after its own stall', () => {
+    /** TimeRanges from [start, end] pairs, in seconds on the element's clock. */
+    const ranges = (...rs: Array<[number, number]>) => ({ length: rs.length, start: (i: number) => rs[i]![0], end: (i: number) => rs[i]![1] });
+    function stalledWatching(sabotage: null = null) {
+      vi.stubGlobal('HTMLMediaElement', { HAVE_FUTURE_DATA: 3 });
+      const v = { ...fakeVideo(), buffered: ranges([0, 13.2]) as unknown };
+      const ready: boolean[] = [];
+      const e = new SyncEngine(bindingFor(v as never), () => {}, sabotage, () => {}, () => null, (r) => ready.push(r));
+      e.applyRemote({ paused: false, positionMs: 10_000, updatedAt: Date.now() }, 0);
+      vi.advanceTimersByTime(3200);
+      v.currentTime = 13.2; v.readyState = 2;
+      e.onLocalWaiting(v as never);
+      vi.advanceTimersByTime(750); // the stall goes out
+      e.applyRemote({ paused: true, positionMs: 13_200, updatedAt: Date.now() }, 0); // and comes back
+      e.start();
+      return { v, e, ready };
+    }
+
+    it('goes by what is loaded, not readyState: HBO Max\'s 4 with 1s ahead is not ready, its 2 with 12s is', () => {
+      const { v, e, ready } = stalledWatching();
+      v.readyState = 4; v.buffered = ranges([0, 14.2]); // measured, throttled: "enough data" with 1s loaded
+      vi.advanceTimersByTime(1000);
+      expect(ready).toEqual([]);
+      v.readyState = 2; v.buffered = ranges([0, 25.2]); // measured, back online and paused: 12s loaded, readyState 2
+      vi.advanceTimersByTime(250);
+      expect(ready).toEqual([true]);
+      vi.advanceTimersByTime(2000);
+      expect(ready).toEqual([true]); // said once
+      e.stop();
+    });
+
+    it('stops watching once the room resumes, and never reports for a player that cannot say what it has loaded', () => {
+      const { v, e, ready } = stalledWatching();
+      e.applyRemote({ paused: false, positionMs: 13_200, updatedAt: Date.now() }, 0);
+      v.buffered = ranges([0, 60]);
+      vi.advanceTimersByTime(1000);
+      expect(ready).toEqual([]);
+      e.stop();
+
+      const quiet = stalledWatching();
+      quiet.v.buffered = undefined; // a facade without that knowledge
+      vi.advanceTimersByTime(1000);
+      expect(quiet.ready).toEqual([]);
+      quiet.e.stop();
+    });
+
+    it('is only about its own stall: a room paused by someone else\'s says nothing', () => {
+      vi.stubGlobal('HTMLMediaElement', { HAVE_FUTURE_DATA: 3 });
+      const v = { ...fakeVideo(), buffered: ranges([0, 60]) as unknown };
+      const ready: boolean[] = [];
+      const e = new SyncEngine(bindingFor(v as never), () => {}, null, () => {}, () => null, (r) => ready.push(r));
+      e.applyRemote({ paused: true, positionMs: 13_200, updatedAt: Date.now() }, 0);
+      e.start();
+      vi.advanceTimersByTime(1000);
+      expect(ready).toEqual([]);
+      e.stop();
+    });
+  });
+
   it('ends the hold when someone else resumes the room', () => {
     const { v, e, sent } = stalledEngine(null);
     e.applyRemote({ paused: true, positionMs: 13_200, updatedAt: Date.now() }, 0);

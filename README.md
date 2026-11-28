@@ -94,7 +94,8 @@ What it does and does not do:
   or advertising. Ads play as served.
 - The signaling server carries display names, room codes, an episode identifier,
   the length of each viewer's copy of it, where the episode starts in a longer
-  copy, and playback position — nothing else — and stores nothing on disk.
+  copy, playback position, and, when a viewer's player has paused everyone to
+  buffer, whether it has caught up — nothing else — and stores nothing on disk.
 
 Use of a streaming service through this extension remains subject to that
 service's terms; each viewer is responsible for their own account. The software

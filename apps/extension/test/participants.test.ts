@@ -29,13 +29,20 @@ describe('participantsFrom', () => {
     expect(byId(participantsFrom({ ...base, peers: [], room: null, stalledBy: { peerId: 'me', name: 'you' } } as never))).toEqual({ me: true });
   });
 
+  it('is ready only while buffering, and only for whoever stalled the room', () => {
+    const ready = (stalledBy: unknown) => Object.fromEntries(participantsFrom({ ...base, stalledBy } as never).map((p) => [p.peerId, p.ready]));
+    expect(ready({ peerId: 'p3', name: 'Cy', ready: false })).toEqual({ p2: false, me: false, p3: false });
+    expect(ready({ peerId: 'p3', name: 'Cy', ready: true })).toEqual({ p2: false, me: false, p3: true });
+    expect(ready(null)).toEqual({ p2: false, me: false, p3: false });
+  });
+
   it('puts self first for the sidebar without reordering the others', () => {
     expect(participantsFrom(base as never, { selfFirst: true }).map((p) => p.peerId)).toEqual(['me', 'p2', 'p3']);
   });
 
   it('synthesises a self entry while the join is in flight, so the lone tile appears at once', () => {
     const ps = participantsFrom({ ...base, peers: [], room: null } as never, { selfFirst: true, selfName: 'Ana' });
-    expect(ps).toEqual([{ peerId: 'me', name: 'Ana', self: true, leader: false, media: null, speaking: true, micOn: false, camOn: false, lost: false, buffering: false }]);
+    expect(ps).toEqual([{ peerId: 'me', name: 'Ana', self: true, leader: false, media: null, speaking: true, micOn: false, camOn: false, lost: false, buffering: false, ready: false }]);
     expect(participantsFrom({ ...base, peers: [], room: null, yourPeerId: null } as never)).toEqual([]);
   });
 });

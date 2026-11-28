@@ -26,7 +26,7 @@ const MATRIX: Record<string, string[]> = {
   // On the Disney shape the burst of the follower's applied seek reaches the room as pauses.
   // On the Drive shape a stall's pause reaches the embed a message later than the seek back to the stall
   // position, so untagged, that seek goes out as a play from a player that still reads as playing.
-  'echo-suppress': ['echo suppression', 'large drift', 'disney-shaped seek', 'buffering stall (drive): the room pauses'],
+  'echo-suppress': ['echo suppression', 'large drift', 'disney-shaped seek', 'buffering stall (drive)'],
   // Without the skip, a copy with extras plays them on the room's timeline: a whole extras' length off the others.
   'episode-start': ['episode start'],
   // Without holding the copy's length, an ad pod past a minute is reported to the room as the copy.
@@ -34,7 +34,9 @@ const MATRIX: Record<string, string[]> = {
   // Reporting the room's last anchor as the stall position rewinds everyone to the last heartbeat.
   'stall-position': ['the room pauses where the stalled player stopped'],
   // Without the hold, a player picking itself up after its own stall resumes the room for everyone.
-  'stall-guard': ['resumes itself'],
+  // The HBO-shaped starved page (Wix frames the same page) resumes itself when data returns, so
+  // its ready tests need the hold too: without it the room plays on and nobody waits to be ready.
+  'stall-guard': ['resumes itself', 'buffering stall (hbo): once', 'buffering stall (wix): once'],
 };
 
 /**
@@ -58,6 +60,11 @@ const SKIP_UNDER_FLAG: Record<string, string[]> = {
   // time only while every frame was applied twice, which doubled each echo. Four other tests
   // demonstrate the row.
   'echo-suppress': ['small drift', 'quality switch'],
+  // Pausing at the stale anchor seeks the stalled Disney-shaped player back while paused, and from
+  // there Chrome loads the fake's plain file only ~4s ahead of a paused element: short of
+  // READY_AHEAD_MS, so it never says ready. That is the fixture, not the mechanism; a real player
+  // that stopped short would just stay on Buffering.
+  'stall-position': ['buffering stall (disney): once'],
   // The drift flag turns every correction past the dead zone into a hard seek, so a starving guest
   // 250ms behind seeks past the end of its data and stalls there instead: a stall from a seek, which
   // these do not guard. Small drift is the row's demonstration.

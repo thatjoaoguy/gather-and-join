@@ -171,7 +171,7 @@ describe('RoomSession', () => {
     expect(events.playback).toHaveBeenLastCalledWith({ paused: false, positionMs: 5000, serverTime: 42, originPeerId: 'p2', offsetMs: 123 });
     expect(session.snapshot.room).toMatchObject({ paused: false, positionMs: 5000, updatedAt: 42 });
     client.frame({ type: 'playback', paused: true, positionMs: 5000, serverTime: 43, originPeerId: 'p2', reason: 'stall' });
-    expect(session.snapshot.stalledBy).toEqual({ peerId: 'p2', name: 'Bea' });
+    expect(session.snapshot.stalledBy).toEqual({ peerId: 'p2', name: 'Bea', ready: false });
     client.frame({ type: 'playback', paused: false, positionMs: 5000, serverTime: 44, originPeerId: 'me' });
     expect(session.snapshot.stalledBy).toBeNull();
     client.frame({ type: 'navigate', contentId: 'urn:hbo:episode:G2', watchUrl: 'http://l/G2', originPeerId: 'me' });
@@ -184,6 +184,26 @@ describe('RoomSession', () => {
       { type: 'playback', paused: true, positionMs: 7000, clientTime: 1_000_000 },
       { type: 'playback', paused: true, positionMs: 9400, clientTime: 1_000_000, reason: 'stall' },
     ]);
+  });
+
+  it('marks whoever stalled the room ready when they say so, ignores anyone else\'s, and sends and marks our own', async () => {
+    const { session, client } = setup();
+    await session.joinRoom('RM0001', 'Ana');
+    client.connect();
+    client.frame(roomFrame({ peers: [{ peerId: 'me', name: 'Ana' }, { peerId: 'p2', name: 'Bea' }, { peerId: 'p3', name: 'Cy' }] }));
+    client.frame({ type: 'playback', paused: true, positionMs: 5000, serverTime: 43, originPeerId: 'p2', reason: 'stall' });
+    client.frame({ type: 'bufferReady', from: 'p3', ready: true }); // not the one everyone is waiting on
+    expect(session.snapshot.stalledBy).toEqual({ peerId: 'p2', name: 'Bea', ready: false });
+    client.frame({ type: 'bufferReady', from: 'p2', ready: true });
+    expect(session.snapshot.stalledBy).toEqual({ peerId: 'p2', name: 'Bea', ready: true });
+    // A new stall starts over, and play clears it all.
+    client.frame({ type: 'playback', paused: true, positionMs: 5200, serverTime: 44, originPeerId: 'me', reason: 'stall' });
+    expect(session.snapshot.stalledBy).toEqual({ peerId: 'me', name: 'you', ready: false });
+    session.bufferReady(true);
+    expect(client.sent.at(-1)).toEqual({ type: 'bufferReady', ready: true });
+    expect(session.snapshot.stalledBy?.ready).toBe(true); // not echoed by the server: set here
+    client.frame({ type: 'playback', paused: false, positionMs: 5200, serverTime: 45, originPeerId: 'p2' });
+    expect(session.snapshot.stalledBy).toBeNull();
   });
 
   it('tracks peers joining and leaving: mesh membership, leadership handover, stalled-by cleanup', async () => {

@@ -548,6 +548,19 @@
 </div></div>
 <p class="drives">Drives: <code>stalledBy = { peerId, name }</code>, as <code>participants[].buffering</code>. A "Buffering" pill on the tile of whoever's player ran dry, everyone's sidebar alike, theirs too; the tile edge takes the warning tone. It says why the show stopped without a notice over it, and stays until a play frame clears <code>stalledBy</code>: resume is manual, on the streaming player. It shares the corner with the muted badge; a dropped connection hides both, since it says more. No motion.</p>
 </div>
+<div>
+<div class="surface-label"><span>HUD / They have caught up</span><span>stalledBy.ready</span></div>
+<div class="hud-frame"><div class="player">
+<div class="film"><span class="eyebrow">Streaming player · paused</span><div class="subtitle">“Glad we did this.”</div></div>
+<aside class="rail current" aria-label="Participants">
+<button class="gear" type="button" aria-label="Room settings" aria-expanded="false"><svg aria-hidden="true"><use href="#i-settings"/></svg></button>
+<div class="tile video self mirrored"><span class="name">You</span></div>
+<div class="tile video buffering ready"><span class="badges"><span class="pill-ready"><svg aria-hidden="true"><use href="#i-ok"/></svg>Ready</span></span><span class="name">Alex</span></div>
+<div class="tile"><div class="peerlabel"><div class="avatar" aria-hidden="true">S</div><strong>Sam</strong></div></div>
+</aside>
+</div></div>
+<p class="drives">Drives: <code>stalledBy.ready</code>, from a <code>bufferReady</code> frame: the player that stalled the room has loaded 5 s past where it stopped (<code>READY_AHEAD_MS</code>, read from what is loaded, never <code>readyState</code>). The pill turns to Ready in the success tone, in the same corner, so everyone knows play can be pressed. The show stays paused: Ready never resumes anything. A player that cannot say what it has loaded stays on Buffering.</p>
+</div>
 </div>
 
 <div class="compare">

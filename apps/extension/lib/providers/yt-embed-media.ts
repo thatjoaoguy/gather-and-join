@@ -25,12 +25,13 @@ import { MediaEvents } from './media-events';
 /** YouTube player states. */
 const UNSTARTED = -1, ENDED = 0, PLAYING = 1, PAUSED = 2, BUFFERING = 3;
 
-type Info = { currentTime?: number; playerState?: number; playbackRate?: number; duration?: number };
+type Info = { currentTime?: number; playerState?: number; playbackRate?: number; duration?: number; videoLoadedFraction?: number };
 
 export class YtEmbedMedia extends MediaEvents {
   /** Last position reported by the player, and the local clock reading when it arrived. */
   private tickSec = 0;
   private tickWall = 0;
+  private loadedFraction: number | null = null;
   private state = UNSTARTED;
   private rate = 1;
   private vol = 1;
@@ -105,6 +106,17 @@ export class YtEmbedMedia extends MediaEvents {
 
   get duration(): number { return this.durationSec; }
 
+  /**
+   * What is loaded, as the one range the embed describes: from the start to the loaded
+   * fraction of the length. Undefined until the embed has said, so a player that never
+   * says is never taken for one that can go on.
+   */
+  get buffered(): TimeRanges | undefined {
+    if (this.loadedFraction === null || !(this.durationSec > 0)) return undefined;
+    const end = this.loadedFraction * this.durationSec;
+    return { length: 1, start: () => 0, end: () => end } as unknown as TimeRanges;
+  }
+
   play(): Promise<void> { this.command('playVideo'); return Promise.resolve(); }
   pause(): void { this.command('pauseVideo'); }
 
@@ -129,6 +141,7 @@ export class YtEmbedMedia extends MediaEvents {
   }
 
   private apply(info: Info) {
+    if (typeof info.videoLoadedFraction === 'number') this.loadedFraction = info.videoLoadedFraction;
     if (typeof info.playbackRate === 'number') this.rate = info.playbackRate;
     if (typeof info.duration === 'number' && info.duration > 0) this.durationSec = info.duration;
     if (typeof info.currentTime === 'number') {
